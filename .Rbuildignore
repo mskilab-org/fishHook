@@ -1,0 +1,15 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^\.travis\.yml$
+^/\.gitattributes$
+^/\.git
+^/\.gitignore
+circos
+batch.R
+^.*\tar.gz$
+rtdocs
+install_bioc.sh
+^data-raw$
+^inst
+.*.pdf$
+cran-comments.md
