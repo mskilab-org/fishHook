@@ -1,20 +1,24 @@
 Package: fish.hook
-Title: R Package for performing Gamma-Poisson regression on somatic mutation count data 
+Title: R Package for performing Gamma-Poisson regression on somatic mutation
+    count data
 Version: 0.1
 Authors@R: c(person(given = "Marcin",
     family = "Imielinski", role = c("aut", "cre"), email = "mai9037@med.cornell.edu"))
-Description:  Package for performing Gamma-Poisson regression on somatic mutation count data with covariates
-       to identify mutational enrichment or depletion in a statistically calibrated fashion. 
+Description: Package for performing Gamma-Poisson regression on somatic mutation
+    count data with covariates to identify mutational enrichment or depletion in a
+    statistically calibrated fashion.
 Depends:
     R (>= 3.1.0),
     data.table (>= 1.9),
-    ffTrack,	
+    ff,
+    ffTrack,
     GenomicRanges (>= 1.18),
     rtracklayer (>= 1.26),
     Biostrings (>= 2.34),
 Imports:
-    MASS			
+    MASS
 Suggests:
     parallel,
 License: GPL-2
 LazyData: true
+RoxygenNote: 5.0.1
