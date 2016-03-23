@@ -9,16 +9,19 @@ Description: Package for performing Gamma-Poisson regression on somatic mutation
     statistically calibrated fashion.
 Depends:
     R (>= 3.1.0),
-    data.table (>= 1.9),
-    ff,
-    ffTrack,
-    GenomicRanges (>= 1.18),
-    rtracklayer (>= 1.26),
-    Biostrings (>= 2.34),
+    GenomicRanges (>= 1.18)
 Imports:
-    MASS
+    MASS,
+    rtracklayer (>= 1.26),
+    zoo,
+    ffTrack,
+    data.table (>= 1.9),
+    gUtils,
+    GenomeInfoDb,
+    S4Vectors,
+    BiocGenerics
 Suggests:
-    parallel,
+    parallel
 License: GPL-2
 LazyData: true
 RoxygenNote: 5.0.1
