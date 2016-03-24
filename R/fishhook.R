@@ -570,8 +570,8 @@ score.targets = function(targets, covariates = names(values(targets)),
     nb = TRUE, ## negative binomial, if false then use poisson
     verbose = TRUE,
     iter = 200,
-    subsample = 1e5,
-    seed = NULL,
+    subsample = 1e5, ## number of subsamples, or if < 1, fraction to subsample
+    seed = 42,
     p.randomized = TRUE)                         
     {
         
@@ -599,7 +599,7 @@ score.targets = function(targets, covariates = names(values(targets)),
         if (length(unique(targets$count))<=1)
             stop('score.targets input malformed --> count does not vary!')
 
-        set.seed(42) ## to ensure reproducibility
+        set.seed(seed) ## to ensure reproducibility
         
         if (is.null(model))
             {
@@ -609,13 +609,14 @@ score.targets = function(targets, covariates = names(values(targets)),
                 if (subsample>nrow(tdt))
                     subsample = NULL
 
+                ## remove rows with NAs
                 tdt = tdt[rowSums(is.na(tdt[, c('count', 'coverage', covariates), with = FALSE]))==0,]
-
                 if (nrow(tdt)==0)
                     stop('No rows with non NA counts, coverage, and covariates')
 
                 if (!is.null(subsample))
                     {
+                        ## interpret subsample as fraction
                         if (subsample<1)
                             subsample = ceiling(pmax(0, subsample)*nrow(tdt))
 
