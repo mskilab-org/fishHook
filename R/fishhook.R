@@ -185,7 +185,7 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
 
                                 if (is.null(cov$pad))
                                     cov$pad = pad
-                                
+
                                 val = fftab(cov$track, ov + cov$pad, cov$signature, chunksize = ff.chunk, FUN = mean, na.rm = TRUE, grep = cov$grep, mc.cores = mc.cores)
                                 values(ov) = values(val)
                                 
@@ -250,7 +250,7 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
 
                                 cov$track = reduce(cov$track)
                                 
-                                new.col = data.frame(val = gr.val(ov + cov$pad, cov$track[, c()], mean = FALSE, weighted = TRUE, mc.cores = mc.cores, max.slice = max.slice, max.chunk = max.chunk, na.rm = TRUE)$value/(BiocGenerics::width(ov)+2*cov$pad))
+                                new.col <- data.frame(val = gr.val(ov + cov$pad, cov$track[, c()], mean = FALSE, weighted = TRUE, mc.cores = mc.cores, max.slice = max.slice, max.chunk = max.chunk, na.rm = TRUE)$value/(BiocGenerics::width(ov)+2*cov$pad))
                                 new.col$val = ifelse(is.na(new.col$val), 0, new.col$val)
                                 names(new.col) = nm
                                 values(ov) = cbind(values(ov), new.col)
