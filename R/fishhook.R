@@ -45,6 +45,7 @@
 #' @param out.path  out.path to save variable to
 #' @return GRanges of input targets annotated with covariate statistics (+/- constrained to the subranges in optional argument covered)
 #' @author Marcin Imielinski
+#' @importFrom ffTrack fftab
 #' @export
 annotate.targets = function(targets, ## path to bed or rds containing genomic target regions with optional target name
     covered = NULL,
@@ -147,7 +148,7 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
                         ov$count = 0
 
                         if (length(oix)>0)
-                            ov$count[oix] = ffTrack::fftab(counts, ov[oix], chunksize = ff.chunk, na.rm = TRUE, mc.cores = mc.cores, verbose = verbose)$score
+                            ov$count[oix] = fftab(counts, ov[oix], chunksize = ff.chunk, na.rm = TRUE, mc.cores = mc.cores, verbose = verbose)$score
 
                         if (!is.null(out.path))
                             tryCatch(saveRDS(ov, paste(out.path, '.intermediate.rds', sep = '')), error = function(e) warning(sprintf('Error writing to file %s', out.file)))
@@ -185,7 +186,7 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
                                 if (is.null(cov$pad))
                                     cov$pad = pad
                                 
-                                val = ffTrack::fftab(cov$track, ov + cov$pad, cov$signature, chunksize = ff.chunk, FUN = mean, na.rm = TRUE, grep = cov$grep, mc.cores = mc.cores)
+                                val = fftab(cov$track, ov + cov$pad, cov$signature, chunksize = ff.chunk, FUN = mean, na.rm = TRUE, grep = cov$grep, mc.cores = mc.cores)
                                 values(ov) = values(val)
                                 
                                 if (verbose)
@@ -209,7 +210,7 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
 
                                 if (is(cov$track, 'ffTrack') | is(cov$track, 'RleList'))
                                     {
-                                        val = ffTrack::fftab(cov$track, ov + cov$pad, signature = cov$signature, FUN = sum, chunksize = ff.chunk, grep = cov$grep, mc.cores = mc.cores)
+                                        val = fftab(cov$track, ov + cov$pad, signature = cov$signature, FUN = sum, chunksize = ff.chunk, grep = cov$grep, mc.cores = mc.cores)
                                         values(ov) = values(val)
                                     }
                                 else ## then must be GRanges
