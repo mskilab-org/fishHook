@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/mskilab/fish.hook.svg?branch=master)](https://travis-ci.org/mskilab/fish.hook)
+
 fish.hook
 ======
 

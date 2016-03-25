@@ -45,6 +45,7 @@
 #' @param out.path  out.path to save variable to
 #' @return GRanges of input targets annotated with covariate statistics (+/- constrained to the subranges in optional argument covered)
 #' @author Marcin Imielinski
+#' @importFrom ffTrack fftab
 #' @export
 annotate.targets = function(targets, ## path to bed or rds containing genomic target regions with optional target name
     covered = NULL,
@@ -59,11 +60,13 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
     max.chunk = 1e11, ## gr.findoverlaps parameter
     out.path = NULL)
     {
+  
+  query.id = NULL ## NOTE fix
         if (is.character(targets))
             if (grepl('\\.rds$', targets[1]))
                 targets = readRDS(targets[1])
             else if (grepl('(\\.bed$)', targets[1]))
-                targets = import.ucsc(targets[1])
+                targets = rtracklayer::import.ucsc(targets[1])
         
         if (!is.null(out.path))
             tryCatch(saveRDS(targets, paste(gsub('.rds', '', out.path), '.source.rds', sep = '')), error = function(e) warning(sprintf('Error writing to file %s', out.file)))
@@ -130,7 +133,7 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
                                 ## total count, and if an event is split between two tile windows
                                 ## then it will contribute a fraction of event proprotional to the number
                                 ## oof bases overlapping
-                                counts = coverage(ev, weight = 1/width(ev))
+                                counts = GenomicRanges::coverage(ev, weight = 1/BiocGenerics::width(ev))
                                 oix = which(gr.in(ov, events))
                             }
                         else ## assume it is an Rle
@@ -182,7 +185,7 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
 
                                 if (is.null(cov$pad))
                                     cov$pad = pad
-                                
+
                                 val = fftab(cov$track, ov + cov$pad, cov$signature, chunksize = ff.chunk, FUN = mean, na.rm = TRUE, grep = cov$grep, mc.cores = mc.cores)
                                 values(ov) = values(val)
                                 
@@ -199,8 +202,7 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
                                         cov$track = readRDS(cov$track)
                                     else ## assume it is a UCSC format
                                         {
-                                            require(rtracklayer)
-                                            cov$track = import(cov$track)
+                                            cov$track = rtracklayer::import(cov$track)
                                         }
 
                                 if (is.null(cov$pad))
@@ -234,8 +236,7 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
                                         cov$track = readRDS(cov$track)
                                     else ## assume it is a UCSC format
                                         {
-                                            require(rtracklayer)
-                                            cov$track = import(cov$track)
+                                            cov$track = rtracklayer::import(cov$track)
                                         }
                                 
                                 if (is(cov, 'GRanges'))
@@ -249,7 +250,7 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
 
                                 cov$track = reduce(cov$track)
                                 
-                                new.col = data.frame(val = gr.val(ov + cov$pad, cov$track[, c()], mean = FALSE, weighted = TRUE, mc.cores = mc.cores, max.slice = max.slice, max.chunk = max.chunk, na.rm = TRUE)$value/(width(ov)+2*cov$pad))
+                                new.col <- data.frame(val = gr.val(ov + cov$pad, cov$track[, c()], mean = FALSE, weighted = TRUE, mc.cores = mc.cores, max.slice = max.slice, max.chunk = max.chunk, na.rm = TRUE)$value/(BiocGenerics::width(ov)+2*cov$pad))
                                 new.col$val = ifelse(is.na(new.col$val), 0, new.col$val)
                                 names(new.col) = nm
                                 values(ov) = cbind(values(ov), new.col)
@@ -261,7 +262,7 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
 
             }
         
-        ovdt = grdt(ov)
+        ovdt = gr2dt(ov)
         
         
         cmd = 'list(coverage = sum(width),';
@@ -322,6 +323,11 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
 #' @param rolling if specified, positive integer specifying how many (genome coordinate) adjacent to aggregate in a rolling fashion
 #' @return GRangesList of input targets annotated with new aggregate covariate statistics OR GRanges if rolling is specified
 #' @author Marcin Imielinski
+#' @importFrom zoo rollapply
+#' @importFrom data.table setkey := data.table as.data.table
+#' @importFrom S4Vectors values values<-
+#' @importFrom GenomeInfoDb seqnames
+#' @importFrom gUtils gr.findoverlaps gr.fix gr.in seg2gr gr.val gr2dt
 #' @export
 aggregate.targets = function(targets, ## path to bed or rds containing genomic target regions with optional target name 
     by = NULL,
@@ -334,6 +340,7 @@ aggregate.targets = function(targets, ## path to bed or rds containing genomic t
     )
     {
 
+  V1 = sn = st = en = keep = count = width = NULL ## NOTE fix
         if (is.null(by) & is.character(targets))
             {
                 cat('Applying sample wise merging\n')
@@ -485,7 +492,7 @@ aggregate.targets = function(targets, ## path to bed or rds containing genomic t
                 values(out)[, 'name'] = names(out)
                 values(out)[, 'numintervals'] = table(by)[names(out)]
                 
-                tadt = grdt(targets)
+                tadt = gr2dt(targets)
                 
                 if (verbose)
                     cat('Aggregating columns \n')
@@ -499,8 +506,6 @@ aggregate.targets = function(targets, ## path to bed or rds containing genomic t
             }
         else
             {
-                require(zoo)
-                
                 if (is.na(rolling <- as.integer(rolling)))
                     stop('rolling must be a positive integer')
 
@@ -510,7 +515,7 @@ aggregate.targets = function(targets, ## path to bed or rds containing genomic t
                 if (verbose)
                     cat('Rolling using window of', rolling, '(output will be coordinate sorted)\n')
                 
-                tadt = grdt(sort(targets))
+                tadt = gr2dt(sort(targets))
 
                 tadt[, width := as.numeric(width)]
 
@@ -574,9 +579,9 @@ score.targets = function(targets, covariates = names(values(targets)),
     seed = 42,
     p.randomized = TRUE)                         
     {
-        
-        require(MASS)
-        require(data.table)
+        # 
+        # require(MASS)
+        # require(data.table)
         covariates = setdiff(covariates, c('count', 'coverage', 'query.id'))        
         
         if (any(nnin <- !(covariates %in% names(values(targets)))))
@@ -630,7 +635,7 @@ score.targets = function(targets, covariates = names(values(targets)),
                     cat(sprintf('Fitting model with %s data points and %s covariates\n', prettyNum(nrow(tdt), big.mark = ','), length(covariates)))
                 formula = eval(parse(text = paste('count', " ~ ", paste(c('offset(1*coverage)', covariates), collapse = "+")))) ## make the formula with covariateso
                 if (nb)
-                    g = glm.nb(formula, data = as.data.frame(tdt), maxit = iter)
+                    g = MASS::glm.nb(formula, data = as.data.frame(tdt), maxit = iter)
                 else
                     {
                         g = glm(formula, data = as.data.frame(tdt), family = poisson)
