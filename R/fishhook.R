@@ -249,11 +249,12 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
                                     cov$na.rm = na.rm
 
                                 cov$track = reduce(cov$track)
-                                
+
                                 new.col <- data.frame(val = gr.val(ov + cov$pad, cov$track[, c()], mean = FALSE, weighted = TRUE, mc.cores = mc.cores, max.slice = max.slice, max.chunk = max.chunk, na.rm = TRUE)$value/(BiocGenerics::width(ov)+2*cov$pad))
                                 new.col$val = ifelse(is.na(new.col$val), 0, new.col$val)
                                 names(new.col) = nm
-                                values(ov) = cbind(values(ov), new.col)
+                                if (nrow(new.col))
+                                  values(ov) = cbind(values(ov), new.col)
 
                                 if (!is.null(out.path))
                                     tryCatch(saveRDS(ov, paste(out.path, '.intermediate.rds', sep = '')), error = function(e) warning(sprintf('Error writing to file %s', out.file)))
@@ -279,7 +280,10 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
                     cmd = paste(cmd,  ',', paste(cov.nm, '= mean(', cov.nm, ')', sep = '', collapse = ', '), ')',  sep = '')
                 else
                     cmd = paste(cmd, ')',  sep = '')
-                
+
+                if (!any(grepl("width", colnames(ovdt))))
+                  ovdt[, width := end - start]
+                options(datatable.optimize=1)
                 ovdta =  ovdt[, eval(parse(text = cmd)), keyby = query.id]
                 values(targets) = as(as.data.frame(ovdta[list(1:length(targets)), ]), 'DataFrame')
               
@@ -519,20 +523,23 @@ aggregate.targets = function(targets, ## path to bed or rds containing genomic t
 
                 tadt[, width := as.numeric(width)]
 
-                if ('count' %in% cfields )
+                tadt <- tadt[seqnames %in% c(seq(22), "X")]
+                
+                if ('count' %in% cfields ) {
+                  print("rolling count")
                     out = tadt[, list(
                         count = rollapply(count, rolling, sum, na.rm = TRUE, fill = NA),
                         start = rollapply(start, rolling, min, fill = NA),
                         end = rollapply(end, rolling, max, fill = NA),
                         coverage = rollapply(coverage, rolling, sum, fill = NA)
                     ), by = seqnames]
-                else
+                } else {
                     out = tadt[, list(
                         start = rollapply(start, rolling, min, fill = NA),
                         end = rollapply(end, rolling, max, fill = NA),
                         coverage = rollapply(coverage, rolling, sum, fill = NA)
                     ), by = seqnames]
-
+                  }
                 nna.ix = !is.na(out$start)
                 
                 if (!any(nna.ix))
@@ -575,8 +582,8 @@ score.targets = function(targets, covariates = names(values(targets)),
     nb = TRUE, ## negative binomial, if false then use poisson
     verbose = TRUE,
     iter = 200,
-    subsample = 1e5, ## number of subsamples, or if < 1, fraction to subsample
-    seed = 42,
+      subsample = 1e5, ## number of subsamples, or if < 1, fraction to subsample
+         seed = 42,
     p.randomized = TRUE)                         
     {
         # 
@@ -605,7 +612,7 @@ score.targets = function(targets, covariates = names(values(targets)),
             stop('score.targets input malformed --> count does not vary!')
 
         set.seed(seed) ## to ensure reproducibility
-        
+
         if (is.null(model))
             {
                 tdt = as.data.table(as.data.frame(values(targets)[, c('count', 'coverage', covariates)]))
@@ -638,7 +645,9 @@ score.targets = function(targets, covariates = names(values(targets)),
                     g = MASS::glm.nb(formula, data = as.data.frame(tdt), maxit = iter)
                 else
                     {
+                        print("fitting poisson model")
                         g = glm(formula, data = as.data.frame(tdt), family = poisson)
+                                              print("model fitted")
                         g$theta = 1
                     }
             }
