@@ -35,4 +35,3 @@ of $p values.  Covariates are inferred from the first file in the list.
 \author{
 Marcin Imielinski
 }
-

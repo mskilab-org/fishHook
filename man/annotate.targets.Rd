@@ -7,7 +7,7 @@
 annotate.targets(targets, covered = NULL, events = NULL, ...,
   mc.cores = 1, na.rm = TRUE, pad = 0, verbose = TRUE,
   max.slice = 1000, ff.chunk = 1e+06, max.chunk = 1e+11,
-  out.path = NULL)
+  out.path = NULL, covariates = list())
 }
 \arguments{
 \item{targets}{path to bed or rds containing genomic target regions with optional target name}
@@ -47,4 +47,3 @@ interval covariates: fraction of bases overlapping feature
 \author{
 Marcin Imielinski
 }
-

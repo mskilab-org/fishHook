@@ -20,4 +20,3 @@ Scores targets based on covariates using gamma-poisson model with coverage as co
 \author{
 Marcin Imielinski
 }
-
