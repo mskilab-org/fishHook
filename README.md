@@ -35,6 +35,16 @@ Installation
   install_github('mskilab/ffTrack')
   ````
 
+5. Install fish.hook
+
+  ```
+  install_github('mskilab/fish.hook')
+  ````
+
+See Demo
+
+[fish.hook Demo](https://github.com/mskilab/fish.hook/blob/master/Fish.hook.class.demo.ipynb)
+
 See documentation
 
 [R Dodcumentation](https://raw.githubusercontent.com/mskilab/fish.hook/master/fish.hook.pdf)
