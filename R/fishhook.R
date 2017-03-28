@@ -1327,7 +1327,19 @@ Annotated <- R6Class("Annotate",
                          ## group the targets in the GRanges object
                          ## See fish.hook documentation for more info on rolling and disjoint
 
-                         xaggregateTargets_sys = function(by = NULL, fields = NULL, rolling = NULL,
+                         aggregateTargets = function(by = NULL, fields = NULL, rolling = NULL,
+                                                     disjoint = TRUE, na.rm = FALSE, FUN = list(),
+                                                     verbose = TRUE){
+                             ret = self$clone()
+                             ret$aggregateTargets_sys(by = by, fields = fields, rolling = rolling,
+                                                      disjoint = disjoint, na.rm = na.rm, FUN = FUN,
+                                                      verbose = verbose)
+                             ret$deleteMeta()
+                             return(ret)
+                             
+                         },
+
+                         aggregateTargets_sys = function(by = NULL, fields = NULL, rolling = NULL,
                                                      disjoint = TRUE, na.rm = FALSE, FUN = list(),
                                                      verbose = TRUE){
                              
@@ -1365,7 +1377,9 @@ Annotated <- R6Class("Annotate",
                              }
 
 
-                         }
+                         },
+
+                         deleteMeta = function(){private$meta = NULL}
                          
 
                
