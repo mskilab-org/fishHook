@@ -1019,7 +1019,9 @@ FishHook <- R6Class("FishHook",
                             self$replaceEvents(events)                            
 
                             ## Initializes and Validates eligible
-                            self$replaceEligible(eligible)
+                            if(!(is.null(eligible))){
+                                self$replaceEligible(eligible)
+                            }
                         },
 
                         
