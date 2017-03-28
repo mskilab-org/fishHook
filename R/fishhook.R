@@ -1326,7 +1326,8 @@ Annotated <- R6Class("Annotate",
                          ## The only required param here is by, which is a vector upon which to
                          ## group the targets in the GRanges object
                          ## See fish.hook documentation for more info on rolling and disjoint
-                         aggregateTargets = function(by = NULL, fields = NULL, rolling = NULL,
+
+                         xaggregateTargets_sys = function(by = NULL, fields = NULL, rolling = NULL,
                                                      disjoint = TRUE, na.rm = FALSE, FUN = list(),
                                                      verbose = TRUE){
                              
@@ -1499,7 +1500,9 @@ Score <- R6Class("Score",
                                                 Effectsize = round(res$effectsize,2),
                                                 q = res$q)
                          }
-                         
+                         else{
+                             res = self$getAll()
+                         }
                          return(qq_pval(res$p ,annotations = annotations,
                                         gradient = list(Count = res$count),
                                         titleText = "" ,  plotly = plotly))
