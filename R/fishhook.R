@@ -331,7 +331,6 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
 #' @importFrom data.table setkey := data.table as.data.table
 #' @importFrom S4Vectors values values<-
 #' @importFrom GenomeInfoDb seqnames
-#' @importFrom gUtils gr.findoverlaps gr.fix gr.in seg2gr gr.val gr2dt
 #' @export
 aggregate.targets = function(targets, ## path to bed or rds containing genomic target regions with optional target name 
     by = NULL,
@@ -1272,6 +1271,7 @@ Annotated <- R6Class("Annotate",
 
                          },
 
+                         setAnno = function(anno_new){private$annotated_targets = anno_new},
                          ## Access Functions
                          getTargets = function(...) {
                              ## Checks if data has been aggregated, if so just return the GrangesList
