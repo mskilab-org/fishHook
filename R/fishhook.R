@@ -223,7 +223,6 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
 
                                         if (is.null(cov$na.rm))
                                             cov$na.rm = na.rm
-                                        browser()
                                         new.col = data.frame(val = values(gr.val(ov + cov$pad, cov$track, cov$field, mc.cores = mc.cores, max.slice = max.slice, max.chunk = max.chunk, mean = TRUE, na.rm = cov$na.rm))[, cov$field])
                                         names(new.col) = nm
                                         values(ov) = cbind(values(ov), new.col)                                
@@ -1240,7 +1239,7 @@ Annotated <- R6Class("Annotate",
                                                covariates ,
                                                meta = NULL){
                              private$annotated_targets = annotate.targets(targets = targets,
-                                                                          covered = eligible,
+                                                                          covered = covered,
                                                                           events = events,
                                                                           mc.cores = mc.cores,
                                                                           na.rm = na.rm,
@@ -1734,8 +1733,6 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, bestfit=T, col = N
     }
 
     else{
-
-        #browser()
         
         if(length(annotations) < 1){
             hover <- do.call(cbind.data.frame, list(p = obs))
@@ -1856,7 +1853,7 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, bestfit=T, col = N
                 outstr = paste(c(rbind(annotation_names, trans[,i])), sep = "", collapse = "")
                 hover_text = c(hover_text,outstr)
             }
-#            browser()
+
             if(gradient_control){
                 p <- dat[, plot_ly(data = dat, x=x, y=y, hoverinfo = "text",text = hover_text, color = grad,
                                    colors = c("blue2","gold"),marker = list(colorbar = list(title = names(gradient[1]))),
@@ -1911,7 +1908,6 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, bestfit=T, col = N
             
         }
 
- #       browser()
         
         #Calculating lambda, Note that this is using the whole data set not the subsampled one
         lambda = lm(y ~ x - 1, dat)$coefficients
