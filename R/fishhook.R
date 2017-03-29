@@ -1001,7 +1001,7 @@ FishHook <- R6Class("FishHook",
                         
                             ## Initializes and Validates targets                            
                             self$replaceTargets(targets)                            
-
+                            
                             ## Initializes and Validates out.path
                             self$replaceOut.Path(out.path)
                             
@@ -1050,7 +1050,7 @@ FishHook <- R6Class("FishHook",
                                 ## covs = paste(cov.names,cov.class,cov.types, sep = " ", collapse = "\n")
 
                             }
-                            meta = paste("Targets contains", ncol(values(targets)), "metadata columns")
+                            meta = paste("Targets contains", ncol(values(private$targets)), "metadata columns")
                             cat(targ,eve,elig,"Covariates:",covs,meta,sep = "\n",collapse = "\n")
                             
                             
@@ -1178,7 +1178,7 @@ FishHook <- R6Class("FishHook",
                     ),
 
                     private = list(
-                        ## Genomic Ranges Object that Indicates Hypothesize
+                        ## Genomic Ranges Object that Indicates Hypotheses
                         targets = NULL,
                         
                         ## Eligible Regions for Targets
