@@ -585,7 +585,8 @@ score.targets = function(targets, covariates = names(values(targets)),
     iter = 200,
     subsample = 1e5,
     seed = NULL,
-    p.randomized = TRUE)                         
+    p.randomized = TRUE,
+    classReturn = FALSE)
     {
         
         require(MASS)
@@ -656,10 +657,10 @@ score.targets = function(targets, covariates = names(values(targets)),
                 #                covariates = setdiff(names(coefficients(g)), '(Intercept)')                
             }
                 
-
-        if (return.model)
-            return(g)            
-
+        if(!(classReturn)){
+            if (return.model)
+                return(g)            
+        }
         if (is(targets, 'GRanges'))
             res = as.data.frame(targets)
         else
@@ -750,8 +751,11 @@ score.targets = function(targets, covariates = names(values(targets)),
             res$p.neg = signif(ppois(res$count, lambda = res$count.pred, lower.tail = T), 2)
         res$q.neg = signif(p.adjust(res$p.neg, 'BH'), 2)
         res$effectsize = log2(res$count / res$count.pred)
-            
-        return(as.data.table(res))
+
+        if(!(classReturn)){
+            return(as.data.table(res))
+        }
+        return(list(as.data.table(res),g))
     }
 
 #' Cov
@@ -1300,6 +1304,7 @@ Annotated <- R6Class("Annotate",
                                                  subsample = 1e5,
                                                  seed = 42,
                                                  p.randomize = TRUE,
+                                                 classReturn = TRUE,
                                                  meta = private$meta){
 
                              ## Assume that the data has not been aggregated
@@ -1317,7 +1322,8 @@ Annotated <- R6Class("Annotate",
                                              return.model = return.model, nb = nb,
                                              verbose = verbose, iter = iter,
                                              subsample = subsample, seed = seed,
-                                             p.randomize = p.randomize, meta = meta,grl = grl)
+                                             p.randomize = p.randomize, meta = meta,grl = grl,
+                                             classReturn = classReturn)
                              return(res)
 
                          },
@@ -1452,18 +1458,22 @@ Score <- R6Class("Score",
                                            seed = 42,
                                            p.randomize = TRUE,
                                            meta = NULL,
+                                           classReturn = TRUE,
                                            grl = FALSE){
 
-                         private$score = score.targets(annotated,
-                                               covariates = names(values(annotated)),
-                                               return.model = return.model,
-                                               nb = nb,
-                                               verbose = verbose,
-                                               iter = iter,
-                                               subsample = subsample,
-                                               seed = seed,
-                                               p.randomize = p.randomize)
+                         score_Output = score.targets(annotated,
+                                                      covariates = names(values(annotated)),
+                                                      return.model = return.model,
+                                                      nb = nb,
+                                                      verbose = verbose,
+                                                      iter = iter,
+                                                      subsample = subsample,
+                                                      seed = seed,
+                                                      classReturn = classReturn,
+                                                      p.randomize = p.randomize)
 
+                         private$score = score_Output[[1]]
+                         private$model = score_Output[[2]]
                          ## Check if we are in grl mode, if so overwrite meta and set to "numintervals" and "name"
                          if(grl){
                              meta = as.data.table(cbind(private$score$numintervals,private$score$name))
@@ -1541,6 +1551,8 @@ Score <- R6Class("Score",
                
                      },
 
+                     Model = function(...){return (private$model)},
+
                      ## Returns the meta data with target names
                      getMeta = function(...){return(private$meta)},
                      
@@ -1586,6 +1598,9 @@ Score <- R6Class("Score",
                      ## The output of the score.targets() function called during initialization
                      score = NULL,
 
+                     ## The output model of score.targets()
+                     model = NULL,
+                     
                      ## Target Metadata
                      meta = NULL
                      

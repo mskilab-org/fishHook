@@ -6,7 +6,8 @@
 \usage{
 score.targets(targets, covariates = names(values(targets)), model = NULL,
   return.model = FALSE, nb = TRUE, verbose = TRUE, iter = 200,
-  subsample = 1e+05, seed = NULL, p.randomized = TRUE)
+  subsample = 1e+05, seed = NULL, p.randomized = TRUE,
+  classReturn = FALSE)
 }
 \arguments{
 \item{targets}{annotated targets with fields $coverage, optional field, $count and additional numeric covariates}
