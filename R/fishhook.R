@@ -1612,8 +1612,12 @@ Score <- R6Class("Score",
                      ## If no annotation is provided will use defaults
                      ## use annotation = list() to have no annotations
                      qq_plot = function(plotly = TRUE, columns = NULL, annotations = NULL, ...){
+                         
+                         res = self$getAll()
 
-                         res = gr2dt(self$getAll())
+                         if(class(res)[1] != "data.table"){
+                             res = gr2dt(res)
+                         }
                          
                          if(!is.null(columns)){
                              columns = columns[columns %in% names(res)]
