@@ -774,7 +774,7 @@ Cov <- R6Class("Cov",
                           
                           initialize = function(Covariate = NULL, type = NULL, signature = NULL,
                                                 name = "", pad = NULL, na.rm = NULL, field = NULL,
-                                                grep = NULL){
+                                                grep = NULL, chr.sub = FALSE){
 
                               # Checks to see if covariates and type were supplied
                               if(is.null(Covariate) | is.null(type)){
@@ -819,6 +819,10 @@ Cov <- R6Class("Cov",
                               }
 
                               ## Assigns and initialized the Cov if all of the above is satisfied
+
+                              if(class(Covariate) == "GRanges" & chr.sub){
+                                  seqlevels(Covariate) = gsub('chr','',seqlevels(Covariate))
+                              }
                               private$Covariate = Covariate
                               private$type = type
                               private$signature = signature
@@ -829,6 +833,13 @@ Cov <- R6Class("Cov",
                               private$grep = grep
                           },
 
+                          seqlevels = function(...){
+                              if(class(private$Covariate) == "GRanges"){
+                                  return(seqlevels(private$Covariate))
+                              }
+                              return (NULL)                              
+                          },
+                          
                           ## prints covariate to output
                           print = function(...){
                               cat(c("type: ",private$type,"\tsignature: ", private$signature,
@@ -855,6 +866,15 @@ Cov <- R6Class("Cov",
                           ## Returns all of the valid covaraite types
                           getCovariateTypes = function(...){return (private$COV.TYPES)},
 
+                          ## Checks to see if this covariate has seqlevels that begin with chr. must be a GRanges to do this
+                          getChr = function(...){
+                              if(class(private$Covariate) == "GRanges"){
+                                  return(any(grepl("chr",seqlevels(private$Covariate))))
+                              }
+                              return (NULL)
+
+                          },
+                          
                           ## Converts a Cov object to a list that can be passed as input for annotate.targets
                           toList = function(...){
                               if(!(is.null(private$signature)) & class(private$Covariate) == "ffTrack"){
@@ -965,6 +985,16 @@ Cov_Arr <- R6Class("Cov_Arr",
                        ## Returns the Covariates as a lsit
                        getArr = function(...){return (private$Covs)},
 
+
+                       ## Returns a vector where TRUE indicates a chr based seqlevels
+                       ## Note that non-GRanges Covariates will not return anything
+                       getChr = function(...){
+                           return(unlist(lapply(private$Covs, function(x) x$getChr())))
+                       },
+                       seqlevels = function(...){
+                           return(lapply(private$Covs, function(x) x$seqlevels()))
+                       },
+                                                  
                        ## Returns a subset of the Covariates as a list
                        subset = function(range,...){
                            private$Covs = private$Covs[range]
@@ -1028,7 +1058,47 @@ FishHook <- R6Class("FishHook",
                     public = list(
                         
                         initialize = function(targets = NULL, out.path = NULL, eligible = NULL, ... ,events = NULL, covariates = NULL){ 
-                        
+
+                            ## This next portion checks to make sure that the seqlevels are in the same format
+                            
+                            ## Gets whther seqlevels of covariates are chr or not chr
+                            seqLevelsStatus_Covariates = covariates$getChr()
+                            ## Warns if there is a heterogenetiy of seqlevels (chr or not)
+                            if(length(unique(seqLevelsStatus_Covariates)) > 1){
+                                warning("Covariates appears to have mismatched seqlevels, make sure all Covariates have seqlevels that start with chr or don't", call.=TRUE)
+                            }
+                            ## gets the seqlevels and looks for chr to indicate USCS format
+                            seqLevelsStatus_Targets = any(grepl("chr",seqlevels(targets)))
+                            seqLevelsStatus_Eligible = any(grepl("chr",seqlevels(eligible)))
+                            seqLevelsStatus_Events = any(grepl("chr",seqlevels(events)))
+
+                            if(seqLevelsStatus_Targets != seqLevelsStatus_Covariates){
+                                warning("seqlevels of Targets and Covariates appear to be in different formats")
+                            }
+                            if(seqLevelsStatus_Targets != seqLevelsStatus_Eligible){
+                                warning("seqlevels of Targets and Eligible appear to be in different formats")
+                            }   
+                            if(seqLevelsStatus_Targets != seqLevelsStatus_Events){
+                                warning("seqlevels of Targets and Events appear to be in different formats")
+                            }
+                            
+
+                            ## This next portion checks to make sure there is atleast some overlap of seqlevels i.e. some mapability
+                            if(!any(seqlevels(targets) %in% seqlevels(events))){
+                                stop("Error, there are no seqlevels of events that match targets")
+                            }
+                            if(!any(seqlevels(targets) %in% seqlevels(eligible))){
+                                stop("Error, there are no seqlevels of eligible that match targets")
+                            }
+
+                            
+                            if(any(!(unlist(lapply(covariates$seqlevels(),function(x) any(x%in%seqlevels(targets))))))){                                
+                                warning("Warning, atleast one of the covariates has no seqlevels in common with targets")
+                            }
+                            
+                            
+
+                            
                             ## Initializes and Validates targets                            
                             self$replaceTargets(targets)                            
                             
@@ -1050,7 +1120,7 @@ FishHook <- R6Class("FishHook",
                             ## Initializes and Validates eligible
                             if(!(is.null(eligible))){
                                 self$replaceEligible(eligible)
-                            }
+                            }                            
                         },
 
                         
