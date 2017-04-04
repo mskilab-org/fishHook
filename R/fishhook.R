@@ -1060,24 +1060,30 @@ FishHook <- R6Class("FishHook",
                         initialize = function(targets = NULL, out.path = NULL, eligible = NULL, ... ,events = NULL, covariates = NULL){ 
 
                             ## This next portion checks to make sure that the seqlevels are in the same format
-                            
-                            ## Gets whther seqlevels of covariates are chr or not chr
-                            seqLevelsStatus_Covariates = covariates$getChr()
-                            ## Warns if there is a heterogenetiy of seqlevels (chr or not)
-                            if(length(unique(seqLevelsStatus_Covariates)) > 1){
-                                warning("Covariates appears to have mismatched seqlevels, make sure all Covariates have seqlevels that start with chr or don't", call.=TRUE)
+                            if(!is.null(covariates)){
+                                ## Gets whther seqlevels of covariates are chr or not chr
+                                seqLevelsStatus_Covariates = covariates$getChr()
+                                ## Warns if there is a heterogenetiy of seqlevels (chr or not)
+                                if(length(unique(seqLevelsStatus_Covariates)) > 1){
+                                    warning("Covariates appears to have mismatched seqlevels, make sure all Covariates have seqlevels that start with chr or don't", call.=TRUE)
+                                }
                             }
                             ## gets the seqlevels and looks for chr to indicate USCS format
                             seqLevelsStatus_Targets = any(grepl("chr",seqlevels(targets)))
-                            seqLevelsStatus_Eligible = any(grepl("chr",seqlevels(eligible)))
                             seqLevelsStatus_Events = any(grepl("chr",seqlevels(events)))
 
-                            if(seqLevelsStatus_Targets != seqLevelsStatus_Covariates){
-                                warning("seqlevels of Targets and Covariates appear to be in different formats")
+                            if(!is.null(covariates)){
+                                if(seqLevelsStatus_Targets != seqLevelsStatus_Covariates){
+                                    warning("seqlevels of Targets and Covariates appear to be in different formats")
+                                }
                             }
-                            if(seqLevelsStatus_Targets != seqLevelsStatus_Eligible){
-                                warning("seqlevels of Targets and Eligible appear to be in different formats")
-                            }   
+
+                            if(!is.null(eligible)){
+                                seqLevelsStatus_Eligible = any(grepl("chr",seqlevels(eligible)))
+                                if(seqLevelsStatus_Targets != seqLevelsStatus_Eligible){
+                                    warning("seqlevels of Targets and Eligible appear to be in different formats")
+                                }
+                            }
                             if(seqLevelsStatus_Targets != seqLevelsStatus_Events){
                                 warning("seqlevels of Targets and Events appear to be in different formats")
                             }
@@ -1091,9 +1097,10 @@ FishHook <- R6Class("FishHook",
                                 stop("Error, there are no seqlevels of eligible that match targets")
                             }
 
-                            
-                            if(any(!(unlist(lapply(covariates$seqlevels(),function(x) any(x%in%seqlevels(targets))))))){                                
-                                warning("Warning, atleast one of the covariates has no seqlevels in common with targets")
+                            if(!is.null(covariates)){
+                                if(any(!(unlist(lapply(covariates$seqlevels(),function(x) any(x%in%seqlevels(targets))))))){                                
+                                    warning("Warning, atleast one of the covariates has no seqlevels in common with targets")
+                                }
                             }
                             
                             
@@ -1604,11 +1611,20 @@ Score <- R6Class("Score",
                      ## You can assign metadata to annotations to plot
                      ## If no annotation is provided will use defaults
                      ## use annotation = list() to have no annotations
-                     qq_plot = function(plotly = TRUE, annotations = NULL, ...){
+                     qq_plot = function(plotly = TRUE, columns = NULL, annotations = NULL, ...){
+
+                         res = gr2dt(self$getAll())
                          
+                         if(!is.null(columns)){
+                             columns = columns[columns %in% names(res)]
+                             annotation_columns = lapply(columns, function(x) as.character(unlist(res[,x,with=FALSE])))
+                             names(annotation_columns) = columns
+                         }
+                         else{
+                             annotation_columns = list()
+                         }
                         
-                         if(is.null(annotations)){                      
-                             res = self$getAll()
+                         if(is.null(annotations) & is.null(columns)){                                                   
                              if(is.null(res$name)){
                                  names = c(1:nrow(res))
                              }
@@ -1623,7 +1639,7 @@ Score <- R6Class("Score",
                          else{
                              res = self$getAll()
                          }
-                         return(qq_pval(res$p ,annotations = annotations,
+                         return(qq_pval(res$p ,annotations = c(annotations,annotation_columns),
                                         gradient = list(Count = res$count),
                                         titleText = "" ,  plotly = plotly))
                          
