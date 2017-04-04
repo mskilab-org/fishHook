@@ -772,7 +772,9 @@ score.targets = function(targets, covariates = names(values(targets)),
 Cov <- R6Class("Cov",
                       public = list(
                           
-                          initialize = function(Covariate = NULL, type = NULL, signature = NULL,name = ""){
+                          initialize = function(Covariate = NULL, type = NULL, signature = NULL,
+                                                name = "", pad = NULL, na.rm = NULL, field = NULL,
+                                                grep = NULL){
 
                               # Checks to see if covariates and type were supplied
                               if(is.null(Covariate) | is.null(type)){
@@ -821,12 +823,18 @@ Cov <- R6Class("Cov",
                               private$type = type
                               private$signature = signature
                               private$name = name
+                              private$pad = pad
+                              private$na.rm = na.rm
+                              private$field = field
+                              private$grep = grep
                           },
 
                           ## prints covariate to output
                           print = function(...){
-                              cat(c("type: ",private$type,"\tsignature: ",
-                                    private$signature,"\ntrack ",private$name," :\n"),collapse = "")
+                              cat(c("type: ",private$type,"\tsignature: ", private$signature,
+                                    "\nfield: ",private$field, "\tpad: ", private$pad,
+                                    "\nna.rm: ", private$na.rm, "\tgrep: ", private$grep,
+                                    "\ntrack:\n", private$track),collapse = "")
                               print(private$Covariate)
                           },
                           ## Returns Covariate name (private$name)
@@ -851,10 +859,16 @@ Cov <- R6Class("Cov",
                           toList = function(...){
                               if(!(is.null(private$signature)) & class(private$Covariate) == "ffTrack"){
                                   return (list(track = private$Covariate, type = private$type,
-                                               signature = private$signature))
+                                               signature = private$signature,pad = private$pad,
+                                               na.rm = private$na.rm,field = private$field,
+                                               grep = private$grep))
                               }
                               else{                                 
-                                  return (list(track = private$Covariate,type = private$type))
+                                  return (list(track = private$Covariate, type = private$type,
+                                               signature = private$signature,pad = private$pad,
+                                               na.rm = private$na.rm,field = private$field,
+                                               grep = private$grep))
+
                               }                              
                           }                          
                           
@@ -872,6 +886,18 @@ Cov <- R6Class("Cov",
                           ## signature for use with ffTrack sequence covariates
                           signature = NULL,
 
+                          ## Pad for use with annotate targets
+                          pad = NULL,
+
+                          ## na.rm for use with annotate targets
+                          na.rm = NULL,
+
+                          ## field specifies the column of the covariate  to use for numeric covariates
+                          field = NULL,
+
+                          ## grep for use with sequence covariates
+                          grep = NULL,
+                          
                           ## Covariate name
                           name = NULL,
                           
