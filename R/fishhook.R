@@ -32,7 +32,7 @@
 #' 
 #' @param targets path to bed or rds containing genomic target regions with optional target name
 #' @param covered  optional path to bed or rds containing  granges object containing "covered" genomic regions
-#' @param covered  optional path to bed or rds containing ranges corresponding to events (ie mutations etc)
+#' @param events  optional path to bed or rds containing ranges corresponding to events (ie mutations etc)
 #' @param out.path  out.path to save variable to
 #' @param ... paths to sequence covariates whose output names will be their argument names, and each consists of a list with
 #' $track field corresponding to a GRanges, RleList, ffTrack object (or path to rds containing that object), $type which can
