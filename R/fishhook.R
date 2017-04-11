@@ -59,7 +59,8 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
     ff.chunk = 1e6, ## max chunk to evaluate with fftab
     max.chunk = 1e11, ## gr.findoverlaps parameter
     out.path = NULL,
-    covariates = list())
+    covariates = list(),
+    maxPtGene = NULL)
     {
         if (is.character(targets))
             if (grepl('\\.rds$', targets[1]))
@@ -126,38 +127,54 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
         if (length(ov)>0)
             {
                 if (!is.null(events))
+                {
+                    if (is(events, 'GRanges'))
                     {
-                        if (is(events, 'GRanges'))
-                            {
-                                ev = gr.fix(events[gr.in(events, ov)])                                
 
-                                ## weighing each event by width means that each event will get one
-                                ## total count, and if an event is split between two tile windows
-                                ## then it will contribute a fraction of event proprotional to the number
-                                ## oof bases overlapping
-                                counts = coverage(ev, weight = 1/width(ev))
-                                oix = which(gr.in(ov, events))
-                            }
-                        else ## assume it is an Rle of event counts along the genome
-                            {
-                                counts = events
-                                oix = 1:length(ov)
-                            }
+                        ev = gr.fix(events[gr.in(events, ov)])                                
+                        
+                        ## weighing each event by width means that each event will get one
+                        ## total count, and if an event is split between two tile windows
+                        ## then it will contribute a fraction of event proprotional to the number
+                        ## oof bases overlapping
+                        counts = coverage(ev)#, weight = 1/width(ev))
+                        oix = which(gr.in(ov, events))
 
-                        if (verbose)
-                            cat('Computing event counts\n')
-
-                        ov$count = 0
-
-                        if (length(oix)>0)
-                            ov$count[oix] = fftab(counts, ov[oix], chunksize = ff.chunk, na.rm = TRUE, mc.cores = mc.cores, verbose = verbose)$score
-
-                        if (!is.null(out.path))
-                            tryCatch(saveRDS(ov, paste(out.path, '.intermediate.rds', sep = '')), error = function(e) warning(sprintf('Error writing to file %s', out.file)))
-
-                        if (verbose)
-                            cat('Finished counting events\n')
+                        if(!is.null(maxPtGene)){
+                            if(!is.numeric(maxPtGene)){
+                                stop("maxPtGene must be of type numeric")
+                            }                
+                            ev2 = gr.findoverlaps(events,ov)
+                            ev2$ID = events$ID[ev2$query.id]
+                            ev2$target.id = ov$query.id[ev2$subject.id]
+                            tab = as.data.table(cbind(ev2$ID,ev2$target.id))
+                            counts.unique = tab[, dummy :=1][, .(count = sum(dummy)), keyby =.(V1, V2)][, count := pmin(maxPtGene, count)][, .(final_count = sum(count)), keyby = V2]                          
+                            ## tab = table(tab)
+                            ## tab[tab>maxPtGene] = maxPtGene
+                            ## counts.unique = colSums(tab)
+                        }
+                        
                     }
+                    else ## assume it is an Rle of event counts along the genome
+                    {
+                        counts = events
+                        oix = 1:length(ov)
+                    }
+                    
+                    if (verbose)
+                        cat('Computing event counts\n')
+                    
+                    ov$count = 0
+                    
+                    if (length(oix)>0){
+                        ov$count[oix] = fftab(counts, ov[oix], chunksize = ff.chunk, na.rm = TRUE, mc.cores = mc.cores, verbose = verbose)$score
+                    }
+                    if (!is.null(out.path))
+                        tryCatch(saveRDS(ov, paste(out.path, '.intermediate.rds', sep = '')), error = function(e) warning(sprintf('Error writing to file %s', out.file)))
+                    
+                    if (verbose)
+                        cat('Finished counting events\n')
+                }
                 
                 for (nm in names(covariates))
                     {
@@ -285,7 +302,13 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
                 
                 ovdta =  ovdt[, eval(parse(text = cmd)), keyby = query.id]
                 values(targets) = as(as.data.frame(ovdta[list(1:length(targets)), ]), 'DataFrame')
-              
+
+
+                if(!is.null(maxPtGene)){
+                    targets$count = 0
+                    targets$count[as.numeric(counts.unique$V2)] = counts.unique$final_count
+                }
+                
             }
         else
             targets$coverage = 0                
@@ -293,9 +316,12 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
         targets$query.id = 1:length(targets)                
         
         ix = is.na(targets$coverage)
-        if (any(ix))
+        if (any(ix)){
             targets$coverage[ix] = 0
-
+            if(!is.null(maxPtGene)){
+                targets$count[targets$coverage == 0] = NA
+            }
+        }
         if (!is.null(out.path))
             {
                 if (file.exists(paste(out.path, '.intermediate.rds', sep = '')))
@@ -1258,7 +1284,7 @@ FishHook <- R6Class("FishHook",
                        ## Returns the created annotate object
                        annotateTargets = function(mc.cores = 1, na.rm = TRUE, pad = 0,
                                                   verbose = TRUE,max.slice = 1e3, ff.chunk = 1e6,
-                                                  max.chunk = 1e11){
+                                                  max.chunk = 1e11, maxPtGene = NULL){
                            
                           res = Annotated$new(targets = private$targets,
                                                covered = private$eligible,
@@ -1272,6 +1298,7 @@ FishHook <- R6Class("FishHook",
                                                max.chunk = max.chunk,
                                                out.path = private$out.path,
                                                meta = private$targets,
+                                               maxPtGene = maxPtGene,
                                                private$covariates$toList())
                            return(res)
                            
@@ -1345,7 +1372,8 @@ Annotated <- R6Class("Annotate",
                                                max.chunk = 1e11,
                                                out.path = NULL,
                                                covariates ,
-                                               meta = NULL){
+                                               meta = NULL,
+                                               maxPtGene = NULL){
                              private$annotated_targets = annotate.targets(targets = targets,
                                                                           covered = covered,
                                                                           events = events,
@@ -1357,7 +1385,8 @@ Annotated <- R6Class("Annotate",
                                                                           ff.chunk = ff.chunk,
                                                                           max.chunk = max.chunk,
                                                                           out.path = out.path,
-                                                                          covariates = covariates)
+                                                                          covariates = covariates,
+                                                                          maxPtGene = maxPtGene)
 
                              private$meta = meta
                          },

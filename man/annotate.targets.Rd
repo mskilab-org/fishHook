@@ -7,12 +7,14 @@
 annotate.targets(targets, covered = NULL, events = NULL, ...,
   mc.cores = 1, na.rm = TRUE, pad = 0, verbose = TRUE,
   max.slice = 1000, ff.chunk = 1e+06, max.chunk = 1e+11,
-  out.path = NULL, covariates = list())
+  out.path = NULL, covariates = list(), maxPtGene = NULL)
 }
 \arguments{
 \item{targets}{path to bed or rds containing genomic target regions with optional target name}
 
 \item{covered}{optional path to bed or rds containing  granges object containing "covered" genomic regions}
+
+\item{events}{optional path to bed or rds containing ranges corresponding to events (ie mutations etc)}
 
 \item{...}{paths to sequence covariates whose output names will be their argument names, and each consists of a list with
 $track field corresponding to a GRanges, RleList, ffTrack object (or path to rds containing that object), $type which can
@@ -24,8 +26,6 @@ will be used as input to fftab, and can have optional logical argument $grep to 
 Interval covariates must be Granges (or paths to GRanges rds) or paths to bed files}
 
 \item{out.path}{out.path to save variable to}
-
-\item{covered}{optional path to bed or rds containing ranges corresponding to events (ie mutations etc)}
 
 \item{out.path}{out.path to save variable to}
 }
