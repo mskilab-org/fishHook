@@ -47,7 +47,7 @@ See Demo
 
 See documentation
 
-[R Dodcumentation](https://raw.githubusercontent.com/mskilab/fish.hook/master/fish.hook.pdf)
+[R Documentation](https://raw.githubusercontent.com/mskilab/fish.hook/master/fish.hook.pdf)
 
 Description
 -----------
