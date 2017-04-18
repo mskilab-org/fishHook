@@ -20,7 +20,8 @@ Imports:
     gUtils,
     GenomeInfoDb,
     S4Vectors,
-    BiocGenerics
+    BiocGenerics,
+    R6
 Suggests:
     parallel
 License: GPL-2
