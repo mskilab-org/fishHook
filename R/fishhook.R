@@ -137,7 +137,7 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
                         ## total count, and if an event is split between two tile windows
                         ## then it will contribute a fraction of event proprotional to the number
                         ## oof bases overlapping
-                        counts = coverage(ev)#, weight = 1/width(ev))
+                        counts = coverage(ev, weight = 1/width(ev))
                         oix = which(gr.in(ov, events))
 
                         if(!is.null(maxPtGene)){
@@ -166,7 +166,7 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
                     
                     ov$count = 0
                     
-                    if (length(oix)>0){
+                    if (length(oix)>0 & is.null(maxPtGene)){
                         ov$count[oix] = fftab(counts, ov[oix], chunksize = ff.chunk, na.rm = TRUE, mc.cores = mc.cores, verbose = verbose)$score
                     }
                     if (!is.null(out.path))
