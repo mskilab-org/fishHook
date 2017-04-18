@@ -43,6 +43,9 @@
 #' will be used as input to fftab, and can have optional logical argument $grep to specify inexact matches (see fftab)
 #' Interval covariates must be Granges (or paths to GRanges rds) or paths to bed files
 #' @param out.path  out.path to save variable to
+#' @param maxPtGene Sets the maximum number of events a patient can contribute per target
+#' @param weightEvetns If true, will weight events by thier overlap with targets. e.g. if 10% of an event overlaps with a target
+#' region, that target region will get assigned a score of 0.1 for that event. If false, any overlap will be given a weight of 1.
 #' @return GRanges of input targets annotated with covariate statistics (+/- constrained to the subranges in optional argument covered)
 #' @author Marcin Imielinski
 #' @importFrom ffTrack fftab
@@ -60,8 +63,13 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
     max.chunk = 1e11, ## gr.findoverlaps parameter
     out.path = NULL,
     covariates = list(),
-    maxPtGene = NULL)
+    maxPtGene = Inf,
+    weightEvents = FALSE)
     {
+        if(weightEvents){
+            maxPtGene = NULL
+        }
+
         if (is.character(targets))
             if (grepl('\\.rds$', targets[1]))
                 targets = readRDS(targets[1])
@@ -143,7 +151,11 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
                         if(!is.null(maxPtGene)){
                             if(!is.numeric(maxPtGene)){
                                 stop("maxPtGene must be of type numeric")
-                            }                
+                            }
+                            if(!("ID" %in% colnames(values(events)))){
+                                events$ID = c(1:length(events))
+                            }
+                            
                             ev2 = gr.findoverlaps(events,ov)
                             ev2$ID = events$ID[ev2$query.id]
                             ev2$target.id = ov$query.id[ev2$subject.id]
@@ -1284,7 +1296,7 @@ FishHook <- R6Class("FishHook",
                        ## Returns the created annotate object
                        annotateTargets = function(mc.cores = 1, na.rm = TRUE, pad = 0,
                                                   verbose = TRUE,max.slice = 1e3, ff.chunk = 1e6,
-                                                  max.chunk = 1e11, maxPtGene = NULL){
+                                                  max.chunk = 1e11, maxPtGene = Inf,weightEvents = FALSE){
                            
                           res = Annotated$new(targets = private$targets,
                                                covered = private$eligible,
@@ -1299,6 +1311,7 @@ FishHook <- R6Class("FishHook",
                                                out.path = private$out.path,
                                                meta = private$targets,
                                                maxPtGene = maxPtGene,
+                                               weightEvents = weightEvents,
                                                private$covariates$toList())
                            return(res)
                            
@@ -1373,7 +1386,8 @@ Annotated <- R6Class("Annotate",
                                                out.path = NULL,
                                                covariates ,
                                                meta = NULL,
-                                               maxPtGene = NULL){
+                                               maxPtGene = Inf,
+                                               weightEvents = FALSE){
                              private$annotated_targets = annotate.targets(targets = targets,
                                                                           covered = covered,
                                                                           events = events,
@@ -1386,7 +1400,8 @@ Annotated <- R6Class("Annotate",
                                                                           max.chunk = max.chunk,
                                                                           out.path = out.path,
                                                                           covariates = covariates,
-                                                                          maxPtGene = maxPtGene)
+                                                                          maxPtGene = maxPtGene,
+                                                                          weightEvents = weightEvents)
 
                              private$meta = meta
                          },

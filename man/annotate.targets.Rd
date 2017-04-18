@@ -7,7 +7,8 @@
 annotate.targets(targets, covered = NULL, events = NULL, ...,
   mc.cores = 1, na.rm = TRUE, pad = 0, verbose = TRUE,
   max.slice = 1000, ff.chunk = 1e+06, max.chunk = 1e+11,
-  out.path = NULL, covariates = list(), maxPtGene = NULL)
+  out.path = NULL, covariates = list(), maxPtGene = Inf,
+  weightEvents = FALSE)
 }
 \arguments{
 \item{targets}{path to bed or rds containing genomic target regions with optional target name}
@@ -27,7 +28,12 @@ Interval covariates must be Granges (or paths to GRanges rds) or paths to bed fi
 
 \item{out.path}{out.path to save variable to}
 
+\item{maxPtGene}{Sets the maximum number of events a patient can contribute per target}
+
 \item{out.path}{out.path to save variable to}
+
+\item{weightEvetns}{If true, will weight events by thier overlap with targets. e.g. if 10% of an event overlaps with a target
+region, that target region will get assigned a score of 0.1 for that event. If false, any overlap will be given a weight of 1.}
 }
 \value{
 GRanges of input targets annotated with covariate statistics (+/- constrained to the subranges in optional argument covered)
