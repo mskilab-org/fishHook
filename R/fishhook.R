@@ -1787,7 +1787,6 @@ Score <- R6Class("Score",
 #' @param gradient named list that contains one vector that color codes points based on value, must bein same order as obs input 
 #' @param titleText title for plotly (html) graph only
 #' @author Marcin Imielinski, Eran Hodis, Zoran Z. Gajic
-#' @import plotly
 #' @export
 qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, bestfit=T, col = NULL, col.bg='black', pch=18, cex=1, conf.lines=T, max=NULL, max.x = NULL, max.y = NULL, qvalues=NULL, label = NULL, plotly = FALSE, annotations = list(), gradient = list(), titleText = "", subsample = NA, ...)
 {
