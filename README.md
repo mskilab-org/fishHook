@@ -55,5 +55,5 @@ Description
 Attributions
 ------------
 > Marcin Imielinski - Assistant Professor, Weill-Cornell Medical College. Core Member, New York Genome Center.
-[license]: https://github.com/mskilab/fish.hook/blob/master/LICENSE
+[![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
 
