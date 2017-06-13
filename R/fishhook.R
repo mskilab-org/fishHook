@@ -1131,17 +1131,17 @@ FishHook <- R6Class("FishHook",
                             if(!any(seqlevels(targets) %in% seqlevels(events))){
                                 stop("Error, there are no seqlevels of events that match targets")
                             }
-                            if(!any(seqlevels(targets) %in% seqlevels(eligible))){
-                                stop("Error, there are no seqlevels of eligible that match targets")
-                            }
 
+                            if(!is.null(eligible)){
+                                if(!any(seqlevels(targets) %in% seqlevels(eligible))){
+                                    stop("Error, there are no seqlevels of eligible that match targets")
+                                }
+                            }
                             if(!is.null(covariates)){
                                 if(any(!(unlist(lapply(covariates$seqlevels(),function(x) any(x%in%seqlevels(targets))))))){                                
                                     warning("Warning, atleast one of the covariates has no seqlevels in common with targets")
                                 }
-                            }
-                            
-                            
+                            }                                                        
 
                             
                             ## Initializes and Validates targets                            
