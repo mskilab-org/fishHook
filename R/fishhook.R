@@ -622,7 +622,7 @@ score.targets = function(targets, covariates = names(values(targets)),
     verbose = TRUE,
     iter = 200,
     subsample = 1e5,
-    seed = NULL,
+    seed = 42,
     p.randomized = TRUE,
     classReturn = FALSE)
     {
@@ -651,7 +651,7 @@ score.targets = function(targets, covariates = names(values(targets)),
         if (length(unique(values(targets)$count))<=1)
             stop('score.targets input malformed --> count does not vary!')
 
-        set.seed(42) ## to ensure reproducibility
+        set.seed(seed) ## to ensure reproducibility
         
         if (is.null(model))
             {
@@ -1174,8 +1174,8 @@ FishHook <- R6Class("FishHook",
                         },
 
                         print = function(){
-                            targ = paste( "Contains" , length(private$targets), "hypothesize." ,collapse = "")
-                            eve = paste("Contains", length(private$events), "events to map to hypothesize.", collapse = "")
+                            targ = paste( "Contains" , length(private$targets), "hypotheses." ,collapse = "")
+                            eve = paste("Contains", length(private$events), "events to map to hypotheses.", collapse = "")
                             if(is.null(private$eligible)){
                                 elig = "All regions are elgible."
                             }
@@ -1407,7 +1407,7 @@ Annotated <- R6Class("Annotate",
                          },
                          print = function(...){
 
-                             anno = paste("Annotated has", length(private$annotated_targets), "hypothesize.")
+                             anno = paste("Annotated has", length(private$annotated_targets), "hypotheses.")
                              if(class(private$annotated_targets) == "GRangesList"){
                                  agg = "The data has been aggregated."
                              }
@@ -1637,7 +1637,7 @@ Score <- R6Class("Score",
                      },
                      print = function(...){
                          
-                         anno = paste("Scored has", nrow(private$score), "hypothesize.")
+                         anno = paste("Scored has", nrow(private$score), "hypotheses.")
                          if(class(private$meta) == "GRanges"){
                              meta = paste("Scored has", ncol(values(private$meta)), "metadata columns")
                          }
