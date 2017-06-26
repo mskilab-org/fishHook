@@ -64,12 +64,12 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
     out.path = NULL,
     covariates = list(),
     maxPtGene = Inf,
+    PtIDCol = NULL,
     weightEvents = FALSE)
     {
         if(weightEvents){
             maxPtGene = NULL
         }
-
         if (is.character(targets))
             if (grepl('\\.rds$', targets[1]))
                 targets = readRDS(targets[1])
@@ -84,7 +84,7 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
         
         COV.TYPES = c('numeric', 'sequence', 'interval')
         COV.CLASSES = c('GRanges', 'RleList', 'ffTrack', 'character')
-        ## covariates = list(...)          
+
         
         cov.types = sapply(covariates, function(x) if (!is.null(x$type)) x$type else NA)
         cov.classes = lapply(covariates, function(x) if (!is.null(x$track)) class(x$track) else NA)
@@ -132,6 +132,7 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
        if (verbose)
            cat('Finished overlapping with covered intervals\n')
 
+#        browser()
         if (length(ov)>0)
             {
                 if (!is.null(events))
@@ -152,12 +153,18 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
                             if(!is.numeric(maxPtGene)){
                                 stop("maxPtGene must be of type numeric")
                             }
-                            if(!("ID" %in% colnames(values(events)))){
+                            if(!("ID" %in% colnames(values(events))) & is.null(PtIDCol)){
                                 events$ID = c(1:length(events))
                             }
                             
-                            ev2 = gr.findoverlaps(events,ov)
-                            ev2$ID = events$ID[ev2$query.id]
+                            ev2 = gr.findoverlaps(events,ov, max.chunk = max.chunk, mc.cores = mc.cores)
+                            if(is.null(PtIDCol)){
+                                ev2$ID = events$ID[ev2$query.id]
+                            }
+                            else{
+                                ev2$ID = mcols(events)[,PtIDCol][ev2$query.id]
+                            }
+                            
                             ev2$target.id = ov$query.id[ev2$subject.id]
                             tab = as.data.table(cbind(ev2$ID,ev2$target.id))
                             counts.unique = tab[, dummy :=1][, .(count = sum(dummy)), keyby =.(V1, V2)][, count := pmin(maxPtGene, count)][, .(final_count = sum(count)), keyby = V2]                          
@@ -217,7 +224,7 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
                                 if (is.null(cov$pad))
                                     cov$pad = pad
                                 
-                                val = fftab(cov$track, ov + cov$pad, cov$signature, chunksize = ff.chunk, FUN = mean, na.rm = TRUE, grep = cov$grep, mc.cores = mc.cores)
+                                val = fftab(cov$track, ov + cov$pad, cov$signature, chunksize = ff.chunk, verbose = verbose, FUN = mean, na.rm = TRUE, grep = cov$grep, mc.cores = mc.cores)
                                 values(ov) = values(val)
                                 
                                 if (verbose)
@@ -242,7 +249,7 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
 
                                 if (is(cov$track, 'ffTrack') | is(cov$track, 'RleList'))
                                     {
-                                        val = fftab(cov$track, ov + cov$pad, signature = cov$signature, FUN = sum, chunksize = ff.chunk, grep = cov$grep, mc.cores = mc.cores)
+                                        val = fftab(cov$track, ov + cov$pad, signature = cov$signature, FUN = sum, verbose = verbose, chunksize = ff.chunk, grep = cov$grep, mc.cores = mc.cores)
                                         values(ov) = values(val)
                                     }
                                 else ## then must be GRanges
@@ -252,7 +259,7 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
 
                                         if (is.null(cov$na.rm))
                                             cov$na.rm = na.rm
-                                        new.col = data.frame(val = values(gr.val(ov + cov$pad, cov$track, cov$field, mc.cores = mc.cores, max.slice = max.slice, max.chunk = max.chunk, mean = TRUE, na.rm = cov$na.rm))[, cov$field])
+                                        new.col = data.frame(val = values(gr.val(ov + cov$pad, cov$track, cov$field, mc.cores = mc.cores,  max.slice = max.slice, max.chunk = max.chunk, mean = TRUE, na.rm = cov$na.rm))[, cov$field])
                                         names(new.col) = nm
                                         values(ov) = cbind(values(ov), new.col)                                
                                     }
@@ -282,7 +289,7 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
 
                                 cov$track = reduce(cov$track)
                                 
-                                new.col = data.frame(val = gr.val(ov + cov$pad, cov$track[, c()], mean = FALSE, weighted = TRUE, mc.cores = mc.cores, max.slice = max.slice, max.chunk = max.chunk, na.rm = TRUE)$value/(width(ov)+2*cov$pad))
+                                new.col = data.frame(val = gr.val(ov + cov$pad, cov$track[, c()], mean = FALSE, weighted = TRUE,  mc.cores = mc.cores, max.slice = max.slice, max.chunk = max.chunk, na.rm = TRUE)$value/(width(ov)+2*cov$pad))
                                 new.col$val = ifelse(is.na(new.col$val), 0, new.col$val)
                                 names(new.col) = nm
                                 values(ov) = cbind(values(ov), new.col)
@@ -1296,7 +1303,7 @@ FishHook <- R6Class("FishHook",
                        ## Returns the created annotate object
                        annotateTargets = function(mc.cores = 1, na.rm = TRUE, pad = 0,
                                                   verbose = TRUE,max.slice = 1e3, ff.chunk = 1e6,
-                                                  max.chunk = 1e11, maxPtGene = Inf,weightEvents = FALSE){
+                                                  max.chunk = 1e11, PtIDCol = NULL, maxPtGene = Inf,weightEvents = FALSE){
                            
                           res = Annotated$new(targets = private$targets,
                                                covered = private$eligible,
@@ -1311,6 +1318,7 @@ FishHook <- R6Class("FishHook",
                                                out.path = private$out.path,
                                                meta = private$targets,
                                                maxPtGene = maxPtGene,
+                                               PtIDCol = PtIDCol,
                                                weightEvents = weightEvents,
                                                private$covariates$toList())
                            return(res)
@@ -1387,6 +1395,7 @@ Annotated <- R6Class("Annotate",
                                                covariates ,
                                                meta = NULL,
                                                maxPtGene = Inf,
+                                               PtIDCol = NULL,
                                                weightEvents = FALSE){
                              private$annotated_targets = annotate.targets(targets = targets,
                                                                           covered = covered,
@@ -1400,6 +1409,7 @@ Annotated <- R6Class("Annotate",
                                                                           max.chunk = max.chunk,
                                                                           out.path = out.path,
                                                                           covariates = covariates,
+                                                                          PtIDCol = PtIDCol,
                                                                           maxPtGene = maxPtGene,
                                                                           weightEvents = weightEvents)
 
