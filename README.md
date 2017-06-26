@@ -43,6 +43,8 @@ Installation
 
 See Demo
 
+Note: Github does not correctly display the rendered version. In order to properly view the rendered version you must run it through ipynb.
+
 [fish.hook Demo](https://github.com/mskilab/fish.hook/blob/master/Fish.hook.class.demo.ipynb)
 
 See documentation
