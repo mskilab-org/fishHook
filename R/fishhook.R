@@ -132,7 +132,7 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
        if (verbose)
            cat('Finished overlapping with covered intervals\n')
 
-#        browser()
+
         if (length(ov)>0)
             {
                 if (!is.null(events))
@@ -259,7 +259,7 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
 
                                         if (is.null(cov$na.rm))
                                             cov$na.rm = na.rm
-                                        new.col = data.frame(val = values(gr.val(ov + cov$pad, cov$track, cov$field, mc.cores = mc.cores,  max.slice = max.slice, max.chunk = max.chunk, mean = TRUE, na.rm = cov$na.rm))[, cov$field])
+                                        new.col = data.frame(val = values(gr.val(ov + cov$pad, cov$track, cov$field, mc.cores = mc.cores, verbose = verbose,  max.slice = max.slice, max.chunk = max.chunk, mean = TRUE, na.rm = cov$na.rm))[, cov$field])
                                         names(new.col) = nm
                                         values(ov) = cbind(values(ov), new.col)                                
                                     }
@@ -1533,7 +1533,8 @@ Annotated <- R6Class("Annotate",
                                  warning("Meta and Targets are of different length, removing Meta.")
                                  private$meta = NULL
                                  return()
-                             }
+                                        #
+                         }
                              else{
                                  private$meta = private$meta[range]
                                  return()
@@ -1665,7 +1666,7 @@ Score <- R6Class("Score",
                      ## You can assign metadata to annotations to plot
                      ## If no annotation is provided will use defaults
                      ## use annotation = list() to have no annotations
-                     qq_plot = function(plotly = TRUE, columns = NULL, annotations = NULL, ...){
+                     qq_plot = function(plotly = TRUE, columns = NULL, annotations = NULL, key = NULL, ...){
                          
                          res = self$getAll()
 
@@ -1699,7 +1700,7 @@ Score <- R6Class("Score",
                          }
                          return(qq_pval(res$p ,annotations = c(annotations,annotation_columns),
                                         gradient = list(Count = res$count),
-                                        titleText = "" ,  plotly = plotly))
+                                        titleText = "" ,  plotly = plotly, key = key))
                          
                      },
 
@@ -1798,7 +1799,7 @@ Score <- R6Class("Score",
 #' @param titleText title for plotly (html) graph only
 #' @author Marcin Imielinski, Eran Hodis, Zoran Z. Gajic
 #' @export
-qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, bestfit=T, col = NULL, col.bg='black', pch=18, cex=1, conf.lines=T, max=NULL, max.x = NULL, max.y = NULL, qvalues=NULL, label = NULL, plotly = FALSE, annotations = list(), gradient = list(), titleText = "", subsample = NA, ...)
+qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, bestfit=T, col = NULL, col.bg='black', pch=18, cex=1, conf.lines=T, max=NULL, max.x = NULL, max.y = NULL, qvalues=NULL, label = NULL, plotly = FALSE, annotations = list(), gradient = list(), titleText = "", subsample = NA, key = NULL,  ...)
 {
     if(!(plotly)){
         is.exp.null = is.null(exp)
@@ -1894,6 +1895,7 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, bestfit=T, col = N
 
                                         #colors = vector(mode = "character", length = length(obs)); colors[] = "black";
 
+        
         colors = col
         colors[highlight] = "red";
 
@@ -1936,7 +1938,8 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, bestfit=T, col = N
     }
 
     else{
-        
+
+
         if(length(annotations) < 1){
             hover <- do.call(cbind.data.frame, list(p = obs))
         }
@@ -1945,6 +1948,7 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, bestfit=T, col = N
         }    
         hover <- as.data.table(hover)
 
+        hover$key = key
         
         is.exp.null = is.null(exp)
         if (is.null(col)) 
@@ -2036,12 +2040,15 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, bestfit=T, col = N
         dat$y = dat$obs    
         
         #declare so we can use in If statement
-        p <- NULL    
+        p <- NULL
+
+
 
         #hacky subsampling but works really well, just maxing out the number of points at 8k
         #and removing the extra from the non-sig
         #(looks to be -logp of 2.6 here can make this more dynamic later )
 
+        
         if (nrow(dat) <=  8000){
 
             dat4 = dat
@@ -2072,15 +2079,20 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, bestfit=T, col = N
             }
         }
 
+
+
+
         
         else {
-                                    
+
+            
             dat$ID = c(1:nrow(dat))
             dat2 = dat[ y < 2.6,]
             dat3 = as.data.frame(dat2)
             dat3 = as.data.table(dat3[ sample(nrow(dat3), min(4000,nrow(dat3))), ])
             dat2 = rbind(dat3,dat[!(ID%in%dat2$ID),])
             dat2$ID = NULL
+
             
             dat4 = dat2
             dat4$obs = NULL
@@ -2088,15 +2100,21 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, bestfit=T, col = N
             dat4$y = NULL
             dat4$grad = NULL
 
+            
             trans = t(dat4)
             hover_text = c()
+
+            test3 <<-dat2
+
             for (i in 1:dim(trans)[2]){
                 outstr = paste(c(rbind(annotation_names, trans[,i])), sep = "", collapse = "")
                 hover_text = c(hover_text,outstr)
             }
-            
+
+
+            test2 <<- dat2
             if(gradient_control){
-                p <- dat2[, plot_ly(data = dat2, x=x, y=y,hoverinfo = "text", text = hover_text, color = grad,
+                p <- dat2[, plot_ly(data = dat2, x=x, y=y,hoverinfo = "text",key = dat2$key,  text = hover_text, color = grad,
                                     colors = c("blue2","gold"),marker = list(colorbar = list(title = names(gradient[1]))),
                                     mode = "markers",type = 'scatter')
                      %>% layout(xaxis = list(title = "<i>Expected -log<sub>10</sub>(P)</i>"),
