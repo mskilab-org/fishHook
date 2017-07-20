@@ -66,159 +66,6 @@ library(fishhook)
 library(skitools)
 ```
 
-    Loading required package: GenomicRanges
-    Loading required package: BiocGenerics
-    Loading required package: parallel
-    
-    Attaching package: ‘BiocGenerics’
-    
-    The following objects are masked from ‘package:parallel’:
-    
-        clusterApply, clusterApplyLB, clusterCall, clusterEvalQ,
-        clusterExport, clusterMap, parApply, parCapply, parLapply,
-        parLapplyLB, parRapply, parSapply, parSapplyLB
-    
-    The following objects are masked from ‘package:stats’:
-    
-        IQR, mad, xtabs
-    
-    The following objects are masked from ‘package:base’:
-    
-        anyDuplicated, append, as.data.frame, as.vector, cbind, colnames,
-        do.call, duplicated, eval, evalq, Filter, Find, get, grep, grepl,
-        intersect, is.unsorted, lapply, lengths, Map, mapply, match, mget,
-        order, paste, pmax, pmax.int, pmin, pmin.int, Position, rank,
-        rbind, Reduce, rownames, sapply, setdiff, sort, table, tapply,
-        union, unique, unlist, unsplit
-    
-    Loading required package: S4Vectors
-    Loading required package: stats4
-    Loading required package: IRanges
-    Loading required package: GenomeInfoDb
-    Loading required package: gUtils
-    Loading required package: data.table
-    
-    Attaching package: ‘data.table’
-    
-    The following object is masked from ‘package:GenomicRanges’:
-    
-        shift
-    
-    The following object is masked from ‘package:IRanges’:
-    
-        shift
-    
-    
-    Attaching package: ‘gUtils’
-    
-    The following object is masked from ‘package:base’:
-    
-        %o%
-    
-    Loading required package: VariantAnnotation
-    Loading required package: SummarizedExperiment
-    Loading required package: Biobase
-    Welcome to Bioconductor
-    
-        Vignettes contain introductory material; view with
-        'browseVignettes()'. To cite Bioconductor, see
-        'citation("Biobase")', and for packages 'citation("pkgname")'.
-    
-    Loading required package: Rsamtools
-    Loading required package: XVector
-    Loading required package: Biostrings
-    
-    Attaching package: ‘VariantAnnotation’
-    
-    The following object is masked from ‘package:base’:
-    
-        tabulate
-    
-    Loading required package: htmlwidgets
-    Loading required package: devtools
-    Loading required package: stringr
-    
-    Attaching package: ‘stringr’
-    
-    The following object is masked from ‘package:VariantAnnotation’:
-    
-        fixed
-    
-    Loading required package: plotly
-    Loading required package: ggplot2
-    
-    Attaching package: ‘ggplot2’
-    
-    The following object is masked from ‘package:gUtils’:
-    
-        %+%
-    
-    
-    Attaching package: ‘plotly’
-    
-    The following object is masked from ‘package:ggplot2’:
-    
-        last_plot
-    
-    The following object is masked from ‘package:VariantAnnotation’:
-    
-        select
-    
-    The following object is masked from ‘package:XVector’:
-    
-        slice
-    
-    The following object is masked from ‘package:IRanges’:
-    
-        slice
-    
-    The following object is masked from ‘package:S4Vectors’:
-    
-        rename
-    
-    The following object is masked from ‘package:stats’:
-    
-        filter
-    
-    The following object is masked from ‘package:graphics’:
-    
-        layout
-    
-    Loading required package: reshape2
-    
-    Attaching package: ‘reshape2’
-    
-    The following objects are masked from ‘package:data.table’:
-    
-        dcast, melt
-    
-    Warning message:
-    “replacing previous import by ‘plotly::select’ when loading ‘skitools’”Warning message:
-    “replacing previous import by ‘plotly::last_plot’ when loading ‘skitools’”
-    Attaching package: ‘skitools’
-    
-    The following object is masked from ‘package:ggplot2’:
-    
-        alpha
-    
-    The following object is masked from ‘package:fishhook’:
-    
-        qq_pval
-    
-    The following object is masked from ‘package:gUtils’:
-    
-        standardize_segs
-    
-    The following object is masked from ‘package:stats’:
-    
-        ccf
-    
-    The following object is masked from ‘package:utils’:
-    
-        timestamp
-    
-
-
 
 ```R
 ## Set this to the path for the dir "data" that contains the demo data
@@ -241,25 +88,6 @@ events
 ```
 
 
-    GRanges object with 1985704 ranges and 1 metadata column:
-                seqnames                 ranges strand   | patient_code
-                   <Rle>              <IRanges>  <Rle>   |  <character>
-            [1]       10   [52587953, 52587953]      *   | TCGA-D8-A1J8
-            [2]       10   [52595854, 52595854]      *   | TCGA-BH-A0HP
-            [3]       10   [52595854, 52595854]      *   | TCGA-BH-A0HP
-            [4]       10   [52595937, 52595937]      *   | TCGA-BH-A18P
-            [5]       10   [52596055, 52596055]      *   | TCGA-AC-A2FB
-            ...      ...                    ...    ... ...          ...
-      [1985700]       22 [ 39239549,  39239549]      *   | TCGA-ZN-A9VW
-      [1985701]       22 [ 50720356,  50720356]      *   | TCGA-ZN-A9VW
-      [1985702]        X [ 83362035,  83362035]      *   | TCGA-ZN-A9VW
-      [1985703]        X [110005955, 110005955]      *   | TCGA-ZN-A9VW
-      [1985704]        X [153588774, 153588774]      *   | TCGA-ZN-A9VW
-      -------
-      seqinfo: 23 sequences from an unspecified genome; no seqlengths
-
-
-
 ```R
 ## Targets contains 19688 annotated human genes
 ## With meta data columns, gene_name, links, summary
@@ -271,64 +99,6 @@ targets
 ```
 
 
-    GRanges object with 19688 ranges and 6 metadata columns:
-              seqnames                 ranges strand   |      chr      pos1
-                 <Rle>              <IRanges>  <Rle>   | <factor> <integer>
-          [1]       19   [58856544, 58864865]      -   |       19  58856544
-          [2]       10   [52559169, 52645435]      -   |       10  52559169
-          [3]       12   [ 9220260,  9268825]      -   |       12   9220260
-          [4]       12   [ 8975068,  9039597]      +   |       12   8975068
-          [5]        1   [33772367, 33786699]      -   |        1  33772367
-          ...      ...                    ...    ... ...      ...       ...
-      [19684]        7 [143078173, 143088204]      +   |        7 143078173
-      [19685]       17 [  3907739,   4046314]      -   |       17   3907739
-      [19686]        1 [ 78028101,  78149104]      -   |        1  78028101
-      [19687]       19 [ 14183348,  14185874]      +   |       19  14183348
-      [19688]       19 [ 50003781,  50004614]      +   |       19  50003781
-                   pos2    gene_name
-              <integer>  <character>
-          [1]  58864865         A1BG
-          [2]  52645435         A1CF
-          [3]   9268825          A2M
-          [4]   9039597        A2ML1
-          [5]  33786699      A3GALT2
-          ...       ...          ...
-      [19684] 143088204          ZYX
-      [19685]   4046314        ZZEF1
-      [19686]  78149104         ZZZ3
-      [19687]  14185874 hsa-mir-1199
-      [19688]  50004614  hsa-mir-150
-                                                                       links
-                                                                    <factor>
-          [1]         http://www.genecards.org/cgi-bin/carddisp.pl?gene=A1BG
-          [2]         http://www.genecards.org/cgi-bin/carddisp.pl?gene=A1CF
-          [3]          http://www.genecards.org/cgi-bin/carddisp.pl?gene=A2M
-          [4]        http://www.genecards.org/cgi-bin/carddisp.pl?gene=A2ML1
-          [5]      http://www.genecards.org/cgi-bin/carddisp.pl?gene=A3GALT2
-          ...                                                            ...
-      [19684]          http://www.genecards.org/cgi-bin/carddisp.pl?gene=ZYX
-      [19685]        http://www.genecards.org/cgi-bin/carddisp.pl?gene=ZZEF1
-      [19686]         http://www.genecards.org/cgi-bin/carddisp.pl?gene=ZZZ3
-      [19687] http://www.genecards.org/cgi-bin/carddisp.pl?gene=hsa-mir-1199
-      [19688]  http://www.genecards.org/cgi-bin/carddisp.pl?gene=hsa-mir-150
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     summary
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <factor>
-          [1]                                                                                                                                                                                                                                                                                                           The protein encoded by this gene is a plasma<br>glycoprotein of unknown function. The protein<br>shows sequence similarity to the variable regions<br>of some immunoglobulin supergene family member<br>proteins. [provided by RefSeq, Jul 2008]<br>
-          [2]         Mammalian apolipoprotein B mRNA undergoes<br>site-specific C to U deamination, which is<br>mediated by a multi-component enzyme complex<br>containing a minimal core composed of APOBEC-1 and<br>a complementation factor encoded by this gene. The<br>gene product has three non-identical RNA<br>recognition motifs and belongs to the hnRNP R<br>family of RNA-binding proteins. It has been<br>proposed that this complementation factor<br>functions as an RNA-binding subunit and docks<br>APOBEC-1 to deaminate the upstream cytidine. Stud<br>
-          [3]                                                                                                                                                                                         Alpha-2-macroglobulin is a protease inhibitor and<br>cytokine transporter. It inhibits many proteases,<br>including trypsin, thrombin and collagenase. A2M<br>is implicated in Alzheimer disease (AD) due to its<br>ability to mediate the clearance and degradation<br>of A-beta, the major component of beta-amyloid<br>deposits. [provided by RefSeq, Jul 2008]<br>
-          [4]      This gene encodes a member of the<br>alpha-macroglobulin superfamily. The encoded<br>protein is thought to be an N-glycosylated<br>monomeric protein that acts as an inhibitor of<br>several proteases. It has been shown to form<br>covalent interactions with proteases, and has been<br>reported as the p170 antigen recognized by<br>autoantibodies in the autoimmune disease<br>paraneoplastic pemphigus (PNP; PMID:20805888).<br>Mutations in these gene have also been associated<br>with some cases of Noonan syndrome (NS;<br>PMID:24939586)<br>
-          [5] A3GALT2 (Alpha 1,3-Galactosyltransferase 2) is a<br>Protein Coding gene.\r\n                            <br>               \r\n                                 <br>          Among its related pathways are<br>Glycosphingolipid biosynthesis - ganglio series.\r\n<br>                                           GO<br>annotations related to this gene include<br>transferase activity, transferring glycosyl groups<br>and alpha-1,3-galactosyltransferase activity.\r\n   <br>                                        An<br>important paralog of this<br>
-          ...                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ...
-      [19684]         Focal adhesions are actin-rich structures that<br>enable cells to adhere to the extracellular matrix<br>and at which protein complexes involved in signal<br>transduction assemble. Zyxin is a zinc-binding<br>phosphoprotein that concentrates at focal<br>adhesions and along the actin cytoskeleton. Zyxin<br>has an N-terminal proline-rich domain and three<br>LIM domains in its C-terminal half. The<br>proline-rich domain may interact with SH3 domains<br>of proteins involved in signal transduction<br>pathways while the LIM domains <br>
-      [19685]                                                                                                                                       ZZEF1 (Zinc Finger ZZ-Type And EF-Hand Domain<br>Containing 1) is a Protein Coding gene.\r\n         <br>                                  \r\n              <br>                             \r\n                   <br>                        GO annotations related to<br>this gene include calcium ion binding.\r\n          <br>                                 An important<br>paralog of this gene is CUL9.<br>
-      [19686]                                                                                                                                                                                                    ZZZ3 (Zinc Finger ZZ-Type Containing 3) is a<br>Protein Coding gene.\r\n                            <br>               \r\n                                 <br>          Among its related pathways are Chromatin<br>organization.\r\n                                   <br>        GO annotations related to this gene<br>include chromatin binding.<br>
-      [19687]         microRNAs (miRNAs) are short (20-24 nt) non-coding<br>RNAs that are involved in post-transcriptional<br>regulation of gene expression in multicellular<br>organisms by affecting both the stability and<br>translation of mRNAs. miRNAs are transcribed by<br>RNA polymerase II as part of capped and<br>polyadenylated primary transcripts (pri-miRNAs)<br>that can be either protein-coding or non-coding.<br>The primary transcript is cleaved by the Drosha<br>ribonuclease III enzyme to produce an<br>approximately 70-nt stem-loop precurso<br>
-      [19688]         microRNAs (miRNAs) are short (20-24 nt) non-coding<br>RNAs that are involved in post-transcriptional<br>regulation of gene expression in multicellular<br>organisms by affecting both the stability and<br>translation of mRNAs. miRNAs are transcribed by<br>RNA polymerase II as part of capped and<br>polyadenylated primary transcripts (pri-miRNAs)<br>that can be either protein-coding or non-coding.<br>The primary transcript is cleaved by the Drosha<br>ribonuclease III enzyme to produce an<br>approximately 70-nt stem-loop precurso<br>
-      -------
-      seqinfo: 25 sequences from an unspecified genome; no seqlengths
-
-
-
 ```R
 ## replcation_timing is a GRanges object that we will use as a Covariate
 ## replication_timing contains 2,385,966 rows
@@ -336,25 +106,6 @@ targets
 ## score is a numeric Covariate.
 replication_timing
 ```
-
-
-    GRanges object with 2385966 ranges and 1 metadata column:
-                seqnames                ranges strand   |     score
-                   <Rle>             <IRanges>  <Rle>   | <numeric>
-            [1]        1        [10150, 10275]      *   |  0.117972
-            [2]        1        [10275, 10501]      *   |  0.117178
-            [3]        1        [10501, 14889]      *   |  0.115744
-            [4]        1        [14889, 16295]      *   |  0.088761
-            [5]        1        [16295, 17403]      *   |  0.079838
-            ...      ...                   ...    ... ...       ...
-      [2385962]        Y [59030705,  59031157]      *   |  -1.19679
-      [2385963]        Y [59031157,  59031510]      *   | -1.198627
-      [2385964]        Y [59031510,  59032054]      *   | -1.200062
-      [2385965]        Y [59032054,  59032496]      *   | -1.202272
-      [2385966]        Y [59032496, 308283117]      *   | -1.204069
-      -------
-      seqinfo: 25 sequences from an unspecified genome
-
 
 
 ```R
@@ -367,25 +118,6 @@ replication_timing
 ## Eligible was previously subset to only include regions with a score > 0.80
 eligible
 ```
-
-
-    GRanges object with 2329621 ranges and 1 metadata column:
-                seqnames                 ranges strand   |     score
-                   <Rle>              <IRanges>  <Rle>   | <numeric>
-            [1]        1       [861300, 861310]      *   |      0.84
-            [2]        1       [861311, 861367]      *   |      0.85
-            [3]        1       [861368, 861386]      *   |      0.84
-            [4]        1       [861387, 861395]      *   |      0.83
-            [5]        1       [866417, 866420]      *   |      0.95
-            ...      ...                    ...    ... ...       ...
-      [2329617]        X [155239804, 155239804]      *   |      0.88
-      [2329618]        X [155239805, 155239805]      *   |      0.86
-      [2329619]        X [155239806, 155239806]      *   |      0.85
-      [2329620]        X [155239807, 155239807]      *   |      0.83
-      [2329621]        X [155239808, 155239808]      *   |      0.82
-      -------
-      seqinfo: 25 sequences from an unspecified genome
-
 
 
 ```R
@@ -405,119 +137,232 @@ print("Covariate List with rept repeated 5 times:")
 Covariates 
 ```
 
-    [1] "Covariate List with rept repeated 5 times:"
+
+```R
+## This vector is subsetable
+Covariates = Covariates[2:4]
+
+print("Subsetted Covariates")
+Covariates
+```
 
 
+```R
+print("Single Covariate")
+Covariates = Covariates[1]
 
-    $rept
-    type:  numeric 	signature:  
-    field:  	pad:  
-    na.rm:  	grep:  
-    track:
-     GRanges object with 2385966 ranges and 1 metadata column:
-                seqnames                ranges strand   |     score
-                   <Rle>             <IRanges>  <Rle>   | <numeric>
-            [1]        1        [10150, 10275]      *   |  0.117972
-            [2]        1        [10275, 10501]      *   |  0.117178
-            [3]        1        [10501, 14889]      *   |  0.115744
-            [4]        1        [14889, 16295]      *   |  0.088761
-            [5]        1        [16295, 17403]      *   |  0.079838
-            ...      ...                   ...    ... ...       ...
-      [2385962]        Y [59030705,  59031157]      *   |  -1.19679
-      [2385963]        Y [59031157,  59031510]      *   | -1.198627
-      [2385964]        Y [59031510,  59032054]      *   | -1.200062
-      [2385965]        Y [59032054,  59032496]      *   | -1.202272
-      [2385966]        Y [59032496, 308283117]      *   | -1.204069
-      -------
-      seqinfo: 25 sequences from an unspecified genome
-    
-    $rept
-    type:  numeric 	signature:  
-    field:  	pad:  
-    na.rm:  	grep:  
-    track:
-     GRanges object with 2385966 ranges and 1 metadata column:
-                seqnames                ranges strand   |     score
-                   <Rle>             <IRanges>  <Rle>   | <numeric>
-            [1]        1        [10150, 10275]      *   |  0.117972
-            [2]        1        [10275, 10501]      *   |  0.117178
-            [3]        1        [10501, 14889]      *   |  0.115744
-            [4]        1        [14889, 16295]      *   |  0.088761
-            [5]        1        [16295, 17403]      *   |  0.079838
-            ...      ...                   ...    ... ...       ...
-      [2385962]        Y [59030705,  59031157]      *   |  -1.19679
-      [2385963]        Y [59031157,  59031510]      *   | -1.198627
-      [2385964]        Y [59031510,  59032054]      *   | -1.200062
-      [2385965]        Y [59032054,  59032496]      *   | -1.202272
-      [2385966]        Y [59032496, 308283117]      *   | -1.204069
-      -------
-      seqinfo: 25 sequences from an unspecified genome
-    
-    $rept
-    type:  numeric 	signature:  
-    field:  	pad:  
-    na.rm:  	grep:  
-    track:
-     GRanges object with 2385966 ranges and 1 metadata column:
-                seqnames                ranges strand   |     score
-                   <Rle>             <IRanges>  <Rle>   | <numeric>
-            [1]        1        [10150, 10275]      *   |  0.117972
-            [2]        1        [10275, 10501]      *   |  0.117178
-            [3]        1        [10501, 14889]      *   |  0.115744
-            [4]        1        [14889, 16295]      *   |  0.088761
-            [5]        1        [16295, 17403]      *   |  0.079838
-            ...      ...                   ...    ... ...       ...
-      [2385962]        Y [59030705,  59031157]      *   |  -1.19679
-      [2385963]        Y [59031157,  59031510]      *   | -1.198627
-      [2385964]        Y [59031510,  59032054]      *   | -1.200062
-      [2385965]        Y [59032054,  59032496]      *   | -1.202272
-      [2385966]        Y [59032496, 308283117]      *   | -1.204069
-      -------
-      seqinfo: 25 sequences from an unspecified genome
-    
-    $rept
-    type:  numeric 	signature:  
-    field:  	pad:  
-    na.rm:  	grep:  
-    track:
-     GRanges object with 2385966 ranges and 1 metadata column:
-                seqnames                ranges strand   |     score
-                   <Rle>             <IRanges>  <Rle>   | <numeric>
-            [1]        1        [10150, 10275]      *   |  0.117972
-            [2]        1        [10275, 10501]      *   |  0.117178
-            [3]        1        [10501, 14889]      *   |  0.115744
-            [4]        1        [14889, 16295]      *   |  0.088761
-            [5]        1        [16295, 17403]      *   |  0.079838
-            ...      ...                   ...    ... ...       ...
-      [2385962]        Y [59030705,  59031157]      *   |  -1.19679
-      [2385963]        Y [59031157,  59031510]      *   | -1.198627
-      [2385964]        Y [59031510,  59032054]      *   | -1.200062
-      [2385965]        Y [59032054,  59032496]      *   | -1.202272
-      [2385966]        Y [59032496, 308283117]      *   | -1.204069
-      -------
-      seqinfo: 25 sequences from an unspecified genome
-    
-    $rept
-    type:  numeric 	signature:  
-    field:  	pad:  
-    na.rm:  	grep:  
-    track:
-     GRanges object with 2385966 ranges and 1 metadata column:
-                seqnames                ranges strand   |     score
-                   <Rle>             <IRanges>  <Rle>   | <numeric>
-            [1]        1        [10150, 10275]      *   |  0.117972
-            [2]        1        [10275, 10501]      *   |  0.117178
-            [3]        1        [10501, 14889]      *   |  0.115744
-            [4]        1        [14889, 16295]      *   |  0.088761
-            [5]        1        [16295, 17403]      *   |  0.079838
-            ...      ...                   ...    ... ...       ...
-      [2385962]        Y [59030705,  59031157]      *   |  -1.19679
-      [2385963]        Y [59031157,  59031510]      *   | -1.198627
-      [2385964]        Y [59031510,  59032054]      *   | -1.200062
-      [2385965]        Y [59032054,  59032496]      *   | -1.202272
-      [2385966]        Y [59032496, 308283117]      *   | -1.204069
-      -------
-      seqinfo: 25 sequences from an unspecified genome
+Covariates
+```
 
 
+```R
+## Now lets create a "FishHook" object that will hold and manage our data
+## Make sure to keep targets, events and eligible as GRanges
+## The only required inputs are targets and events
+## can modify elements of FishHook object using replace functions.
+fish = FishHook$new(targets = targets, events = events, eligible = eligible, covariates = Covariates)
 
+##Lets take a look at our FishHook object:
+fish
+
+```
+
+
+```R
+## annotate targets with the events data only in the eligible regions
+## Note that if you are testing and trying to get this to run,
+## Covariates add about 2 min to the run time (over a base runtime of ~ 20sec) so get rid of them if debugging
+##anno = fish$annotateTargets()
+
+## Note that the default annotate run mode counts each event-target intersection as 1 hit
+## If you would like to weigh the hits such that a large hit of which only 10% spans a target contributes a count
+## of 0.1, you can set the param weightEvents=TRUE
+##anno = fish$annotateTargets(weightEvents = TRUE)
+
+## You can also choose to annotate such that each patient can contribute at most "n" events to each target.
+## This is to fix some issuses that can arise when you have a few patients with a large amount of mutations 
+## in a given target.
+## To do this set maxPtGene = n
+## and include a column named ID in your events or specify the column name using the param "PtIDCol".
+## That indicates which sample/patient this event comes from
+anno = fish$annotateTargets(maxPtGene = 1, verbose = FALSE, PtIDCol = "patient_code")
+
+```
+
+
+```R
+## Lets take a look at our Annotate Object
+anno
+
+anno$getTargets()
+```
+
+
+```R
+## Score Targets, score the annotated data set
+## Now we will score the annotated data set to 
+## see which of our targets (in this case genes)
+## Are significantly mutated
+## This portion is quite quick
+score = anno$scoreTargets()
+
+## Lets take a look at our scored targets:
+
+score
+
+## We can look at the data store in score by using
+score$getAll()
+##query.id is a column used during fish.hook
+##coverage is the size of the eligible region of the gene
+##count is the number of mutations we see at that gene
+##rept is our Covariate that we named rept
+##p is the p-value
+##q is the q-value
+```
+
+
+```R
+## Now that we have all of this data we will want a way to visualize it.
+## We can both visualize and assess the merit of our analysis by using a qq_plot
+## fish.class comes with a built in plotting function built using ploty
+## Note that displaying html widget objects in jupyter requires installing "pandoc"
+## Can get from : "sudo apt-get install pandoc"
+
+x = score$qq_plot()
+
+
+x
+
+```
+
+
+```R
+## Here is a nicer version that lets you annotate the points w/metadata
+## First lets get all of out Metadata out from the score object
+res = score$getAll()
+
+## Lets add hover annotations
+## gene_name -> gene names from targets
+## q -> q-value from score
+## count -> count from annotate
+## summary -> gene summary from targets obtained from genecards 
+## p-value is added in automatically so no need to add
+x = score$qq_plot(annotations = list(Hypothesis_ID = res$gene_name,Count = res$count, q = res$q,Summary = res$summary))
+
+x
+```
+
+
+```R
+## you can also plot so that there are no hover annotations other than p-value with:
+
+x = score$qq_plot(annotations = list())
+
+x
+```
+
+
+```R
+## You can also set annotations by specifying the columns of your score object to annotate with
+
+x = score$qq_plot(columns = c("count","q","gene_name"))
+
+x
+
+```
+
+
+```R
+## Now lets look at the aggregation function and how we can use it to study pathways.
+## First we will need to get some pathways metadata.
+pathways = readRDS("indexed_pathways.rds")
+
+##lets take a look at a few pathways:
+pathways[1:3]
+
+#And the number of pathways
+length(pathways)
+```
+
+
+```R
+##Lets take a look at a series of pathways, for example lets look at the KEGG pathways:
+
+Chosen_Pathways_Index = which(grepl("KEGG",names(pathways)))
+Chosen_Pathways = pathways[Chosen_Pathways_Index]
+
+## Lets look at our chosen pathways:
+Chosen_Pathways[1:10]
+length(Chosen_Pathways)
+```
+
+
+```R
+## Now lets aggregate our results by pathways:
+anno2 = anno$aggregateTargets(by = Chosen_Pathways)
+
+```
+
+
+```R
+##Lets look at our aggregates:
+anno2
+```
+
+
+```R
+##Scoring:
+score = anno2$scoreTargets()
+```
+
+
+```R
+##Plotting
+x = score$qq_plot()
+
+
+x
+```
+
+
+```R
+## change annotations
+
+new_meta = as.data.frame(names(Chosen_Pathways))
+
+score$replaceMeta(new_meta)
+
+score$getMeta()
+
+x = score$qq_plot()
+
+x
+```
+
+
+```R
+targets[Chosen_Pathways$KEGG_LYSINE_DEGRADATION]$gene_name
+
+```
+
+
+```R
+## Another way to call the plotting fuction is to use the names of the columns:
+
+class(score$getAll())
+#score$getAll()
+
+x = score$qq_plot(columns = c("count","q","names(Chosen_Pathways)"))
+
+x
+```
+
+
+```R
+##Since the names(Chosen_Pathways) looks a bit funky we can use a mix of the two methods
+
+colnames(new_meta) = "Pathways"
+x = score$qq_plot(columns = c("count","q"),annotations = list(new_meta))
+
+x
+```
