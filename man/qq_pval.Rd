@@ -8,7 +8,7 @@ qq_pval(obs, highlight = c(), exp = NULL, lwd = 1, bestfit = T,
   col = NULL, col.bg = "black", pch = 18, cex = 1, conf.lines = T,
   max = NULL, max.x = NULL, max.y = NULL, qvalues = NULL,
   label = NULL, plotly = FALSE, annotations = list(), gradient = list(),
-  titleText = "", subsample = NA, ...)
+  titleText = "", subsample = NA, key = NULL, ...)
 }
 \arguments{
 \item{obs}{vector of pvalues to plot, names of obs can be intepreted as labels}

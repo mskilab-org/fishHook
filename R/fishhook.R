@@ -1025,8 +1025,30 @@ Cov_Arr <- R6Class("Cov_Arr",
                            private$Covs = Covs
                            private$names = names
 
+
                        },
 
+                       getNames = function(...){return(private$names)},
+                       
+                       append = function(...){
+                           Cov_Arrs = list(...)
+                           ##Checks to make sure that all items within the ... are of class Cov_Arr
+                           isca = sapply(Cov_Arrs, function(x) class(x)[1] == "Cov_Arr")
+                           if(any(!isca))
+                               stop("All inputs must be of class Cov_Arr")
+                           ## Merging names
+                           names = sapply(Cov_Arrs, function(x) x$getNames())
+                           private$names = c(private$names, names)
+                           ##Merging Covariates
+                           covs = lapply(Cov_Arrs, function(x) x$getCovs())
+                           self_covs = append(list(private$Covs), covs)
+                           private$Covs = unlist(self_covs, recursive = F)
+                           
+                       },
+
+
+                           
+                           
                        ## Returns the Covariates as a lsit
                        getArr = function(...){return (private$Covs)},
 
@@ -1058,7 +1080,8 @@ Cov_Arr <- R6Class("Cov_Arr",
                            return(out)
 
                        },
-                       print = function(...){print(self$getArr())}
+                       print = function(...){print(self$getArr())},
+                       getCovs = function(...){return(private$Covs)}
                    ),
                    private = list(
                        Covs = list(),
@@ -1086,7 +1109,6 @@ Cov_Arr <- R6Class("Cov_Arr",
 }
 
 
-
 #' FishHook
 #'
 #' Stores Events, Targets, Eligible, Covariates. 
@@ -1102,7 +1124,7 @@ Cov_Arr <- R6Class("Cov_Arr",
 FishHook <- R6Class("FishHook",
                     public = list(
                         
-                        initialize = function(targets = NULL, out.path = NULL, eligible = NULL, ... ,events = NULL, covariates = NULL){ 
+                        initialize = function(targets = NULL, out.path = NULL, eligible = NULL, ... ,events = NULL, covariates = NULL, use_local_mut_density = FALSE, local_mut_density_bin = 1e6){ 
 
                             ## This next portion checks to make sure that the seqlevels are in the same format
                             if(!is.null(covariates)){
@@ -1172,7 +1194,27 @@ FishHook <- R6Class("FishHook",
                             ## Initializes and Validates eligible
                             if(!(is.null(eligible))){
                                 self$replaceEligible(eligible)
-                            }                            
+                            }
+
+                            if(use_local_mut_density){
+                                bins = gr.tile(hg_seqlengths(),  local_mut_density_bin)
+                                f1 = FishHook$new(targets = bins, events = events, eligible = eligible)
+                                a1 = f1$annotateTargets(verbose = F)
+                                s1 = a1$scoreTargets()
+                                local_mut_density = seg2gr(s1$getScore())[,'count.density']
+                                cd = local_mut_density$count.density
+                                avg_cd = mean(cd, na.rm = T)
+                                cd[is.na(cd) | cd == Inf] = avg_cd
+                                local_mut_density$count.density = cd
+                                if(length(private$covariates$toList()) == 0 ){
+                                    private$covariates = c(Cov$new(Covariate = local_mut_density, type = 'numeric', name = "Local Mutation Density", field = "count.density"))
+                                }
+                                else{
+                                    private$covariates$append(c(Cov$new(Covariate = local_mut_density, type = 'numeric', name = "Local Mutation Density", field = "count.density")))
+                                }
+                            }
+
+                            
                         },
 
                         
@@ -2066,7 +2108,7 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, bestfit=T, col = N
 
             if(gradient_control){
                 p <- dat[, plot_ly(data = dat, x=x, y=y, hoverinfo = "text",text = hover_text, color = grad,
-                                   colors = c("blue2","gold"),marker = list(colorbar = list(title = names(gradient[1]))),
+                                   colors = c("blue2","gold"),marker = list(colorbar = list(title = names(gradient[1]), len = 1)),
                                    mode = "markers",type = 'scatter')
                     %>% layout(xaxis = list(title = "<i>Expected -log<sub>10</sub>(P)</i>"),
                                yaxis = list(title = "<i>Observed -log<sub>10</sub>(P)</i>")) ]
@@ -2115,7 +2157,7 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, bestfit=T, col = N
             test2 <<- dat2
             if(gradient_control){
                 p <- dat2[, plot_ly(data = dat2, x=x, y=y,hoverinfo = "text",key = dat2$key,  text = hover_text, color = grad,
-                                    colors = c("blue2","gold"),marker = list(colorbar = list(title = names(gradient[1]))),
+                                    colors = c("blue2","gold"),marker = list(colorbar = list(title = names(gradient[1]), len = 1, lenmode = "fraction" )),
                                     mode = "markers",type = 'scatter')
                      %>% layout(xaxis = list(title = "<i>Expected -log<sub>10</sub>(P)</i>"),
                                 yaxis = list(title = "<i>Observed -log<sub>10</sub>(P)</i>")) ]
