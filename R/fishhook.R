@@ -1458,7 +1458,7 @@ Annotated <- R6Class("Annotate",
                              private$meta = meta
                          },
                          print = function(...){
-
+                             
                              anno = paste("Annotated has", length(private$annotated_targets), "hypotheses.")
                              if(class(private$annotated_targets) == "GRangesList"){
                                  agg = "The data has been aggregated."
@@ -1466,7 +1466,13 @@ Annotated <- R6Class("Annotate",
                              else{
                                  agg = "The data has not been aggregated."
                              }
-                             meta = paste("Annotated has", ncol(values(private$meta)), "metadata columns")
+                             print("hello world")
+                             if(is.null(private$meta)){
+                                 meta = "Annotated has 0 metadata columns"
+                             }
+                             else{
+                                 meta = paste("Annotated has", ncol(values(private$meta)), "metadata columns")
+                             }
                              cat(anno,agg,meta,sep = "\n", collapse = "\n")
 
 
@@ -1661,6 +1667,9 @@ Score <- R6Class("Score",
                                            classReturn = TRUE,
                                            grl = FALSE){
 
+                         annotated$chr = NULL
+                         annotated$pos1 = NULL
+                         annotated$pos2 = NULL
                          score_Output = score.targets(annotated,
                                                       covariates = names(values(annotated)),
                                                       return.model = return.model,
@@ -1709,7 +1718,6 @@ Score <- R6Class("Score",
                      ## If no annotation is provided will use defaults
                      ## use annotation = list() to have no annotations
                      qq_plot = function(plotly = TRUE, columns = NULL, annotations = NULL, key = NULL, ...){
-                         
                          res = self$getAll()
 
                          if(class(res)[1] != "data.table"){
@@ -1843,6 +1851,8 @@ Score <- R6Class("Score",
 #' @export
 qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, bestfit=T, col = NULL, col.bg='black', pch=18, cex=1, conf.lines=T, max=NULL, max.x = NULL, max.y = NULL, qvalues=NULL, label = NULL, plotly = FALSE, annotations = list(), gradient = list(), titleText = "", subsample = NA, key = NULL,  ...)
 {
+
+
     if(!(plotly)){
         is.exp.null = is.null(exp)
 
@@ -2107,14 +2117,14 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, bestfit=T, col = N
             }
 
             if(gradient_control){
-                p <- dat[, plot_ly(data = dat, x=x, y=y, hoverinfo = "text",text = hover_text, color = grad,
+                p <- dat[, plot_ly(data = dat, x=x, y=y, key = dat$key, hoverinfo = "text",text = hover_text, color = grad,
                                    colors = c("blue2","gold"),marker = list(colorbar = list(title = names(gradient[1]), len = 1)),
                                    mode = "markers",type = 'scatter')
                     %>% layout(xaxis = list(title = "<i>Expected -log<sub>10</sub>(P)</i>"),
                                yaxis = list(title = "<i>Observed -log<sub>10</sub>(P)</i>")) ]
             }
             else{
-                p <- dat[, plot_ly(data = dat, x=x, y=y, hoverinfo = "text",text = hover_text,
+                p <- dat[, plot_ly(data = dat, x=x, y=y, key = dat$key, hoverinfo = "text",text = hover_text,
                                    mode = "markers",type = 'scatter')
                     %>% layout(xaxis = list(title = "<i>Expected -log<sub>10</sub>(P)</i>"),
                                yaxis = list(title = "<i>Observed -log<sub>10</sub>(P)</i>")) ]
