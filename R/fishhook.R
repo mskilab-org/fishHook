@@ -194,13 +194,14 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
                     if (verbose)
                         cat('Finished counting events\n')
                 }
-                
+
+                covariates = covariates[nchar(names(covariates))>0]
                 for (nm in names(covariates))
                     {
                         cov = covariates[[nm]]
                         if (verbose)
                             cat('Starting track', nm, '\n')
-                        
+
                         if (cov$type == 'sequence')
                             {
                                 if (is.null(cov$grep))
@@ -1140,14 +1141,14 @@ FishHook <- R6Class("FishHook",
                             seqLevelsStatus_Events = any(grepl("chr",seqlevels(events)))
 
                             if(!is.null(covariates)){
-                                if(seqLevelsStatus_Targets != seqLevelsStatus_Covariates){
+                                if(any(seqLevelsStatus_Targets != seqLevelsStatus_Covariates)){
                                     warning("seqlevels of Targets and Covariates appear to be in different formats")
                                 }
                             }
 
                             if(!is.null(eligible)){
                                 seqLevelsStatus_Eligible = any(grepl("chr",seqlevels(eligible)))
-                                if(seqLevelsStatus_Targets != seqLevelsStatus_Eligible){
+                                if(any(seqLevelsStatus_Targets != seqLevelsStatus_Eligible)){
                                     warning("seqlevels of Targets and Eligible appear to be in different formats")
                                 }
                             }
@@ -1692,8 +1693,10 @@ Score <- R6Class("Score",
                          ## and when accessed via the getAll()
                          ## function, we pull the name from the meta.
                          ## This is to support grl functionality
+
+                       if (!is.null(private$score$name))
                          private$score$name = NULL
-                         private$meta = meta
+                       private$meta = meta
                     
                      
                      },
