@@ -66,7 +66,7 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
     maxPtGene = Inf,
     PtIDCol = NULL,
     weightEvents = FALSE)
-    {
+    {        
         if(weightEvents){
             maxPtGene = NULL
         }
@@ -212,16 +212,16 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
                                 if (!is.list(cov$signature))
                                     cov$signature = list(cov$signature)
 
-                                if (is.null(names(cov$signature)))
+                                if (is.na(names(cov$signature)))
                                     if (length(cov$signature)>1)
                                         names(cov$signature) = 1:length(cov$signature)
 
-                                if (!is.null(names(cov$signature)))
+                                if (!is.na(names(cov$signature)))
                                     names(cov$signature) = paste(nm, names(cov$signature), sep = '.')
                                 else
                                     names(cov$signature) = nm
 
-                                if (is.null(cov$pad))
+                                if (is.na(cov$pad))
                                     cov$pad = pad
                                 
                                 val = fftab(cov$track, ov + cov$pad, cov$signature, chunksize = ff.chunk, verbose = verbose, FUN = mean, na.rm = TRUE, grep = cov$grep, mc.cores = mc.cores)
@@ -244,7 +244,7 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
                                             cov$track = import(cov$track)
                                         }
 
-                                if (is.null(cov$pad))
+                                if (is.na(cov$pad))
                                     cov$pad = pad
 
                                 if (is(cov$track, 'ffTrack') | is(cov$track, 'RleList'))
@@ -254,10 +254,10 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
                                     }
                                 else ## then must be GRanges
                                     {
-                                        if (is.null(cov$field))
+                                        if (is.na(cov$field))
                                             cov$field = 'score'
 
-                                        if (is.null(cov$na.rm))
+                                        if (is.na(cov$na.rm))
                                             cov$na.rm = na.rm
                                         new.col = data.frame(val = values(gr.val(ov + cov$pad, cov$track, cov$field, mc.cores = mc.cores, verbose = verbose,  max.slice = max.slice, max.chunk = max.chunk, mean = TRUE, na.rm = cov$na.rm))[, cov$field])
                                         names(new.col) = nm
@@ -817,23 +817,23 @@ score.targets = function(targets, covariates = names(values(targets)),
 Cov <- R6Class("Cov",
                       public = list(
                           
-                          initialize = function(Covariate = NULL, type = NULL, signature = NULL,
-                                                name = "", pad = NULL, na.rm = NULL, field = NULL,
-                                                grep = NULL, chr.sub = FALSE){
+                          initialize = function(Covariate = NA, type = NA, signature = NA,
+                                                name = "", pad = NA, na.rm = NA, field = NA,
+                                                grep = NA, chr.sub = FALSE){
 
                               # Checks to see if covariates and type were supplied
                               if(is.null(Covariate) | is.null(type)){
                                   stop("Both Covariate and track must be non-null.")
                               }
 
-                              # Checks to see if covariate type is one of the specified types in private$COV.TYPES
-                              if(!(type %in% private$COV.TYPES)){
+                              # Checks to see if covariate type is one of the specified types in self$COV.TYPES
+                              if(!(type %in% self$COV.TYPES)){
                                   stop('"type" must be "numeric", or "sequence", or "interval"')
                               }
 
-                              # Checks to see if the class of the covariates is one of the specified classes in private$COV.CLASSES
-                              if(!(class(Covariate) %in% private$COV.CLASSES)){
-                                  stop(sprintf('Malformed covariate input: Covariate  must be of class GRanges, ffTrack, Rle, object, or character path to rds object with the latter or .bw, .bed file, $type must have value %s', paste(private$COV.TYPES, collapse = ',')))
+                              # Checks to see if the class of the covariates is one of the specified classes in self$COV.CLASSES
+                              if(!(class(Covariate) %in% self$COV.CLASSES)){
+                                  stop(sprintf('Malformed covariate input: Covariate  must be of class GRanges, ffTrack, Rle, object, or character path to rds object with the latter or .bw, .bed file, $type must have value %s', paste(self$COV.TYPES, collapse = ',')))
                               }
 
 
@@ -868,117 +868,106 @@ Cov <- R6Class("Cov",
                               if(class(Covariate) == "GRanges" & chr.sub){
                                   seqlevels(Covariate) = gsub('chr','',seqlevels(Covariate))
                               }
-                              private$Covariate = Covariate
-                              private$type = type
-                              private$signature = signature
-                              private$name = name
-                              private$pad = pad
-                              private$na.rm = na.rm
-                              private$field = field
-                              private$grep = grep
+                              self$Covariate = Covariate
+                              self$type = type
+                              self$signature = signature
+                              self$name = name
+                              self$pad = pad
+                              self$na.rm = na.rm
+                              self$field = field
+                              self$grep = grep
                           },
 
                           seqlevels = function(...){
-                              if(class(private$Covariate) == "GRanges"){
-                                  return(seqlevels(private$Covariate))
+                              if(class(self$Covariate) == "GRanges"){
+                                  return(seqlevels(self$Covariate))
                               }
-                              return (NULL)                              
+                              return (NA)                              
+                          },
+
+                          toString = function(...){
+                              paste(c("Name:", self$name,
+                                    "\ntype: ",self$type,"\tsignature: ", self$signature,
+                                    "\nfield: ",self$field, "\tpad: ", self$pad,
+                                    "\nna.rm: ", self$na.rm, "\tgrep: ", self$grep,
+                                    "\nCovariate: ", class(self$Covariate), '\n'),collapse = "", sep = '')
+                          },
+
+                          convert2Arr = function(...){
+                              return(Cov_Arr$new(self))
                           },
                           
                           ## prints covariate to output
                           print = function(...){
-                              cat(c("type: ",private$type,"\tsignature: ", private$signature,
-                                    "\nfield: ",private$field, "\tpad: ", private$pad,
-                                    "\nna.rm: ", private$na.rm, "\tgrep: ", private$grep,
-                                    "\ntrack:\n", private$track),collapse = "")
-                              print(private$Covariate)
+                              cat(c("Name:", self$name,
+                                    "\ntype: ",self$type,"\tsignature: ", self$signature,
+                                    "\nfield: ",self$field, "\tpad: ", self$pad,
+                                    "\na.rm: ", self$na.rm, "\tgrep: ", self$grep,
+                                    "\nCovariate Class: ", class(self$Covariate), '\n'),collapse = "")
                           },
-                          ## Returns Covariate name (private$name)
-                          getName = function(...){return(private$name)},
-                          getCovariate = function(...){
-                              return (private$Covariate)
-                          },
-                          ## Returns Covariate type (private$type)
-                          getType = function(...){
-                              return (private$Type)
-                          },
-                          ## Returns Covariate signature (private$ signature)
-                          getSig = function(...){
-                              return (private$signature)
-                          },
-                          ## Returns all of the valid covariate classes
-                          getCovariateClasses = function(...){return (private$COV.CLASSES)},
-                          ## Returns all of the valid covaraite types
-                          getCovariateTypes = function(...){return (private$COV.TYPES)},
 
                           ## Checks to see if this covariate has seqlevels that begin with chr. must be a GRanges to do this
-                          getChr = function(...){
-                              if(class(private$Covariate) == "GRanges"){
-                                  return(any(grepl("chr",seqlevels(private$Covariate))))
+                          chr = function(...){
+                              if(class(self$Covariate) == "GRanges"){
+                                  return(any(grepl("chr",seqlevels(self$Covariate))))
                               }
-                              return (NULL)
+                              return (NA)
 
                           },
                           
                           ## Converts a Cov object to a list that can be passed as input for annotate.targets
                           toList = function(...){
-                              if(!(is.null(private$signature)) & class(private$Covariate) == "ffTrack"){
-                                  return (list(track = private$Covariate, type = private$type,
-                                               signature = private$signature,pad = private$pad,
-                                               na.rm = private$na.rm,field = private$field,
-                                               grep = private$grep))
+                              if(!(is.null(self$signature)) & class(self$Covariate) == "ffTrack"){
+                                  return (list(track = self$Covariate, type = self$type,
+                                               signature = self$signature,pad = self$pad,
+                                               na.rm = self$na.rm,field = self$field,
+                                               grep = self$grep))
                               }
                               else{                                 
-                                  return (list(track = private$Covariate, type = private$type,
-                                               signature = private$signature,pad = private$pad,
-                                               na.rm = private$na.rm,field = private$field,
-                                               grep = private$grep))
+                                  return (list(track = self$Covariate, type = self$type,
+                                               signature = self$signature,pad = self$pad,
+                                               na.rm = self$na.rm,field = self$field,
+                                               grep = self$grep))
 
                               }                              
-                          }                          
-                          
-                      ),## hcc1143
-
-               
-                      private = list(
-                          
+                          },                          
+                                                    
                           ## Active Covariates
-                          Covariate = NULL,
+                          Covariate = NA,
 
                           ## Active Track
-                          type = NULL,
+                          type = NA,
 
                           ## signature for use with ffTrack sequence covariates
-                          signature = NULL,
+                          signature = NA,
 
                           ## Pad for use with annotate targets
-                          pad = NULL,
+                          pad = NA,
 
                           ## na.rm for use with annotate targets
-                          na.rm = NULL,
+                          na.rm = NA,
 
                           ## field specifies the column of the covariate  to use for numeric covariates
-                          field = NULL,
+                          field = NA,
 
                           ## grep for use with sequence covariates
-                          grep = NULL,
+                          grep = NA,
                           
                           ## Covariate name
-                          name = NULL,
+                          name = NA,
                           
                           ## Valid Covariate Types
                           COV.TYPES = c('numeric', 'sequence', 'interval'),
                           
                           ## Valid Covariate Classes
-                          COV.CLASSES = c('GRanges', 'RleList', 'ffTrack', 'character')
+                          COV.CLASSES = c('GRanges', 'RleList', 'ffTrack', 'character')                         
 
-                         
-                      ),
-                      
 
-               
-                      active = list()
-                      )
+                          
+                      )## hcc1143
+
+              
+)
 
 
 #' c.Cov
@@ -991,10 +980,46 @@ Cov <- R6Class("Cov",
 #' @export
 'c.Cov' <- function(...){
     Covs = list(...)
-    isc = sapply(Covs, function(x) class(x)[1] == "Cov")
+    isc = sapply(Covs, function(x) (class(x)[1] == "Cov" ||  class(x)[1] == "Cov_Arr"))
     if(any(!isc))
-        stop("All inputs must be of class Cov.")
-    return(Cov_Arr$new(...))
+        stop("All inputs must be of class Cov or Cov_Arr.")
+    Cov_Arrs = lapply(Covs, function(x) {
+        if(class(x)[1] == "Cov"){
+            return( x$convert2Arr())
+        }
+        else{
+            return(x)
+        }
+    })
+
+    ## Merging vars
+    names  = unlist(sapply(Cov_Arrs, function(x) x$names))
+    type  = unlist(sapply(Cov_Arrs, function(x) x$type))
+    signature  = unlist(sapply(Cov_Arrs, function(x) x$signature))
+    field  = unlist(sapply(Cov_Arrs, function(x) x$field))
+    pad  = unlist(sapply(Cov_Arrs, function(x) x$pad))
+    na.rm  = unlist(sapply(Cov_Arrs, function(x) x$na.rm))
+    grep  = unlist(sapply(Cov_Arrs, function(x) x$grep))
+    
+    
+    ##Merging Covariates
+    covs = lapply(Cov_Arrs, function(x) x$cvs)
+    Covs = unlist(covs, recursive = F)
+    
+    
+    ret = Cov_Arr$new()
+    ret$cvs = Covs
+    ret$names = names
+    ret$type = type
+    ret$signature = signature
+    ret$field = field
+    ret$pad = pad
+    ret$na.rm = na.rm
+    ret$grep = grep
+    return(ret)
+
+    
+    
 }
 
 
@@ -1014,81 +1039,402 @@ Cov_Arr <- R6Class("Cov_Arr",
                        ## e.g. class(c(Cov_1,Cov_2,Cov_3))[1] == Cov_Arr
                        initialize = function(...){
                            Covs = list(...)
+                           if(length(Covs) == 0){
+                               return()
+
+                           }
                            ## Checks to make sure that all items within the c() operator are all of class Cov
                            isc = sapply(Covs, function(x) class(x)[1] == "Cov")
                            if(any(!isc))
                                stop("All inputs must be of class Cov.")
-                           ## Extracts names from all Covs
-                           names = sapply(Covs,function(x) x$getName())
-                           names(Covs) = names
+                           ## ## Extracts names from all Covs
+                           ## names = sapply(Covs,function(x) x$name)
+                           ## names(Covs) = names                           
                            ## Assigning and intializing.
-                           private$Covs = Covs
-                           private$names = names
+                           private$pCovs = lapply(Covs, function(x) x$Covariate)
+                           private$pnames = sapply(Covs, function(x) x$name)
+                           private$ptype = sapply(Covs, function(x) x$type)
+                           private$psignature = sapply(Covs, function(x) x$signature)
+                           private$pfield = sapply(Covs, function(x) x$field)
+                           private$ppad = sapply(Covs, function(x) x$pad)
+                           private$pna.rm = sapply(Covs, function(x) x$na.rm)
+                           private$pgrep = sapply(Covs, function(x) x$grep)
 
 
                        },
 
-                       getNames = function(...){return(private$names)},
-                       
-                       append = function(...){
-                           Cov_Arrs = list(...)
-                           ##Checks to make sure that all items within the ... are of class Cov_Arr
-                           isca = sapply(Cov_Arrs, function(x) class(x)[1] == "Cov_Arr")
-                           if(any(!isca))
-                               stop("All inputs must be of class Cov_Arr")
-                           ## Merging names
-                           names = sapply(Cov_Arrs, function(x) x$getNames())
-                           private$names = c(private$names, names)
-                           ##Merging Covariates
-                           covs = lapply(Cov_Arrs, function(x) x$getCovs())
-                           self_covs = append(list(private$Covs), covs)
-                           private$Covs = unlist(self_covs, recursive = F)
-                           
-                       },
+
+                       merge = function(...){return (c(self,...))},
 
 
-                           
-                           
-                       ## Returns the Covariates as a lsit
-                       getArr = function(...){return (private$Covs)},
-
-
-                       ## Returns a vector where TRUE indicates a chr based seqlevels
+                       ## Returns a vector where TRUE indicates a chr based seqlevels e.g. chr14, False -> 14
                        ## Note that non-GRanges Covariates will not return anything
-                       getChr = function(...){
-                           return(unlist(lapply(private$Covs, function(x) x$getChr())))
+                       chr = function(...){
+
+                           chrs = lapply(c(1:length(private$pCovs)), function(x){
+                               if(class(private$pCovs[[x]]) == "GRanges"){
+                                   return(any(grepl("chr",seqlevels(private$pCovs[[x]]))))
+                               }
+                               else{return(NA)}
+                           })
+                           return(unlist(chrs))
                        },
                        seqlevels = function(...){
-                           return(lapply(private$Covs, function(x) x$seqlevels()))
+                           seqs = lapply(c(1:length(private$pCovs)), function(x){
+                               cov = private$pCovs[[x]]
+                               if(class(cov) == "GRanges"){
+                                  return(seqlevels(cov))
+                               }
+                               else{return(NA)}
+                               })
+                           return(seqs)
+
                        },
                                                   
                        ## Returns a subset of the Covariates as a list
                        subset = function(range,...){
-                           private$Covs = private$Covs[range]
-                           private$names = private$names[range]
-                       },
-
+                           private$pCovs = private$pCovs[range]
+                           private$pnames = private$pnames[range]
+                           private$ptype = private$ptype[range]
+                           private$psignature = private$psignature[range]
+                           private$pfield = private$pfield[range]
+                           private$ppad = private$ppad[range]
+                           private$pna.rm = private$pna.rm[range]
+                           private$pgrep = private$pgrep[range]
+                       },                                                 
+                       
                        ## Creates a list of lists for passing to annotate.targets.
                        ## The inner list constitutes a Cov$toList()
                        ## The outer list serves to hold all of the Cov lists
                        toList = function(...){
-                           if(length(private$Covs) == 0){
+                           if(length(private$pCovs) == 0){
                                return(list())
                            }
-                           out = lapply(private$Covs, function(x) x$toList())
-                           names(out) = private$names
+                           out = lapply(c(1:length(private$pCovs)), function(x){
+                               if(!(is.na(private$psignature[x])) & class(private$pCovs[[x]]) == "ffTrack"){
+                                   return (list(track = private$pCovs[[x]], type = private$ptype[x],
+                                               signature = private$psignature[x],pad = private$ppad[x],
+                                               na.rm = private$pna.rm[x],field = private$pfield[x],
+                                               grep = private$pgrep[x]))
+                              }
+                               else{                                  
+                                  return (list(track = private$pCovs[[x]], type = private$ptype[x],
+                                               signature = private$psignature[x],pad = private$ppad[x],
+                                               na.rm = private$pna.rm[x],field = private$pfield[x],
+                                               grep = private$pgrep[x]))
+                              }
+                           })
+                           names(out) = private$pnames
                            return(out)
 
                        },
-                       print = function(...){print(self$getArr())},
-                       getCovs = function(...){return(private$Covs)}
+
+                       
+                       print = function(...){
+                           out= sapply(c(1:length(private$pCovs)), function(x){
+                               cat(c("Covariate Number: " , x, "\nName:", private$pnames[x],
+                                     "\ntype: ",private$ptype[x],"\tsignature: ", private$psignature[x],
+                                     "\nfield: ",private$pfield[x], "\tpad: ", private$ppad[x],
+                                     "\n","na.rm: ", private$pna.rm[x], "\tgrep: ", private$pgrep[x],
+                                     "\nCovariate Class: ", class(private$pCovs[[x]]), '\n\n'),collapse = "",sep = "")
+                           })
+                       }                     
+                       
+                       
                    ),
                    private = list(
-                       Covs = list(),
-                       names = c()
+                       
+                       pCovs = list(),
+                       pnames = c(),
+                       ptype = c(),
+                       psignature = c(),
+                       pfield = c(),
+                       ppad = c(),
+                       pna.rm = c(),
+                       pgrep = c(),
+                                                 
+                       ## Valid Covariate Types
+                       COV.TYPES = c('numeric', 'sequence', 'interval'),
+                       
+                       ## Valid Covariate Classes
+                       COV.CLASSES = c('GRanges', 'RleList', 'ffTrack', 'character')                         
+
+
                    ),
-                   active = list()
-                   )
+                   active = list(
+
+                       ##Covariate Names
+                       names = function(value) {
+                           if(!missing(value)){
+                               if(!is.character(value) && !all(is.na(value)) ){
+                                   stop("Error: names must be of class character")
+                               }
+                               if(length(value) != length(private$pCovs) & length(private$pCovs) %% length(value) != 0){
+                                   stop("Error: Length of names must be of length equal to the number of Covariates or a divisor of number of covariates.")
+                               }
+
+                               if(length(private$pCovs) / length(value) != 1){
+                                   private$pnames = rep(value, length(private$pCovs)/length(value))
+                                   return(private$pnames)
+                               }
+                               
+                               private$pnames = value
+                               return(private$pnames)
+                                                                  
+                           }
+                           
+                           else{
+                               return(private$pnames)
+                           }
+                       },
+
+                       
+                       ##Covariate type
+                       type = function(value) {
+                           if(!missing(value)){
+                               if(!is.character(value) && !all(is.na(value))){
+                                   stop("Error: type must be of class character")
+                               }
+                               if(length(value) != length(private$pCovs) & length(private$pCovs) %% length(value) != 0){
+                                   stop("Error: Length of type must be of length equal to the number of Covariates or a divisor of number of covariates.")
+                               }
+
+                               if(!all(value %in% private$COV.TYPES)){
+                                   stop('"type" must be "numeric", "sequence", or "interval"')
+                               }
+                               
+
+                               if(length(private$pCovs) / length(value) != 1){
+                                   private$ptype = rep(value, length(private$pCovs)/length(value))
+                                   return(private$ptype)
+                               }
+                               
+                               private$ptype = value
+                               return(private$ptype)
+                                                                  
+                           }
+                           
+                           else{
+                               return(private$ptype)
+                           }
+                       },   
+
+
+                                              ##Covariate Signature
+                       signature = function(value) {
+                           if(!missing(value)){
+                               if(!is.character(value) && !all(is.na(value))){
+                                   stop("Error: signature must be of class character")
+                               }
+                               if(length(value) != length(private$pCovs) & length(private$pCovs) %% length(value) != 0){
+                                   stop("Error: Length of signature must be of length equal to the number of Covariates or a divisor of number of covariates.")
+                               }
+
+                               if(length(private$pCovs) / length(value) != 1){
+                                   private$psignature = rep(value, length(private$pCovs)/length(value))
+                                   return(private$psignature)
+                               }
+                               
+                               private$psignature = value
+                               return(private$psignature)
+                                                                  
+                           }
+                           
+                           else{
+                               return(private$psignature)
+                           }
+                       },   
+
+
+                                              ##Covariate Field
+                       field = function(value) {
+                           if(!missing(value)){
+                               if(!is.character(value) && !all(is.na(value))){
+                                   stop("Error: field must be of class character")
+                               }
+                               if(length(value) != length(private$pCovs) & length(private$pCovs) %% length(value) != 0){
+                                   stop("Error: Length of field must be of length equal to the number of Covariates or a divisor of number of covariates.")
+                               }
+
+                               if(length(private$pCovs) / length(value) != 1){
+                                   private$pfield = rep(value, length(private$pCovs)/length(value))
+                                   return(private$pfield)
+                               }
+                               
+                               private$pfield = value
+                               return(private$pfield)
+                                                                  
+                           }
+                           
+                           else{
+                               return(private$pfield)
+                           }
+                       },   
+
+
+                                              ##Covariate Pad
+                       pad = function(value) {
+                           if(!missing(value)){
+                               if(!is.numeric(value) && !all(is.na(value))){
+                                   stop("Error: pad must be of class character")
+                               }
+                               if(length(value) != length(private$pCovs) & length(private$pCovs) %% length(value) != 0){
+                                   stop("Error: Length of pad must be of length equal to the number of Covariates or a divisor of number of covariates.")
+                               }
+
+                               if(length(private$pCovs) / length(value) != 1){
+                                   private$ppad = rep(value, length(private$pCovs)/length(value))
+                                   return(private$ppad)
+                               }
+                               
+                               private$ppad = value
+                               return(private$ppad)
+                                                                  
+                           }
+                           
+                           else{
+                               return(private$ppad)
+                           }
+                       },
+                       
+
+                                              ##Covariate Na.Rm
+                       na.rm = function(value) {
+                           if(!missing(value)){
+                               if(!is.logical(value) && !all(is.na(value))){
+                                   stop("Error: na.rm must be of class character")
+                               }
+                               if(length(value) != length(private$pCovs) & length(private$pCovs) %% length(value) != 0){
+                                   stop("Error: Length of na.rm must be of length equal to the number of Covariates or a divisor of number of covariates.")
+                               }
+
+                               if(length(private$pCovs) / length(value) != 1){
+                                   private$pna.rm = rep(value, length(private$pCovs)/length(value))
+                                   return(private$pna.rm)
+                               }
+                               
+                               private$pna.rm = value
+                               return(private$pna.rm)
+                                                                  
+                           }
+                           
+                           else{
+                               return(private$pna.rm)
+                           }
+                       },   
+
+                       
+
+                                              ##Covariate Grep
+                       grep = function(value) {
+                           if(!missing(value)){
+                               if(!is.character(value) && !all(is.na(value))){
+                                   stop("Error: grep must be of class character")
+                               }
+                               if(length(value) != length(private$pCovs) & length(private$pCovs) %% length(value) != 0){
+                                   stop("Error: Length of grep must be of length equal to the number of Covariates or a divisor of number of covariates.")
+                               }
+
+                               if(length(private$pCovs) / length(value) != 1){
+                                   private$pgrep = rep(value, length(private$pCovs)/length(value))
+                                   return(private$pgrep)
+                               }
+                               
+                               private$pgrep = value
+                               return(private$pgrep)
+                                                                  
+                           }
+                           
+                           else{
+                               return(private$pgrep)
+                           }
+                       },
+
+                                                                     ##Covariate Covs
+                       cvs = function(value) {
+                           if(!missing(value)){
+                               ## if(!is.character(value) && !all(is.na(value))){
+                               ##     stop("Error: signature must be of class character")
+                               ## }
+                               ## if(length(value) != length(private$pCovs) & length(private$pCovs) %% length(value) != 0){
+                               ##     stop("Error: Length of signature must be of length equal to the number of Covariates or a divisor of number of covariates.")
+                               ## }
+
+                               ## if(length(private$pCovs) / length(value) != 1){
+                               ##     private$psignature = rep(value, length(private$pCovs)/length(value))
+                               ##     return(private$psignature)
+                               ## }
+                               
+                               private$pCovs = value
+                               return(private$pCovs)
+                                                                  
+                           }
+                           
+                           else{
+                               return(private$pCovs)
+                           }
+                       }
+
+
+
+
+                   ),
+                   
+)
+
+
+#' c.Cov_Arr
+#'
+#' Override the c operator for covariates so that when you type: c(Cov1,Cov2,Cov3) it returns a Cov_Arr object that support vector like operation.
+#' 
+#' @param ... A series of Covariates, note all objects must be of type Cov_Arr
+#' @return Cov_Arr object that can be passed directly into the FishHook object constructor
+#' @author Zoran Z. Gajic
+#' @export
+'c.Cov_Arr' <- function(...){
+    Covs = list(...)
+    isc = sapply(Covs, function(x) (class(x)[1] == "Cov" ||  class(x)[1] == "Cov_Arr"))
+    if(any(!isc))
+        stop("All inputs must be of class Cov or Cov_Arr.")
+    Cov_Arrs = lapply(Covs, function(x) {
+        if(class(x)[1] == "Cov"){
+            return( x$convert2Arr())
+        }
+        else{
+            return(x)
+        }
+    })
+
+    ## Merging vars
+    names  = unlist(sapply(Cov_Arrs, function(x) x$names))
+    type  = unlist(sapply(Cov_Arrs, function(x) x$type))
+    signature  = unlist(sapply(Cov_Arrs, function(x) x$signature))
+    field  = unlist(sapply(Cov_Arrs, function(x) x$field))
+    pad  = unlist(sapply(Cov_Arrs, function(x) x$pad))
+    na.rm  = unlist(sapply(Cov_Arrs, function(x) x$na.rm))
+    grep  = unlist(sapply(Cov_Arrs, function(x) x$grep))
+    
+    
+    ##Merging Covariates
+    covs = lapply(Cov_Arrs, function(x) x$cvs)
+    Covs = unlist(covs, recursive = F)
+    
+    
+    ret = Cov_Arr$new()
+    ret$cvs = Covs
+    ret$names = names
+    ret$type = type
+    ret$signature = signature
+    ret$field = field
+    ret$pad = pad
+    ret$na.rm = na.rm
+    ret$grep = grep
+    return(ret)
+
+
+
+}
+
 
 
 #' [.Cov_Arr
@@ -1101,8 +1447,6 @@ Cov_Arr <- R6Class("Cov_Arr",
 #' @author Zoran Z. Gajic
 #' @export
 '[.Cov_Arr' <- function(obj,range){
-    #return(a$getTargets()[b])
-    # a = obj b = range
     ret = obj$clone()
     ret$subset(range)
     return (ret)
@@ -1124,12 +1468,16 @@ Cov_Arr <- R6Class("Cov_Arr",
 FishHook <- R6Class("FishHook",
                     public = list(
                         
-                        initialize = function(targets = NULL, out.path = NULL, eligible = NULL, ... ,events = NULL, covariates = NULL, use_local_mut_density = FALSE, local_mut_density_bin = 1e6){ 
+                        initialize = function(targets = NULL, out.path = NULL, eligible = NULL, ... ,events = NULL, covariates = NULL,
+                                              use_local_mut_density = FALSE, local_mut_density_bin = 1e6, genome =  "BSgenome.Hsapiens.UCSC.hg19::Hsapiens",
+                                              mc.cores = 1, na.rm = TRUE, pad = 0, verbose = TRUE, max.slice = 1e3, ff.chunk = 1e6, max.chunk = 1e11, PtIDCol = NULL,
+                                              maxPtGene = Inf, weightEvents = FALSE, nb = TRUE){ 
+
 
                             ## This next portion checks to make sure that the seqlevels are in the same format
                             if(!is.null(covariates)){
                                 ## Gets whther seqlevels of covariates are chr or not chr
-                                seqLevelsStatus_Covariates = covariates$getChr()
+                                seqLevelsStatus_Covariates = covariates$chr()
                                 ## Warns if there is a heterogenetiy of seqlevels (chr or not)
                                 if(length(unique(seqLevelsStatus_Covariates)) > 1){
                                     warning("Covariates appears to have mismatched seqlevels, make sure all Covariates have seqlevels that start with chr or don't", call.=TRUE)
@@ -1140,7 +1488,7 @@ FishHook <- R6Class("FishHook",
                             seqLevelsStatus_Events = any(grepl("chr",seqlevels(events)))
 
                             if(!is.null(covariates)){
-                                if(seqLevelsStatus_Targets != seqLevelsStatus_Covariates){
+                                if(any(!(seqLevelsStatus_Targets %in% seqLevelsStatus_Covariates))){
                                     warning("seqlevels of Targets and Covariates appear to be in different formats")
                                 }
                             }
@@ -1174,10 +1522,10 @@ FishHook <- R6Class("FishHook",
 
                             
                             ## Initializes and Validates targets                            
-                            self$replaceTargets(targets)                            
+                            self$targets = targets
                             
                             ## Initializes and Validates out.path
-                            self$replaceOut.Path(out.path)
+                            self$out.path = out.path
                             
                             ## Initializes and Validates covariates 
                             if(is.null(covariates)){
@@ -1186,33 +1534,47 @@ FishHook <- R6Class("FishHook",
                             if(class(covariates)[1] != "Cov_Arr"){
                                 stop("Covariates must be a vector of covariates or an object of class 'Cov_Arr'")
                             }
-                            private$covariates = covariates
+                            self$cvs = covariates
                                                                 
                             ## Initializes and Validates events 
-                            self$replaceEvents(events)                            
+                            self$events = events
 
                             ## Initializes and Validates eligible
                             if(!(is.null(eligible))){
-                                self$replaceEligible(eligible)
+                                self$eligible = eligible
                             }
 
                             if(use_local_mut_density){
-                                bins = gr.tile(hg_seqlengths(),  local_mut_density_bin)
+                                Sys.setenv(DEFAULT_BSGENOME = genome)
+                                bins = gr.tile(hg_seqlengths(),   local_mut_density_bin)
                                 f1 = FishHook$new(targets = bins, events = events, eligible = eligible)
-                                a1 = f1$annotateTargets(verbose = F)
-                                s1 = a1$scoreTargets()
-                                local_mut_density = seg2gr(s1$getScore())[,'count.density']
+                                f1$annotate(mc.cores = mc.cores, na.rm = na.rm, verbose = verbose, max.slice = max.slice, ff.chunk = ff.chunk, max.chunk = max.chunk)
+                                f1$score()
+                                local_mut_density = seg2gr(f1$scores)[,'count.density']
                                 cd = local_mut_density$count.density
                                 avg_cd = mean(cd, na.rm = T)
                                 cd[is.na(cd) | cd == Inf] = avg_cd
                                 local_mut_density$count.density = cd
-                                if(length(private$covariates$toList()) == 0 ){
-                                    private$covariates = c(Cov$new(Covariate = local_mut_density, type = 'numeric', name = "Local Mutation Density", field = "count.density"))
+                                if(length(private$pcovariates$toList()) == 0 ){
+                                    private$pcovariates = c(Cov$new(Covariate = local_mut_density, type = 'numeric', name = "Local Mutation Density", field = "count.density"))
                                 }
                                 else{
-                                    private$covariates$append(c(Cov$new(Covariate = local_mut_density, type = 'numeric', name = "Local Mutation Density", field = "count.density")))
+                                    private$pcovariates = c(Cov$new(Covariate = local_mut_density, type = 'numeric', name = "Local Mutation Density", field = "count.density"), private$pcovariates)
                                 }
                             }
+
+
+                            private$pmc.cores = mc.cores
+                            private$pna.rm = na.rm
+                            private$ppad = pad
+                            private$pverbose = verbose
+                            private$pmax.slice = max.slice
+                            private$pff.chunk = ff.chunk
+                            private$pmax.chunk = max.chunk
+                            private$pPtIDCol = PtIDCol
+                            private$pmaxPtGene = maxPtGene
+                            private$pweightEvents = weightEvents
+                            private$pnb = nb
 
                             
                         },
@@ -1223,185 +1585,678 @@ FishHook <- R6Class("FishHook",
                         },
 
                         print = function(){
-                            targ = paste( "Contains" , length(private$targets), "hypotheses." ,collapse = "")
-                            eve = paste("Contains", length(private$events), "events to map to hypotheses.", collapse = "")
-                            if(is.null(private$eligible)){
+                            targ = paste( "Contains" , length(private$ptargets), "hypotheses." ,collapse = "")
+                            eve = paste("Contains", length(private$pevents), "events to map to hypotheses.", collapse = "")
+                            if(is.null(private$peligible)){
                                 elig = "All regions are elgible."
                             }
                             else{
                                 elig = "Will map only eliglble regions."
                             }
-                            if(is.null(private$covariates)){
+                            if(is.null(private$pcovariates$names)){
                                 covs = "No covariates will be used."
                             }
                             else{                                
-                                cov.names = names(private$covariates$getArr())
+                                cov.names = private$pcovariates$names
                                 covs = cov.names
-                                ## cov.class = sapply(private$covariates,
+                                ## cov.class = sapply(private$pcovariates,
                                 ##                    function(x) if (!is.null(x$class)) x$class else NA)
-                                ## cov.types = sapply(private$covariates,
+                                ## cov.types = sapply(private$pcovariates,
                                 ##                    function(x) if (!is.null(x$type)) x$type else NA)
                                 ## covs = paste(cov.names,cov.class,cov.types, sep = " ", collapse = "\n")
 
                             }
-                            meta = paste("Targets contains", ncol(values(private$targets)), "metadata columns")
-                            cat(targ,eve,elig,"Covariates:",covs,meta,sep = "\n",collapse = "\n")
+                            meta = paste("Targets contains", ncol(values(private$ptargets)), "metadata columns")
+                            state = paste("Current State:", private$pstate)
+                            cat(targ,eve,elig,"Covariates:",covs,meta,state,sep = "\n",collapse = "\n")
                             
                             
-                        },
-                        
-                        ## Access Functions 
-                        getCovariates= function(...) {return (private$covariates)},
-                        getTargets = function(...) {return (private$targets[,"name"])},
-                        getEvents = function(...) {return (private$events)},
-                        getEligible = function(...) {return (private$eligible)},
-                        getOut.Path = function(...) {return (private$out.path)},
-                        getMeta = function(...) { return (private$targets)},
-
-
-                        ## Remove Functions Note that Events and Targets Cannot be Removed
-#                        removeCovariates = function(...){private$covariates = NULL},
-                        removeEligible = function(...){private$eligible = NULL},
-                        removeOut.Path = function(...){private$out.path = NULL},
-                        
-                        
-                        ## Replace Functions
+                        },                        
                        
-
-                        
-                       
-                       replaceTargets = function(targets = private$targets){                       
-                            
-                            ## checks if targets is NULL
-                            if (is.null(targets))
-                                stop('Targets cannot be "NULL".')
-                            
-                            ## checks to see if targets is a path & import if so
-                            if (is.character(targets))
-                                if (grepl('\\.rds$', targets[1]))
-                                    targets = readRDS(targets[1])
-                                else if (grepl('(\\.bed$)', targets[1]))
-                                    targets = import.ucsc(targets[1])
-                            
-                            
-                            ## Forces targets to be a GRanges Objects
-                            if(class(targets) != "GRanges"){
-                                stop('Loaded or provided class of targets must be "GRanges"')
-                            }
-                            
-                            ## checks to see if target contains any data
-                            if (length(targets)==0)
-                                stop('Must provide non-empty targets')
-                            
-                            ## Looks for a "name" field to index/Identify targets by name
-                            ## If no such field is found creates a set of indexes
-                            if(is.null(targets$name)){
-                                targets$name = 1:length(targets)
-                            }
-                            
-                            private$targets = targets                            
-                            
-                        },
-
-                       
-                       replaceEvents = function(events = private$events){
-
-                           ## Forces Events to Exist
-                            if(is.null(events)){
-                                stop('Events must exist and cannot be "NULL"')
-                            }
-
-                           ## Forces Events to be a GRanges  Object
-                            if (class(events) != "GRanges" )
-                                stop('events must be of class "GRanges"')
-
-                           private$events = events
-                            
-                        },
-
-                       
-                       replaceEligible = function(eligible = private$eligible){
-                           ## Forces Eligible to either not exist or to be a GRanges
-                            if (class(eligible) != "GRanges" & !is.null(eligible))
-                                stop('eligible must be of class "GRanges"')
-
-                           private$eligible = eligible
-                        },
-
-                       replaceOut.Path = function(out.path = private$out.path){                                                        
-                            ## checks to see if out.path is able to be written to
-                            ## throws a warning if unable to write
-                            if (!is.null(out.path))
-                                tryCatch(saveRDS(private$targets, paste(gsub('.rds', '', out.path),
-                                                                '.source.rds', sep = '')),
-                                         error = function(e)
-                                             warning(sprintf('Error writing to file %s', out.path)))
-
-                            private$out.path = out.path
-                       },
 
                        ## Takes a series of run params and passes them as well as
                        ## the internal data to the initialize function for the annotate object
                        ## Returns the created annotate object
-                       annotateTargets = function(mc.cores = 1, na.rm = TRUE, pad = 0,
-                                                  verbose = TRUE,max.slice = 1e3, ff.chunk = 1e6,
-                                                  max.chunk = 1e11, PtIDCol = NULL, maxPtGene = Inf,weightEvents = FALSE){
+                       annotate = function(mc.cores = private$pmc.cores, na.rm = private$pna.rm, pad = private$ppad,
+                                           verbose = private$pverbose,max.slice = private$pmax.slice, ff.chunk = private$pff.chunk,
+                                           max.chunk = private$pmax.chunk, PtIDCol = private$pPtIDCol, maxPtGene = private$maxPtGene,
+                                           weightEvents = private$pweightEvents){
                            
-                          res = Annotated$new(targets = private$targets,
-                                               covered = private$eligible,
-                                               events = private$events,
-                                               mc.core = mc.cores,
-                                               na.rm = na.rm,
-                                               pad = pad,
-                                               verbose = verbose,
-                                               max.slice = max.slice,
-                                               ff.chunk = ff.chunk,
-                                               max.chunk = max.chunk,
-                                               out.path = private$out.path,
-                                               meta = private$targets,
-                                               maxPtGene = maxPtGene,
-                                               PtIDCol = PtIDCol,
-                                               weightEvents = weightEvents,
-                                               private$covariates$toList())
-                           return(res)
+                           if(private$pstate == "Scored"){
+                               stop("Error: You have a scored object already created. If you want to re-run the analysis you can clear the scored and annotated objects using fish$clear()")
+                           }
+                               
+                               private$panno = annotate.targets(targets = private$ptargets,
+                                                            covered = private$peligible,
+                                                            events = private$pevents,
+                                                            mc.cores = mc.cores,
+                                                            na.rm = na.rm,
+                                                            pad = pad,
+                                                            verbose = verbose,
+                                                            max.slice = max.slice,
+                                                            ff.chunk = ff.chunk,
+                                                            max.chunk = max.chunk,
+                                                            out.path = private$pout.path,
+                                                            covariates = private$pcovariates$toList(),
+                                                            PtIDCol = PtIDCol,
+                                                            maxPtGene = maxPtGene,
+                                                            weightEvents = weightEvents)
+                           
+                           private$pstate = "Annotated"
+                           
+                       },
+
+
+                       score = function(nb = private$pnb,
+                                        verbose = private$pverbose,                                      
+                                        model = NULL,
+                                        iter = 200,
+                                        subsample = 1e5,
+                                        seed = 42,
+                                        p.randomize = TRUE){
+
+                           if(private$pstate == "Initialized"){
+                               self$annotate()
+                           }
+
+                           score = score.targets(private$panno,
+                                                 covariates = names(values(private$panno)),
+                                                 return.model = TRUE,
+                                                 nb = nb,
+                                                 verbose = verbose,
+                                                 iter = iter,
+                                                 subsample = subsample,
+                                                 seed = seed,
+                                                 classReturn = TRUE,
+                                                 p.randomize = p.randomize)
+
+                           private$pscore = score[[1]]
+
+                           private$pmodel = score[[2]]
+                           
+                           private$pstate = "Scored"
+                           
+
+                       },
+
+
+                       clear = function(state = "Initialized"){
+                           if(state == "Initialized"){
+                               private$pstate = "Initialized"
+                               private$pmodel = NULL
+                               private$pscore = NULL
+                               private$panno = NULL
+                               return("Clear Completed")
+                           }
+                           if(state == "Annotated"){
+                               private$pstate = "Annotated"
+                               private$pmodel = NULL
+                               private$pscore = NULL
+                               return("Clear Completed")                               
+                           }
+                           return("Valid reversion state not specified. This is not a major error, just letting you know that nothing has been chaged")
+                           
+
+
+                       },
+                       
+                       ## Produces a plotly html output of the scored targets
+                       ## plotly = FALSE will produce a standard R graph
+                       ## You can assign metadata to annotations to plot
+                       ## If no annotation is provided will use defaults
+                       ## use annotation = list() to have no annotations
+                       qq_plot = function(plotly = TRUE, columns = NULL, annotations = NULL, key = NULL, ...){
+                           res = self$all
+                                                      
+                           if(!is.null(columns)){
+                               columns = columns[columns %in% names(res)]
+                               annotation_columns = lapply(columns, function(x) as.character(unlist(res[,x,with=FALSE])))
+                               names(annotation_columns) = columns
+                           }
+                           else{
+                               annotation_columns = list()
+                           }
+                           
+                           if(is.null(annotations) & is.null(columns)){                                                   
+                               if(is.null(res$name)){
+                                   names = c(1:nrow(res))
+                               }
+                               else{
+                                   names = res$name
+                               }
+                               annotations = list(Hypothesis_ID = names,
+                                                  Count = res$count,
+                                                  Effectsize = round(res$effectsize,2),
+                                                  q = res$q)
+                           }
+                           else{
+                               res = self$all                               
+                           }
+                           return(qq_pval(res$p ,annotations = c(annotations,annotation_columns),
+                                          gradient = list(Count = res$count),
+                                          titleText = "" ,  plotly = plotly, key = key))
                            
                        }
-
-                       
-
-                       
-                       
-
+                                              
                     ),
 
                     private = list(
                         ## Genomic Ranges Object that Indicates Hypotheses
-                        targets = NULL,
+                        ptargets = NULL,
                         
                         ## Eligible Regions for Targets
-                        eligible = NULL,
+                        peligible = NULL,
 
                         ## Events to Count
-                        events = NULL,
+                        pevents = NULL,
 
                         ## Covariates list for passing to fish.hook
-                        covariates = NULL,
+                        pcovariates = NULL,
 
                         ## Potentially allow access to covariates via indexing
 
                         ## Valid Covariate Types
-                        COV.TYPES = c('numeric', 'sequence', 'interval'),
+                        pCOV.TYPES = c('numeric', 'sequence', 'interval'),
 
                         ## Valid Covariate Classes
-                        COV.CLASSES = c('GRanges', 'RleList', 'ffTrack', 'character'),
+                        pCOV.CLASSES = c('GRanges', 'RleList', 'ffTrack', 'character'),
 
                         ## Path to write the annotated data to
                         ## Useful if working with long proccessing times due to
                         ## Many Covariates
-                        out.path = NULL
+                        pout.path = NULL,
+
+                        pmc.cores = 1,
+
+                        pstate = "Initialized",
+
+                        pna.rm = TRUE,
+
+                        ppad = 0,
+
+                        pverbose = TRUE,
+
+                        pmax.slice = 1e3,
+
+                        pff.chunk = 1e6,
+
+                        pmax.chunk = 1e11,
+
+                        pPtIDCol = NULL,
+
+                        pmaxPtGene = Inf,
+
+                        pweightEvents = FALSE,
+
+                        panno = NULL,
+
+                        pscore = NULL,
+
+                        pmodel = NULL,
                         
+                        preturn.model = TRUE,
+                        
+                        pnb = TRUE
+                        
+                    ),
+                    active = list(
+                        
+                        cvs = function(value) {
+                           if(!missing(value)){
+                               if(!(class(value)[1] == "Cov_Arr")  & !is.null(value)){
+                                   stop("Error: covariates must be of class Cov_Arr")
+                               }
+
+                               self$clear()
+                               
+                               private$pcovariates = value                               
+                               
+                               return(private$pcovariate)
+                                                                  
+                           }
+                           
+                           else{
+                               return(private$pcovariates)
+                           }
+                       },
+
+                       eligible = function(value) {
+                           if(!missing(value)){
+                               if((!class(value) == "GRanges") & !is.null(value)){
+                                   stop("Error: eligible must be of class GRanges")
+                               }
+
+                               self$clear()
+                               
+                               private$peligible = value
+                               return(private$peligible)
+                                                                  
+                           }
+                           
+                           else{
+                               return(private$peligible)
+                           }
+                       },
+
+                       
+                       targets = function(value) {
+                           
+                           if(!missing(value)){
+                               if(!(class(value) == "GRanges")){
+                                   stop("Error: targets must be of class GRanges")
+                               }
+                               
+                               targets = value
+                               ## checks if targets is NULL
+                               if (is.null(targets))
+                                   stop('Targets cannot be "NULL".')
+                               
+                               ## checks to see if targets is a path & import if so
+                               if (is.character(targets))
+                                   if (grepl('\\.rds$', targets[1]))
+                                       targets = readRDS(targets[1])
+                                   else if (grepl('(\\.bed$)', targets[1]))
+                                       targets = import.ucsc(targets[1])
+                               
+                               
+                               ## Forces targets to be a GRanges Objects
+                               if(class(targets) != "GRanges"){
+                                   stop('Loaded or provided class of targets must be "GRanges"')
+                               }
+                               
+                               ## checks to see if target contains any data
+                               if (length(targets)==0)
+                                   stop('Must provide non-empty targets')
+                               
+                               ## Looks for a "name" field to index/Identify targets by name
+                               ## If no such field is found creates a set of indexes
+                               if(is.null(targets$name)){
+                                   targets$name = 1:length(targets)
+                               }
+
+                               ##Change here when making the smart swaps
+                               self$clear()
+                               
+                               private$ptargets = targets                            
+                               
+                               return(private$ptargets)
+                               
+                           }
+                           
+                           else{
+                               return(private$ptargets)
+                           }
+                       },
+                                              
+                       events = function(value) {
+                           if(!missing(value)){
+                               if(!(class(value) == "GRanges")){
+                                   stop("Error: events must be of class GRanges")
+                               }
+
+                               events = value
+                               ## Forces Events to Exist
+                               if(is.null(events)){
+                                   stop('Events must exist and cannot be "NULL"')
+                               }
+                               
+                               ## Forces Events to be a GRanges  Object
+                               if (class(events) != "GRanges" )
+                                   stop('events must be of class "GRanges"')
+                               
+                               private$pevents = events
+
+                               # Chang here when making the smart swaps
+                               self$clear()
+                               
+                               return(private$pevents)
+                                                                  
+                           }
+                           
+                           else{
+                               return(private$pevents)
+                           }
+                       },
+                       
+                       out.path = function(value) {
+                           if(!missing(value)){
+                               if(!(class(value) == "character")  && !is.null(value)){
+                                   stop("Error: out.path must be of class character")
+                               }
+
+                               out.path = value         
+                               ## checks to see if out.path is able to be written to
+                               ## throws a warning if unable to write
+                               if (!is.null(out.path))
+                                   tryCatch(saveRDS(private$ptargets, paste(gsub('.rds', '', out.path),
+                                                                            '.source.rds', sep = '')),
+                                            error = function(e)
+                                                warning(sprintf('Error writing to file %s', out.path)))
+                               
+                               private$pout.path = out.path
+                               
+                               return(private$pout.path)
+                                                                  
+                           }
+                           
+                           else{
+                               return(private$pout.path)
+                           }
+                       },
+
+                       anno = function(value) {
+                           if(!missing(value)){
+                               if(!(class(value) == "GRanges")  && !is.null(value)){
+                                   stop("Error: anno must be of class GRanges")
+                               }
+                               else{
+                                   warning("You are editing the annotated dataset generated by fish.hook, if you are trying to change targets use fish$targets.")
+                               }
+                               
+                               private$panno = value
+                               
+                               return(private$panno)
+                                                                  
+                           }
+                           
+                           else{
+                               return(private$panno)
+                           }
+                       },
+
+                       scores = function(value) {
+                           if(!missing(value)){
+                               if(!(class(value) == "data.table")  && !is.null(value)){
+                                   stop("Error: score must be of class data.table")
+                               }
+                               else{
+                                   warning("You are editing the annotated dataset generated by fish.hook, if you are trying to change targets use fish$targets.")
+                               }
+                                                              
+                               private$pscore = value
+                               
+                               return(private$pscore)
+                                                                  
+                           }
+                           
+                           else{
+                               return(private$pscore)
+                           }
+                       },
+
+                       model = function(value) {
+                           if(!missing(value)){
+
+                               warning("You are editing the regression model generated by fish.hook. Unless you know what you're doing I would reccomend reverting to a safe state using fish$clear()")                               
+                                                              
+                               private$pmodel = value
+                               
+                               return(private$pmodel)
+                               
+                           }
+                           
+                           else{
+                               return(private$pmodel)
+                           }
+                       },
+
+
+                      
+                       mc.cores = function(value) {
+                           if(!missing(value)){
+                               if(!(class(value) == "numeric")  && !is.null(value)){
+                                   stop("Error: mc.cores must be of class numeric")
+                               }
+                                                              
+                               private$pmc.cores = value
+                               
+                               return(private$pmc.cores)
+                                                                  
+                           }
+                           
+                           else{
+                               return(private$pmc.cores)
+                           }
+                       },
+                       
+                       na.rm = function(value) {
+                           if(!missing(value)){
+                               if(!(class(value) == "logical")  && !is.null(value)){
+                                   stop("Error:  na.rm must be of class logical")
+                               }
+                                                              
+                               private$pna.rm = value
+                               
+                               return(private$pna.rm)
+                                                                  
+                           }
+                           
+                           else{
+                               return(private$pna.rm)
+                           }
+                       },
+ 
+                       
+                       pad = function(value) {
+                           if(!missing(value)){
+                               if(!(class(value) == "numeric")  && !is.null(value)){
+                                   stop("Error: pad  must be of class numeric")
+                               }
+                                                              
+                               private$ppad = value
+                               
+                               return(private$ppad)
+                                                                  
+                           }
+                           
+                           else{
+                               return(private$ppad)
+                           }
+                       },
+                       
+                       verbose = function(value) {
+                           if(!missing(value)){
+                               if(!(class(value) == "logical")  && !is.null(value)){
+                                   stop("Error: verbose must be of class logical")
+                               }
+                                                              
+                               private$pverbose = value
+                               
+                               return(private$pverbose)
+                                                                  
+                           }
+                           
+                           else{
+                               return(private$pverbose)
+                           }
+                       },
+
+                       max.slice = function(value) {
+                           if(!missing(value)){
+                               if(!(class(value) == "numeric")  && !is.null(value)){
+                                   stop("Error: max.slice must be of class numeric")
+                               }
+                                                              
+                               private$pmax.slice = value
+                               
+                               return(private$pmax.slice)
+                                                                  
+                           }
+                           
+                           else{
+                               return(private$pmax.slice)
+                           }
+                       },
+                       
+                       ff.chunk = function(value) {
+                           if(!missing(value)){
+                               if(!(class(value) == "numeric")  && !is.null(value)){
+                                   stop("Error: ff.chunk  must be of class numeric")
+                               }
+                                                              
+                               private$pff.chunk = value
+                               
+                               return(private$pff.chunk)
+                                                                  
+                           }
+                           
+                           else{
+                               return(private$pff.chunk)
+                           }
+                       },
+
+                       max.chunk = function(value) {
+                           if(!missing(value)){
+                               if(!(class(value) == "numeric")  && !is.null(value)){
+                                   stop("Error: max.chunk must be of class numeric")
+                               }
+                                                              
+                               private$pmax.chunk = value
+                               
+                               return(private$pmax.chunk)
+                                                                  
+                           }
+                           
+                           else{
+                               return(private$pmax.chunk)
+                           }
+                       },
+
+                       PtIDCol = function(value) {
+                           if(!missing(value)){
+                               if(!(class(value) == "character")  && !is.null(value)){
+                                   stop("Error: PtIDCol must be of class character")
+                               }
+                                                              
+                               private$pPtIDCol = value
+                               
+                               return(private$pPtIDCol)
+                                                                  
+                           }
+                           
+                           else{
+                               return(private$pPtIDCol)
+                           }
+                       },
+                       
+                       maxPtGene = function(value) {
+                           if(!missing(value)){
+                               if(!(class(value) == "numeric")  && !is.null(value)){
+                                   stop("Error: maxPtGene must be of class numeric")
+                               }
+                                                              
+                               private$pmaxPtGene = value
+                               
+                               return(private$pmaxPtGene)
+                                                                  
+                           }
+                           
+                           else{
+                               return(private$pmaxPtGene)
+                           }
+                       },
+
+                       weightEvents = function(value) {
+                           if(!missing(value)){
+                               if(!(class(value) == "logical")  && !is.null(value)){
+                                   stop("Error: weightEvents must be of class logical")
+                               }
+                                                              
+                               private$pweightEvents = value
+                               
+                               return(private$pweightEvents)
+                                                                  
+                           }
+                           
+                           else{
+                               return(private$pweightEvents)
+                           }
+                       },
+
+                       nb = function(value) {
+                           if(!missing(value)){
+                               if(!(class(value) == "logical")  && !is.null(value)){
+                                   stop("Error: nb must be of class logical")
+                               }
+                                                              
+                               private$pnb = value
+                               
+                               return(private$pnb)
+                                                                  
+                           }
+                           
+                           else{
+                               return(private$pnb)
+                           }
+                       },
+
+                       all = function(value) {
+                           if(!missing(value)){
+                               stop("Error: This is solely for accessing data. If you want to set data use $targets")
+                                                                  
+                           }
+                           
+                           else{
+                               meta = values(private$ptargets)
+                               scores = private$pscore
+                               return(as.data.table(cbind(scores,meta)))
+                           }
+                       },
+
+                       
+                       state = function(value) {
+                           if(!missing(value)){
+                               stop("Error: Cannot change the state of the FishHook Object")
+                                                                  
+                           }
+                           
+                           else{
+                               return(private$pstate)
+                           }
+                       }
+
+
+                       
+
+
                     )
 )
+
+
+#' [.FishHook
+#'
+#' Overrides the subset operator x[] for use with Cov_Arr to allow for vector like subsetting
+#'
+#' @param obj This is the FishHookObject to be subset
+#' @param range This is the range of Covariates to return, like subsetting a vector. e.g. c(1,2,3,4,5)[3:4] == c(3,4)
+#' @return A new Cov_Arr object that contains only the Covs within the given range
+#' @author Zoran Z. Gajic
+#' @export
+'[.FishHook' <- function(obj,i,j,k,l){
+    ret = obj$clone()
+
+    ##i -> targets
+    if(!missing(i)){
+        ret$targets = ret$targets[i]
+    }
+
+    ##j -> events
+    if(!missing(j)){
+        ret$events = ret$events[j]
+    }
+    
+    ##k -> cvs
+    if(!missing(k)){
+        ret$cvs = ret$cvs[k]
+    }
+
+    ##l -> eligible
+    if(!missing(l)){
+        ret$eligible = ret$eligible[l]
+    }
+    return(ret)
+}
+
 
 
 #' Annotated
@@ -1419,10 +2274,6 @@ FishHook <- R6Class("FishHook",
 Annotated <- R6Class("Annotate",
                      public = list(
                          ## Initialize takes in all of the same params as annotate.targets
-                         ## Including a meta param that remembers the meta data associated with
-                         ## the FishHook object.
-                         ## Passes all params except meta to annotate.targets()
-                         ## Makes a meta variable for rembering metadata
                          initialize = function(targets = NULL,
                                                covered = NULL,
                                                events = NULL,
@@ -1435,11 +2286,10 @@ Annotated <- R6Class("Annotate",
                                                max.chunk = 1e11,
                                                out.path = NULL,
                                                covariates ,
-                                               meta = NULL,
                                                maxPtGene = Inf,
                                                PtIDCol = NULL,
                                                weightEvents = FALSE){
-                             private$annotated_targets = annotate.targets(targets = targets,
+                             private$pannotated_targets = annotate.targets(targets = targets,
                                                                           covered = covered,
                                                                           events = events,
                                                                           mc.cores = mc.cores,
@@ -1455,52 +2305,41 @@ Annotated <- R6Class("Annotate",
                                                                           maxPtGene = maxPtGene,
                                                                           weightEvents = weightEvents)
 
-                             private$meta = meta
                          },
                          print = function(...){
                              
-                             anno = paste("Annotated has", length(private$annotated_targets), "hypotheses.")
-                             if(class(private$annotated_targets) == "GRangesList"){
+                             anno = paste("Annotated has", length(private$pannotated_targets), "hypotheses.")
+                             if(class(private$pannotated_targets) == "GRangesList"){
                                  agg = "The data has been aggregated."
                              }
                              else{
                                  agg = "The data has not been aggregated."
                              }
-                             print("hello world")
-                             if(is.null(private$meta)){
-                                 meta = "Annotated has 0 metadata columns"
-                             }
-                             else{
-                                 meta = paste("Annotated has", ncol(values(private$meta)), "metadata columns")
-                             }
                              cat(anno,agg,meta,sep = "\n", collapse = "\n")
 
 
-
-
                          },
 
-                         setAnno = function(anno_new){private$annotated_targets = anno_new},
+                         setAnno = function(anno_new){private$pannotated_targets = anno_new},
                          ## Access Functions
                          getTargets = function(...) {
                              ## Checks if data has been aggregated, if so just return the GrangesList
-                             if(class(private$annotated_targets) == "GRangesList"){
-                                 return (private$annotated_targets)
+                             if(class(private$pannotated_targets) == "GRangesList"){
+                                 return (private$pannotated_targets)
                              }
                              
                              ## Adds "name" to targets for convienience if not already Aggregated
-                             tmp = private$annotated_targets
-                             tmp$name = private$meta$name
+                             tmp = private$pannotated_targets
+                             tmp$name = private$targets
                              return (tmp)
                          },
-                         getMeta =  function(...) {return (private$meta)},
 
                          ## Takes in a series of run parameters for the fish.hook function
                          ## score.targets and allows the user to change the meta data at
                          ## this point if they so desire, however this is not reccomended for
                          ## standard users.
                          ## Initializes a "Score" object using the provided params
-                         scoreTargets = function(annotated = private$annotated_targets,
+                         scoreTargets = function(annotated = private$pannotated_targets,
                                                  model = NULL,
                                                  return.model = FALSE,
                                                  nb = TRUE,
@@ -1509,8 +2348,7 @@ Annotated <- R6Class("Annotate",
                                                  subsample = 1e5,
                                                  seed = 42,
                                                  p.randomize = TRUE,
-                                                 classReturn = TRUE,
-                                                 meta = private$meta){
+                                                 classReturn = TRUE){
 
                              ## Assume that the data has not been aggregated
                              grl = FALSE
@@ -1518,8 +2356,7 @@ Annotated <- R6Class("Annotate",
                              ## get rid of the old meta as it will not pertain to the
                              ## output and you can get it from accessing the current object
                              ## set the control variable grl to TRUE
-                             if(class(private$annotated_targets) == "GRangesList"){
-                                 meta = NULL
+                             if(class(private$pannotated_targets) == "GRangesList"){
                                  grl = TRUE
                              }
 
@@ -1527,7 +2364,7 @@ Annotated <- R6Class("Annotate",
                                              return.model = return.model, nb = nb,
                                              verbose = verbose, iter = iter,
                                              subsample = subsample, seed = seed,
-                                             p.randomize = p.randomize, meta = meta,grl = grl,
+                                             p.randomize = p.randomize,grl = grl,
                                              classReturn = classReturn)
                              return(res)
 
@@ -1558,11 +2395,11 @@ Annotated <- R6Class("Annotate",
                              ## is much more complicated and can be done much more simply by breaking
                              ## up the grls into GRanges and aggregating each one, and then merging
                              ## the resultant grls into one large grl
-                             if(class(private$annotated_targets) == "GRangesList"){
+                             if(class(private$pannotated_targets) == "GRangesList"){
                                  stop("Data already aggregated")
                              }
                              
-                             private$annotated_targets= aggregate.targets(private$annotated_targets,
+                             private$pannotated_targets= aggregate.targets(private$pannotated_targets,
                                                                           by = by, fields = fields,
                                                                           rolling = rolling,
                                                                           disjoint = disjoint,
@@ -1575,8 +2412,8 @@ Annotated <- R6Class("Annotate",
                          },
 
                          subset = function(range){
-                             size = length(private$annotated_targets)
-                             private$annotated_targets = private$annotated_targets[range]
+                             size = length(private$pannotated_targets)
+                             private$pannotated_targets = private$pannotated_targets[range]
                              if (length(private$meta) != size){
                                  warning("Meta and Targets are of different length, removing Meta.")
                                  private$meta = NULL
@@ -1589,9 +2426,7 @@ Annotated <- R6Class("Annotate",
                              }
 
 
-                         },
-
-                         deleteMeta = function(){private$meta = NULL}
+                         }
                          
 
                
@@ -1604,10 +2439,8 @@ Annotated <- R6Class("Annotate",
                          ## Or the results of aggregate
                          ## Discriminator: if output of annotate.targets -> class(annotated_targets) = "GRanges
                          ## if result of aggregate -> class(annotated_targets) = "GRangesList
-                         annotated_targets = NULL,
+                         pannotated_targets = NULL
 
-                         ## An extra param that remembers meta data for the targets
-                         meta = NULL
                      ),
                      
                      active = list()
