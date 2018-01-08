@@ -43,7 +43,7 @@
 #' will be used as input to fftab, and can have optional logical argument $grep to specify inexact matches (see fftab)
 #' Interval covariates must be Granges (or paths to GRanges rds) or paths to bed files
 #' @param out.path  out.path to save variable to
-#' @param maxPtGene Sets the maximum number of events a patient can contribute per target
+#' @param maxpatientpergene Sets the maximum number of events a patient can contribute per target
 #' @param weightEvetns If true, will weight events by thier overlap with targets. e.g. if 10% of an event overlaps with a target
 #' region, that target region will get assigned a score of 0.1 for that event. If false, any overlap will be given a weight of 1.
 #' @return GRanges of input targets annotated with covariate statistics (+/- constrained to the subranges in optional argument covered)
@@ -63,12 +63,12 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
     max.chunk = 1e11, ## gr.findoverlaps parameter
     out.path = NULL,
     covariates = list(),
-    maxPtGene = Inf,
-    PtIDCol = NULL,
+    maxpatientpergene = Inf,
+    ptidcol = NULL,
     weightEvents = FALSE)
     {        
         if(weightEvents){
-            maxPtGene = NULL
+            maxpatientpergene = NULL
         }
         if (is.character(targets))
             if (grepl('\\.rds$', targets[1]))
@@ -149,27 +149,27 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
                         counts = coverage(ev, weight = 1/width(ev))
                         oix = which(gr.in(ov, events))
 
-                        if(!is.null(maxPtGene)){
-                            if(!is.numeric(maxPtGene)){
-                                stop("maxPtGene must be of type numeric")
+                        if(!is.null(maxpatientpergene)){
+                            if(!is.numeric(maxpatientpergene)){
+                                stop("maxpatientpergene must be of type numeric")
                             }
-                            if(!("ID" %in% colnames(values(events))) & is.null(PtIDCol)){
+                            if(!("ID" %in% colnames(values(events))) & is.null(ptidcol)){
                                 events$ID = c(1:length(events))
                             }
                             
                             ev2 = gr.findoverlaps(events,ov, max.chunk = max.chunk, mc.cores = mc.cores)
-                            if(is.null(PtIDCol)){
+                            if(is.null(ptidcol)){
                                 ev2$ID = events$ID[ev2$query.id]
                             }
                             else{
-                                ev2$ID = mcols(events)[,PtIDCol][ev2$query.id]
+                                ev2$ID = mcols(events)[,ptidcol][ev2$query.id]
                             }
                             
                             ev2$target.id = ov$query.id[ev2$subject.id]
                             tab = as.data.table(cbind(ev2$ID,ev2$target.id))
-                            counts.unique = tab[, dummy :=1][, .(count = sum(dummy)), keyby =.(V1, V2)][, count := pmin(maxPtGene, count)][, .(final_count = sum(count)), keyby = V2]                          
+                            counts.unique = tab[, dummy :=1][, .(count = sum(dummy)), keyby =.(V1, V2)][, count := pmin(maxpatientpergene, count)][, .(final_count = sum(count)), keyby = V2]                          
                             ## tab = table(tab)
-                            ## tab[tab>maxPtGene] = maxPtGene
+                            ## tab[tab>maxpatientpergene] = maxpatientpergene
                             ## counts.unique = colSums(tab)
                         }
                         
@@ -185,7 +185,7 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
                     
                     ov$count = 0
                     
-                    if (length(oix)>0 & is.null(maxPtGene)){
+                    if (length(oix)>0 & is.null(maxpatientpergene)){
                         ov$count[oix] = fftab(counts, ov[oix], chunksize = ff.chunk, na.rm = TRUE, mc.cores = mc.cores, verbose = verbose)$score
                     }
                     if (!is.null(out.path))
@@ -323,7 +323,7 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
                 values(targets) = as(as.data.frame(ovdta[list(1:length(targets)), ]), 'DataFrame')
 
 
-                if(!is.null(maxPtGene)){
+                if(!is.null(maxpatientpergene)){
                     targets$count = 0
                     targets$count[as.numeric(counts.unique$V2)] = counts.unique$final_count
                 }
@@ -337,7 +337,7 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
         ix = is.na(targets$coverage)
         if (any(ix)){
             targets$coverage[ix] = 0
-            if(!is.null(maxPtGene)){
+            if(!is.null(maxpatientpergene)){
                 targets$count[targets$coverage == 0] = NA
             }
         }
@@ -1470,8 +1470,8 @@ FishHook <- R6Class("FishHook",
                         
                         initialize = function(targets = NULL, out.path = NULL, eligible = NULL, ... ,events = NULL, covariates = NULL,
                                               use_local_mut_density = FALSE, local_mut_density_bin = 1e6, genome =  "BSgenome.Hsapiens.UCSC.hg19::Hsapiens",
-                                              mc.cores = 1, na.rm = TRUE, pad = 0, verbose = TRUE, max.slice = 1e3, ff.chunk = 1e6, max.chunk = 1e11, PtIDCol = NULL,
-                                              maxPtGene = Inf, weightEvents = FALSE, nb = TRUE){ 
+                                              mc.cores = 1, na.rm = TRUE, pad = 0, verbose = TRUE, max.slice = 1e3, ff.chunk = 1e6, max.chunk = 1e11, ptidcol = NULL,
+                                              maxpatientpergene = Inf, weightEvents = FALSE, nb = TRUE){ 
 
 
                             ## This next portion checks to make sure that the seqlevels are in the same format
@@ -1571,8 +1571,8 @@ FishHook <- R6Class("FishHook",
                             private$pmax.slice = max.slice
                             private$pff.chunk = ff.chunk
                             private$pmax.chunk = max.chunk
-                            private$pPtIDCol = PtIDCol
-                            private$pmaxPtGene = maxPtGene
+                            private$pptidcol = ptidcol
+                            private$pmaxpatientpergene = maxpatientpergene
                             private$pweightEvents = weightEvents
                             private$pnb = nb
 
@@ -1619,7 +1619,7 @@ FishHook <- R6Class("FishHook",
                        ## Returns the created annotate object
                        annotate = function(mc.cores = private$pmc.cores, na.rm = private$pna.rm, pad = private$ppad,
                                            verbose = private$pverbose,max.slice = private$pmax.slice, ff.chunk = private$pff.chunk,
-                                           max.chunk = private$pmax.chunk, PtIDCol = private$pPtIDCol, maxPtGene = private$maxPtGene,
+                                           max.chunk = private$pmax.chunk, ptidcol = private$pptidcol, maxpatientpergene = private$maxpatientpergene,
                                            weightEvents = private$pweightEvents){
                            
                            if(private$pstate == "Scored"){
@@ -1638,8 +1638,8 @@ FishHook <- R6Class("FishHook",
                                                             max.chunk = max.chunk,
                                                             out.path = private$pout.path,
                                                             covariates = private$pcovariates$toList(),
-                                                            PtIDCol = PtIDCol,
-                                                            maxPtGene = maxPtGene,
+                                                            ptidcol = ptidcol,
+                                                            maxpatientpergene = maxpatientpergene,
                                                             weightEvents = weightEvents)
                            
                            private$pstate = "Annotated"
@@ -1647,6 +1647,37 @@ FishHook <- R6Class("FishHook",
                        },
 
 
+
+                       aggregate = function(targets = private$panno,
+                                            by = NULL,
+                                            fields = NULL,
+                                            rolling = NULL,
+                                            disjoint = TRUE,
+                                            na.rm = FALSE,
+                                            FUN = list(),
+                                            verbose = private$pverbose){
+
+                           if(private$pstate == "Initialized"){
+                               self$annotate()
+                           }
+
+                           agg = aggregate.targets(targets,
+                                                   by = by,
+                                                   fields = fields,
+                                                   rolling = rolling, 
+                                                   disjoint = disjoint, 
+                                                   na.rm = na.rm,
+                                                   FUN = list(),
+                                                   verbose = TRUE
+                                                   )
+
+                           private$paggregated = agg
+                           
+                           dump = self$clear("Aggregated")
+                           
+
+                       },
+                       
                        score = function(nb = private$pnb,
                                         verbose = private$pverbose,                                      
                                         model = NULL,
@@ -1659,7 +1690,18 @@ FishHook <- R6Class("FishHook",
                                self$annotate()
                            }
 
-                           score = score.targets(private$panno,
+                           ##If we are aggregated we should score that, if we are not we should score anno
+                           if(private$pstate == "Aggregated"){
+                               targ = private$paggregated                               
+                           }
+                           else{
+                               targ = private$panno
+                           }
+
+                           print(targ)
+
+                           ##Scoring
+                           score = score.targets(targ,
                                                  covariates = names(values(private$panno)),
                                                  return.model = TRUE,
                                                  nb = nb,
@@ -1686,14 +1728,23 @@ FishHook <- R6Class("FishHook",
                                private$pmodel = NULL
                                private$pscore = NULL
                                private$panno = NULL
+                               private$paggregated = NULL
                                return("Clear Completed")
                            }
                            if(state == "Annotated"){
                                private$pstate = "Annotated"
                                private$pmodel = NULL
                                private$pscore = NULL
+                               private$paggregated = NULL
                                return("Clear Completed")                               
                            }
+                           if(state == "Aggregated"){
+                               private$pstate = "Aggregated"
+                               private$pmodel = NULL
+                               private$pscore = NULL
+                               return("Clear Completed")                               
+                           }
+
                            return("Valid reversion state not specified. This is not a major error, just letting you know that nothing has been chaged")
                            
 
@@ -1782,9 +1833,9 @@ FishHook <- R6Class("FishHook",
 
                         pmax.chunk = 1e11,
 
-                        pPtIDCol = NULL,
+                        pptidcol = NULL,
 
-                        pmaxPtGene = Inf,
+                        pmaxpatientpergene = Inf,
 
                         pweightEvents = FALSE,
 
@@ -1796,7 +1847,9 @@ FishHook <- R6Class("FishHook",
                         
                         preturn.model = TRUE,
                         
-                        pnb = TRUE
+                        pnb = TRUE,
+
+                        paggregated = NULL
                         
                     ),
                     active = list(
@@ -2122,37 +2175,37 @@ FishHook <- R6Class("FishHook",
                            }
                        },
 
-                       PtIDCol = function(value) {
+                       ptidcol = function(value) {
                            if(!missing(value)){
                                if(!(class(value) == "character")  && !is.null(value)){
-                                   stop("Error: PtIDCol must be of class character")
+                                   stop("Error: ptidcol must be of class character")
                                }
                                                               
-                               private$pPtIDCol = value
+                               private$pptidcol = value
                                
-                               return(private$pPtIDCol)
+                               return(private$pptidcol)
                                                                   
                            }
                            
                            else{
-                               return(private$pPtIDCol)
+                               return(private$pptidcol)
                            }
                        },
                        
-                       maxPtGene = function(value) {
+                       maxpatientpergene = function(value) {
                            if(!missing(value)){
                                if(!(class(value) == "numeric")  && !is.null(value)){
-                                   stop("Error: maxPtGene must be of class numeric")
+                                   stop("Error: maxpatientpergene must be of class numeric")
                                }
                                                               
-                               private$pmaxPtGene = value
+                               private$pmaxpatientpergene = value
                                
-                               return(private$pmaxPtGene)
+                               return(private$pmaxpatientpergene)
                                                                   
                            }
                            
                            else{
-                               return(private$pmaxPtGene)
+                               return(private$pmaxpatientpergene)
                            }
                        },
 
@@ -2213,7 +2266,28 @@ FishHook <- R6Class("FishHook",
                            else{
                                return(private$pstate)
                            }
+                       },
+
+                       aggregated = function(value) {
+                           if(!missing(value)){
+                               if(!(class(value) == "GRangesList")  && !is.null(value) && !(class(value) == "GRanges")){
+                                   stop("Error: aggregated must be of class GRangesList")
+                               }
+                               else{
+                                   warning("You are editing the aggregated dataset generated by fish.hook, goodluck.")
+                               }
+                               
+                               private$paggregated = value
+                               
+                               return(private$paggregated)
+                                                                  
+                           }
+                           
+                           else{
+                               return(private$paggregated)
+                           }
                        }
+
 
 
                        

@@ -7,8 +7,8 @@
 annotate.targets(targets, covered = NULL, events = NULL, ...,
   mc.cores = 1, na.rm = TRUE, pad = 0, verbose = TRUE,
   max.slice = 1000, ff.chunk = 1e+06, max.chunk = 1e+11,
-  out.path = NULL, covariates = list(), maxPtGene = Inf, PtIDCol = NULL,
-  weightEvents = FALSE)
+  out.path = NULL, covariates = list(), maxpatientpergene = Inf,
+  ptidcol = NULL, weightEvents = FALSE)
 }
 \arguments{
 \item{targets}{path to bed or rds containing genomic target regions with optional target name}
@@ -28,7 +28,7 @@ Interval covariates must be Granges (or paths to GRanges rds) or paths to bed fi
 
 \item{out.path}{out.path to save variable to}
 
-\item{maxPtGene}{Sets the maximum number of events a patient can contribute per target}
+\item{maxpatientpergene}{Sets the maximum number of events a patient can contribute per target}
 
 \item{out.path}{out.path to save variable to}
 
