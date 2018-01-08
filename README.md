@@ -63,7 +63,7 @@ Attributions
 Demo
 -----------
 
-To be Updated, see fishHook_Demo.ipynb for up to date demo.
+See Below. To be Updated with plots.
 
 
 ## Load the Required Packages
