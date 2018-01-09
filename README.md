@@ -444,6 +444,8 @@ suppressWarnings(plot <- fish$qq_plot(plotly = F))
 
 ```
 
+![](DemoImages/standard_plot_noplotly.png)
+
 ## Visualizing the Data cont.
 The above is cool and all but we probably want to annotate the hover text of each point with targets metadata, to do that we can use the columns param in qq_plot(). Note that you can specify any column that is present in the 'all' output. You can also provide your own vectors through annotations. P value will be included in all graphs created but Count, Effectsize, HypothesisID and q will only be added by default if not annotations are specified by the user.
 
@@ -459,6 +461,13 @@ plot1
 suppressWarnings(plot2 <- fish$qq_plot(columns = c("gene_name"), annotations = list(test = c("testing", "123"))))
 plot2
 ```
+
+![](DemoImages/plotly1.png)
+
+![](DemoImages/plotly2.png)
+
+
+
 
 ## Covariates
 Now we know how to test for which targets are a hotspot for mutations. However, mutational hotspots can be caused by various biological phenomina that are unrelated to cancer. Fore example, replication timing, transcription status, chromatin state and sequence context can all play a role in the formation of mutations. We refer to these biological factors that influence mutation covariates. FishHook has its own object for instantiating covariates, but first lets load up the replication timing covariate as a Genomic Ranges object. It contain a 'score' for each region of the genome.
@@ -712,6 +721,10 @@ fish$score()
 suppressWarnings(plot <- fish$qq_plot(columns = c('gene_name','count','q')))
 plot
 ```
+
+![](DemoImages/plotly3.png)
+
+
 
 ## fishHook Analysis using Covariates cont.
 Covariates rely on our prior knowledge about mutational processes. However, there are likely facotrs that influence mutations that are not known as thus it would be impossible for us to define a covariate for them. However, all of the mutational evidence is present in the mutational landscape (events) and as such we can create a covariate from our events that we will call local mutational density that can model the mutational landscape in the area surrounding our targets. We can use the flag use_local_mut_density for this. The bin for this covariate be specified using local_mut_density_bin and is by default set to 1e6.
