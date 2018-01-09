@@ -63,19 +63,19 @@ Attributions
 Demo
 -----------
 
-See Below. To be Updated with plots.
+See Below. 
 
 
 ## Load the Required Packages
 
 
 ```R
-suppressWarnings(suppressMessages(library(fishhook)))
-suppressWarnings(suppressMessages(library(skitools)))
+library(fishhook)
+library(skitools)
 ```
 
 ## Now we will need some data
-**fishHook utilizes gamme poisson regression to idenfity frequently mutated or amplified/delete regions of the genome from sequencing and microarray data. To do this we need to take a set of genomic targets, and test each one against the hypothesis that they are significantly altered in comparison to the other targets. In this first example we will use genes as our targets and use exome data as the mutational events. Since exome sequencing tends to exhibt strong sequencing bias, we want to include this information in our analysis. To do this we constructed a GRanges called eligible that will indicate the regions that have sufficeint coverage. **
+fishHook utilizes gamme poisson regression to idenfity frequently mutated or amplified/delete regions of the genome from sequencing and microarray data. To do this we need to take a set of genomic targets, and test each one against the hypothesis that they are significantly altered in comparison to the other targets. In this first example we will use genes as our targets and use exome data as the mutational events. Since exome sequencing tends to exhibt strong sequencing bias, we want to include this information in our analysis. To do this we constructed a GRanges called eligible that will indicate the regions that have sufficeint coverage. 
 
 
 ```R
@@ -196,7 +196,7 @@ fish$eligible
 ```
 
 
-'Initialized'
+    Initialized
 
 
 
@@ -440,9 +440,11 @@ Grabbing the raw data from the scores field in the fish object is an ok way to m
 
 
 ```R
-suppressWarnings(plot <- fish$qq_plot(plotly = F))
+plot <- fish$qq_plot(plotly = F)
 
 ```
+
+
 
 ![](DemoImages/standard_plot_noplotly.png)
 
@@ -454,15 +456,38 @@ The above is cool and all but we probably want to annotate the hover text of eac
 fish$all[1:10]
 
 "Column Annotations"
-suppressWarnings(plot1 <- fish$qq_plot(columns = c("gene_name")))
+plot1 <- fish$qq_plot(columns = c("gene_name"))
 plot1
 
 "Novel Annotations"
-suppressWarnings(plot2 <- fish$qq_plot(columns = c("gene_name"), annotations = list(test = c("testing", "123"))))
+plot2 <- fish$qq_plot(columns = c("gene_name"), annotations = list(test = c("testing", "123")))
 plot2
 ```
 
+<table>
+<thead><tr><th scope=col>seqnames</th><th scope=col>start</th><th scope=col>end</th><th scope=col>width</th><th scope=col>strand</th><th scope=col>query.id</th><th scope=col>coverage</th><th scope=col>count</th><th scope=col>count.pred</th><th scope=col>count.pred.density</th><th scope=col>count.density</th><th scope=col>p</th><th scope=col>q</th><th scope=col>p.neg</th><th scope=col>q.neg</th><th scope=col>effectsize</th><th scope=col>gene_name</th><th scope=col>name</th></tr></thead>
+<tbody>
+	<tr><td>19           </td><td> 58856544    </td><td> 58864865    </td><td> 8322        </td><td>-            </td><td> 1           </td><td>1467         </td><td> 50          </td><td> 80.33959    </td><td>0.05476455   </td><td>0.03408316   </td><td>0.800        </td><td>1.0          </td><td>0.21         </td><td>0.85         </td><td>-0.6841830323</td><td>A1BG         </td><td> 1           </td></tr>
+	<tr><td>10           </td><td> 52559169    </td><td> 52645435    </td><td>86267        </td><td>-            </td><td> 2           </td><td>2103         </td><td>209          </td><td>115.16984    </td><td>0.05476455   </td><td>0.09938184   </td><td>0.051        </td><td>0.8          </td><td>0.95         </td><td>1.00         </td><td> 0.8597399309</td><td>A1CF         </td><td> 2           </td></tr>
+	<tr><td>12           </td><td>  9220260    </td><td>  9268825    </td><td>48566        </td><td>-            </td><td> 3           </td><td>3884         </td><td>270          </td><td>212.70550    </td><td>0.05476455   </td><td>0.06951596   </td><td>0.240        </td><td>1.0          </td><td>0.76         </td><td>0.94         </td><td> 0.3441020452</td><td>A2M          </td><td> 3           </td></tr>
+	<tr><td>12           </td><td>  8975068    </td><td>  9039597    </td><td>64530        </td><td>+            </td><td> 4           </td><td>4588         </td><td>303          </td><td>251.25975    </td><td>0.05476455   </td><td>0.06604185   </td><td>0.280        </td><td>1.0          </td><td>0.72         </td><td>0.93         </td><td> 0.2701382411</td><td>A2ML1        </td><td> 4           </td></tr>
+	<tr><td>1            </td><td> 33772367    </td><td> 33786699    </td><td>14333        </td><td>-            </td><td> 5           </td><td>   0         </td><td> NA          </td><td>  0.00000    </td><td>       NaN   </td><td>        NA   </td><td>1.000        </td><td>1.0          </td><td>  NA         </td><td>  NA         </td><td>           NA</td><td>A3GALT2      </td><td> 5           </td></tr>
+	<tr><td>22           </td><td> 43088127    </td><td> 43117304    </td><td>29178        </td><td>-            </td><td> 6           </td><td> 737         </td><td> 36          </td><td> 40.36147    </td><td>0.05476455   </td><td>0.04884668   </td><td>0.540        </td><td>1.0          </td><td>0.47         </td><td>0.85         </td><td>-0.1649818741</td><td>A4GALT       </td><td> 6           </td></tr>
+	<tr><td>3            </td><td>137842560    </td><td>137851229    </td><td> 8670        </td><td>-            </td><td> 7           </td><td>1168         </td><td> 64          </td><td> 63.96499    </td><td>0.05476455   </td><td>0.05479452   </td><td>0.440        </td><td>1.0          </td><td>0.56         </td><td>0.87         </td><td> 0.0007893747</td><td>A4GNT        </td><td> 7           </td></tr>
+	<tr><td>12           </td><td> 53701240    </td><td> 53718648    </td><td>17409        </td><td>-            </td><td> 8           </td><td>1838         </td><td> 77          </td><td>100.65724    </td><td>0.05476455   </td><td>0.04189336   </td><td>0.670        </td><td>1.0          </td><td>0.34         </td><td>0.85         </td><td>-0.3865205770</td><td>AAAS         </td><td> 8           </td></tr>
+	<tr><td>12           </td><td>125549925    </td><td>125627873    </td><td>77949        </td><td>+            </td><td> 9           </td><td>2155         </td><td>102          </td><td>118.01760    </td><td>0.05476455   </td><td>0.04733179   </td><td>0.570        </td><td>1.0          </td><td>0.43         </td><td>0.85         </td><td>-0.2104328784</td><td>AACS         </td><td> 9           </td></tr>
+	<tr><td>3            </td><td>151531825    </td><td>151546276    </td><td>14452        </td><td>+            </td><td>10           </td><td>1328         </td><td>100          </td><td> 72.72732    </td><td>0.05476455   </td><td>0.07530120   </td><td>0.190        </td><td>1.0          </td><td>0.82         </td><td>0.97         </td><td> 0.4594306920</td><td>AADAC        </td><td>10           </td></tr>
+</tbody>
+</table>
+
+
+
+
+        Column Annotations
+
 ![](DemoImages/plotly1.png)
+
+        Novel Annotations
 
 ![](DemoImages/plotly2.png)
 
@@ -693,20 +718,9 @@ rep3$type
 rep3$signature
 ```
 
-
-<ol class=list-inline>
-	<li>'numeric'</li>
-	<li>'numeric'</li>
-</ol>
-
-
-
-
-<ol class=list-inline>
-	<li>&lt;NA&gt;</li>
-	<li>&lt;NA&gt;</li>
-</ol>
-
+        'numeric'       'numeric'
+        <NA>            <NA>
+                     
 
 
 ## fishHook Analysis using Covariates
@@ -718,9 +732,57 @@ fish = FishHook$new(targets = gene_targets, events = mutational_events, eligible
 fish
 fish$annotate(mc.cores = 3,verbose = F)
 fish$score()
-suppressWarnings(plot <- fish$qq_plot(columns = c('gene_name','count','q')))
+plot <- fish$qq_plot(columns = c('gene_name','count','q'))
 plot
 ```
+
+
+
+    Contains 19688 hypotheses.
+    Contains 1985704 events to map to hypotheses.
+    Will map only eliglble regions.
+    Covariates:
+    rept
+    Targets contains 2 metadata columns
+    Current State: Initialized
+    
+
+
+
+    GRanges object with 19688 ranges and 4 metadata columns:
+              seqnames                 ranges strand   |  query.id  coverage
+                 <Rle>              <IRanges>  <Rle>   | <integer> <numeric>
+          [1]       19   [58856544, 58864865]      -   |         1      1467
+          [2]       10   [52559169, 52645435]      -   |         2      2103
+          [3]       12   [ 9220260,  9268825]      -   |         3      3884
+          [4]       12   [ 8975068,  9039597]      +   |         4      4588
+          [5]        1   [33772367, 33786699]      -   |         5         0
+          ...      ...                    ...    ... ...       ...       ...
+      [19684]        7 [143078173, 143088204]      +   |     19684      1337
+      [19685]       17 [  3907739,   4046314]      -   |     19685      9203
+      [19686]        1 [ 78028101,  78149104]      -   |     19686      2899
+      [19687]       19 [ 14183348,  14185874]      +   |     19687         0
+      [19688]       19 [ 50003781,  50004614]      +   |     19688         0
+                         count               rept
+                     <numeric>          <numeric>
+          [1]               50 -0.297950732144312
+          [2]              209 -0.817199707881931
+          [3]  269.58461538461  0.951710314812554
+          [4] 302.999999999992    1.0355531646779
+          [5]             <NA>               <NA>
+          ...              ...                ...
+      [19684] 68.9999999999806  -1.08295616530581
+      [19685] 318.636363636364   1.26355495111961
+      [19686]              121   1.34188474219116
+      [19687]             <NA>               <NA>
+      [19688]             <NA>               <NA>
+      -------
+      seqinfo: 25 sequences from an unspecified genome; no seqlengths
+    Setting up problem
+    Fitting model with 18,418 data points and 1 covariates
+    Scoring results
+
+
 
 ![](DemoImages/plotly3.png)
 
@@ -738,10 +800,93 @@ fish
 
 fish$annotate(mc.cores = 3,verbose = F)
 fish$score()
-suppressWarnings(plot <- fish$qq_plot(columns = c('gene_name','count','q')))
+plot <- fish$qq_plot(columns = c('gene_name','count','q'))
 plot
 
 ```
+
+
+    GRanges object with 30971 ranges and 3 metadata columns:
+              seqnames               ranges strand   |  query.id  coverage
+                 <Rle>            <IRanges>  <Rle>   | <integer> <numeric>
+          [1]        1     [     1, 100000]      +   |         1         0
+          [2]        1     [100001, 200000]      +   |         2         0
+          [3]        1     [200001, 300000]      +   |         3         0
+          [4]        1     [300001, 400000]      +   |         4         0
+          [5]        1     [400001, 500000]      +   |         5         0
+          ...      ...                  ...    ... ...       ...       ...
+      [30967]        Y [59000001, 59100000]      +   |     30967         0
+      [30968]        Y [59100001, 59200000]      +   |     30968         0
+      [30969]        Y [59200001, 59300000]      +   |     30969         0
+      [30970]        Y [59300001, 59373566]      +   |     30970         0
+      [30971]        M [       1,    16571]      +   |     30971         0
+                  count
+              <numeric>
+          [1]      <NA>
+          [2]      <NA>
+          [3]      <NA>
+          [4]      <NA>
+          [5]      <NA>
+          ...       ...
+      [30967]      <NA>
+      [30968]      <NA>
+      [30969]      <NA>
+      [30970]      <NA>
+      [30971]      <NA>
+      -------
+      seqinfo: 25 sequences from an unspecified genome
+    Setting up problem
+    Fitting model with 15,358 data points and 0 covariates
+    Scoring results
+
+
+
+    Contains 19688 hypotheses.
+    Contains 1985704 events to map to hypotheses.
+    Will map only eliglble regions.
+    Covariates:
+    Local Mutation Density
+    rept
+    Targets contains 2 metadata columns
+    Current State: Initialized
+    
+
+
+
+    GRanges object with 19688 ranges and 5 metadata columns:
+              seqnames                 ranges strand   |  query.id  coverage
+                 <Rle>              <IRanges>  <Rle>   | <integer> <numeric>
+          [1]       19   [58856544, 58864865]      -   |         1      1467
+          [2]       10   [52559169, 52645435]      -   |         2      2103
+          [3]       12   [ 9220260,  9268825]      -   |         3      3884
+          [4]       12   [ 8975068,  9039597]      +   |         4      4588
+          [5]        1   [33772367, 33786699]      -   |         5         0
+          ...      ...                    ...    ... ...       ...       ...
+      [19684]        7 [143078173, 143088204]      +   |     19684      1337
+      [19685]       17 [  3907739,   4046314]      -   |     19685      9203
+      [19686]        1 [ 78028101,  78149104]      -   |     19686      2899
+      [19687]       19 [ 14183348,  14185874]      +   |     19687         0
+      [19688]       19 [ 50003781,  50004614]      +   |     19688         0
+                         count Local.Mutation.Density               rept
+                     <numeric>              <numeric>          <numeric>
+          [1]               50      0.044721257913008 -0.297950732144312
+          [2]              209     0.0992943081081466 -0.817199707881931
+          [3]  269.58461538461     0.0695159629248198  0.951710314812554
+          [4] 302.999999999992     0.0542573619593414    1.0355531646779
+          [5]             <NA>                   <NA>               <NA>
+          ...              ...                    ...                ...
+      [19684] 68.9999999999806     0.0735778091208275  -1.08295616530581
+      [19685] 318.636363636364      0.034898612890737   1.26355495111961
+      [19686]              121      0.042336217552534   1.34188474219116
+      [19687]             <NA>                   <NA>               <NA>
+      [19688]             <NA>                   <NA>               <NA>
+      -------
+      seqinfo: 25 sequences from an unspecified genome; no seqlengths
+
+
+
+![](DemoImages/plotly4.png)
+
 
 ## FishHook Extras: Subsetting
 The fishHook obeject can be subseted in the following way: fish[i,j,k,l] where: 
