@@ -17,7 +17,10 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ###############################################################################
 
+#' @import R6
+#' @import GenomicRanges
 
+#' @name annotate.targets
 #' annotate.targets
 #'
 #' Takes input of GRanges targets, an optional set of "covered" intervals, and an indefinite list of covariates which can be R objects
@@ -29,6 +32,7 @@
 #' numeric covariates: the mean value
 #' sequence covarites: fraction of bases satisfying $signature
 #' interval covariates: fraction of bases overlapping feature
+#' 
 #' 
 #' @param targets path to bed or rds containing genomic target regions with optional target name
 #' @param covered  optional path to bed or rds containing  granges object containing "covered" genomic regions
@@ -811,10 +815,11 @@ score.targets = function(targets, covariates = names(values(targets)),
 #' @param type a string indicating the type of Covariate, valid options are: numeric, sequence, interval. See Annotate Targets for more information on Covariate types
 #' @param signature In the case where a ffTrack object is of type sequence, a signature field is required, see fftab in ffTrack for more information.
 #' @return Cov object that can be passed to FishHook object constructor
+#' @import R6
 #' @author Zoran Z. Gajic
 #' @importFrom R6 R6Class
 #' @export
-Cov <- R6Class("Cov",
+Cov = R6::R6Class("Cov",
                       public = list(
                           
                           initialize = function(Covariate = NA, type = NA, signature = NA,
@@ -1029,9 +1034,9 @@ Cov <- R6Class("Cov",
 #' @param ... several Cov objects for packaging.
 #' @return Cov_Arr object that can be passed directly to the FishHook object constructor
 #' @author Zoran Z. Gajic
-#' @importFrom R6 R6Class
+#' @import R6 
 #' @export
-Cov_Arr <- R6Class("Cov_Arr",
+Cov_Arr = R6::R6Class("Cov_Arr",
 
                    public = list(
 
@@ -1391,7 +1396,7 @@ Cov_Arr <- R6Class("Cov_Arr",
 #' @return Cov_Arr object that can be passed directly into the FishHook object constructor
 #' @author Zoran Z. Gajic
 #' @export
-'c.Cov_Arr' <- function(...){
+'c.Cov_Arr' = function(...){
     Covs = list(...)
     isc = sapply(Covs, function(x) (class(x)[1] == "Cov" ||  class(x)[1] == "Cov_Arr"))
     if(any(!isc))
@@ -1430,9 +1435,6 @@ Cov_Arr <- R6Class("Cov_Arr",
     ret$na.rm = na.rm
     ret$grep = grep
     return(ret)
-
-
-
 }
 
 
@@ -1453,6 +1455,7 @@ Cov_Arr <- R6Class("Cov_Arr",
 }
 
 
+
 #' FishHook
 #'
 #' Stores Events, Targets, Eligible, Covariates. 
@@ -1465,7 +1468,7 @@ Cov_Arr <- R6Class("Cov_Arr",
 #' @author Zoran Z. Gajic
 #' @importFrom R6 R6Class
 #' @export
-FishHook <- R6Class("FishHook",
+FishHook <- R6::R6Class("FishHook",
                     public = list(
                         
                         initialize = function(targets = NULL, out.path = NULL, eligible = NULL, ... ,events = NULL, covariates = NULL,
@@ -2271,7 +2274,7 @@ FishHook <- R6Class("FishHook",
 #' @author Zoran Z. Gajic
 #' @importFrom R6 R6Class
 #' @export
-Annotated <- R6Class("Annotate",
+Annotated <- R6::R6Class("Annotate",
                      public = list(
                          ## Initialize takes in all of the same params as annotate.targets
                          initialize = function(targets = NULL,
@@ -2474,7 +2477,7 @@ Annotated <- R6Class("Annotate",
 #' @author Zoran Z. Gajic
 #' @importFrom R6 R6Class
 #' @export
-Score <- R6Class("Score",
+Score = R6::R6Class("Score",
                  public = list(
 
                      ## Initialize takes in all of the params for the fish.hook function

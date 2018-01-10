@@ -37,6 +37,9 @@ qq_pval(obs, highlight = c(), exp = NULL, lwd = 1, bestfit = T,
 
 \item{samp}{integer, optional specifying how many samples to draw from input data (default NULL)}
 }
+\description{
+qq plot given input p values
+}
 \author{
 Marcin Imielinski, Eran Hodis, Zoran Z. Gajic
 }
