@@ -21,7 +21,8 @@
 #' @import GenomicRanges
 
 #' @name annotate.targets
-#' annotate.targets
+#' @title title
+#' @description 
 #'
 #' Takes input of GRanges targets, an optional set of "covered" intervals, and an indefinite list of covariates which can be R objects
 #' (GRanges, ffTrack, Rle) or file paths to .rds, .bw, .bed files, and an annotated target intervals GRanges with covariates computed
@@ -37,7 +38,19 @@
 #' @param targets path to bed or rds containing genomic target regions with optional target name
 #' @param covered  optional path to bed or rds containing  granges object containing "covered" genomic regions
 #' @param events  optional path to bed or rds containing ranges corresponding to events (ie mutations etc)
+#' @param mc.cores
+#' @param na.rm 
+#' @param pad 
+#' @param verbose boolean verbose flag (default == FALSE)
+#' @param max.slice integer Max slice of intervals to evaluate with  gr.val
+#' @param ff.chunk integer Max chunk to evaluate with fftab
+#' @param max.chunk integer gr.findoverlaps parameter
 #' @param out.path  out.path to save variable to
+#' @param covariates list 
+#' @param maxpatientpergene Sets the maximum number of events a patient can contribute per target
+#' @param weightEvetns If true, will weight events by thier overlap with targets. e.g. if 10% of an event overlaps with a target
+#' @param ptidcol string Column where patient ID is stored
+#' region, that target region will get assigned a score of 0.1 for that event. If false, any overlap will be given a weight of 1.
 #' @param ... paths to sequence covariates whose output names will be their argument names, and each consists of a list with
 #' $track field corresponding to a GRanges, RleList, ffTrack object (or path to rds containing that object), $type which can
 #' have one of three values "numeric", "sequence", "interval".
@@ -46,160 +59,156 @@
 #' Sequence covariates must be ffTrack objects (or paths to ffTrack rds) and require an additional variables $signatures, which
 #' will be used as input to fftab, and can have optional logical argument $grep to specify inexact matches (see fftab)
 #' Interval covariates must be Granges (or paths to GRanges rds) or paths to bed files
-#' @param out.path  out.path to save variable to
-#' @param maxpatientpergene Sets the maximum number of events a patient can contribute per target
-#' @param weightEvetns If true, will weight events by thier overlap with targets. e.g. if 10% of an event overlaps with a target
-#' region, that target region will get assigned a score of 0.1 for that event. If false, any overlap will be given a weight of 1.
 #' @return GRanges of input targets annotated with covariate statistics (+/- constrained to the subranges in optional argument covered)
 #' @author Marcin Imielinski
 #' @importFrom ffTrack fftab
 #' @export
-annotate.targets = function(targets, ## path to bed or rds containing genomic target regions with optional target name
-    covered = NULL,
-    events = NULL,  
-    ...,
-    mc.cores = 1,
-    na.rm = TRUE,
-    pad = 0,
-    verbose = TRUE,
-    max.slice = 1e3, ## max slice of intervals to evaluate with  gr.val
-    ff.chunk = 1e6, ## max chunk to evaluate with fftab
-    max.chunk = 1e11, ## gr.findoverlaps parameter
-    out.path = NULL,
-    covariates = list(),
-    maxpatientpergene = Inf,
-    ptidcol = NULL,
-    weightEvents = FALSE)
-    {        
-        if(weightEvents){
-            maxpatientpergene = NULL
+annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 1, na.rm = TRUE, pad = 0, verbose = TRUE, max.slice = 1e3, 
+    ff.chunk = 1e6, max.chunk = 1e11, out.path = NULL, covariates = list(), maxpatientpergene = Inf, ptidcol = NULL, weightEvents = FALSE, ...)
+{
+    if(weightEvents){
+        maxpatientpergene = NULL
+    }
+    if (is.character(targets)){
+        if (grepl('\\.rds$', targets[1])){
+            targets = readRDS(targets[1])
         }
-        if (is.character(targets))
-            if (grepl('\\.rds$', targets[1]))
-                targets = readRDS(targets[1])
-            else if (grepl('(\\.bed$)', targets[1]))
-                targets = import.ucsc(targets[1])
+        else if (grepl('(\\.bed$)', targets[1])){
+            targets = import.ucsc(targets[1])
+        }
+    }
 
-        if (length(targets)==0)
-            stop('Must provide non-empty targets')
+    if (length(targets)==0){
+        stop('Error: Must provide non-empty targets')
+    }
         
-        if (!is.null(out.path))
-            tryCatch(saveRDS(targets, paste(gsub('.rds', '', out.path), '.source.rds', sep = '')), error = function(e) warning(sprintf('Error writing to file %s', out.file)))
+    if (!is.null(out.path)){
+        tryCatch(saveRDS(targets, paste(gsub('.rds', '', out.path), '.source.rds', sep = '')), error = function(e) warning(sprintf('Error writing to file %s', out.file)))
+    }
         
-        COV.TYPES = c('numeric', 'sequence', 'interval')
-        COV.CLASSES = c('GRanges', 'RleList', 'ffTrack', 'character')
+    COV.TYPES = c('numeric', 'sequence', 'interval')
+    COV.CLASSES = c('GRanges', 'RleList', 'ffTrack', 'character')
 
         
-        cov.types = sapply(covariates, function(x) if (!is.null(x$type)) x$type else NA)
-        cov.classes = lapply(covariates, function(x) if (!is.null(x$track)) class(x$track) else NA)
+    cov.types = sapply(covariates, function(x) if (!is.null(x$type)) x$type else NA)
+    cov.classes = lapply(covariates, function(x) if (!is.null(x$track)) class(x$track) else NA)
         
-        if (is.list(cov.types))
-            cov.type = ''
+    if (is.list(cov.types)){
+        cov.type = ''
+    }
         
-        if (is.list(cov.classes))
-            cov.classes = ''
+    if (is.list(cov.classes)){
+        cov.classes = ''
+    }
+            
+    cov.types[is.na(cov.types)] = ''
         
-        cov.types[is.na(cov.types)] = ''
+    if (!all(cov.types %in% COV.TYPES) & !(all(cov.classes %in% COV.CLASSES))){
+        stop(sprintf('Error: Malformed covariate input: each covariate must be a list with fields $tracks and $type, $track must be of class GRanges, ffTrack, Rle, object, or character path to rds object with the latter or .bw, .bed file, $type must have value %s', paste(COV.TYPES, collapse = ',')))
+    }
+         
+    if (any(ix <- (cov.types == 'sequence'))){
+        for (cov in covariates[ix]){
+            if (is.character(cov$track)){
+                cov$track = tryCatch(readRDS(cov$track), error = function(e) 'Error: not ffTrack')   
+            } 
+            if (class(cov$track) != 'ffTrack'){
+                stop('Error: Sequence tracks must have ffTrack object as $track field or $track must be a path to an ffTrack object rds file')
+            }
+        }
         
-        if (!all(cov.types %in% COV.TYPES) & !(all(cov.classes %in% COV.CLASSES)))
-            stop(sprintf('Malformed covariate input: each covariate must be a list with fields $tracks and $type, $track must be of class GRanges, ffTrack, Rle, object, or character path to rds object with the latter or .bw, .bed file, $type must have value %s', paste(COV.TYPES, collapse = ',')))
+    if (any(ix <- (cov.classes == 'ffTrack' & cov.types == 'sequence'))){
+        if (!all(sapply(covariates, function(x) !is.null(x$signature)))){
+            stop('sequence tracks must be ffTracks and have a $signature field specified (see fftab in ffTrack)') 
+        }               
+    }
 
+    if (verbose){
+        cat('Overlapping with covered intervals\n')
+    }
+    if (!is.null(covered)){
+        ov = gr.findoverlaps(targets, covered, verbose = verbose, max.chunk = max.chunk, mc.cores = mc.cores)
+    }
+    else{
+        ov = targets[, c()]
+        ov$query.id = ov$subject.id = 1:length(targets)
+    }
 
-        if (any(ix <- (cov.types == 'sequence')))
-            {
-                for (cov in covariates[ix])
-                    {
-                        if (is.character(cov$track))                      
-                            cov$track = tryCatch(readRDS(cov$track), error = function(e) 'not ffTrack')                        
+    if (verbose){
+        cat('Finished overlapping with covered intervals\n')
+    }
+
+    if (length(ov)>0){
+
+        if (!is.null(events)){
+
+            if (is(events, 'GRanges')){
+
+                ev = gr.fix(events[gr.in(events, ov)])                                
                         
-                        if (class(cov$track) != 'ffTrack')
-                            stop('sequence tracks must have ffTrack object as $track field or $track must be a path to an ffTrack object rds file')
+                ## weighing each event by width means that each event will get one
+                ## total count, and if an event is split between two tile windows
+                ## then it will contribute a fraction of event proprotional to the number
+                ## oof bases overlapping
+                counts = coverage(ev, weight = 1/width(ev))
+                oix = which(gr.in(ov, events))
+
+                if(!is.null(maxpatientpergene)){
+
+                    if(!is.numeric(maxpatientpergene)){
+                        stop("maxpatientpergene must be of type numeric")
                     }
-            }
-        
-        if (any(ix <- (cov.classes == 'ffTrack' & cov.types == 'sequence')))
-            {
-                if (!all(sapply(covariates, function(x) !is.null(x$signature))))
-                    stop('sequence tracks must be ffTracks and have a $signature field specified (see fftab in ffTrack)')                    
-            }
 
-        if (verbose)
-            cat('Overlapping with covered intervals\n')
-        if (!is.null(covered))
-            ov = gr.findoverlaps(targets, covered, verbose = verbose, max.chunk = max.chunk, mc.cores = mc.cores)
-        else
-            {
-                ov = targets[, c()]
-                ov$query.id = ov$subject.id = 1:length(targets)
-            }
-        
-       if (verbose)
-           cat('Finished overlapping with covered intervals\n')
-
-
-        if (length(ov)>0)
-            {
-                if (!is.null(events))
-                {
-                    if (is(events, 'GRanges'))
-                    {
-
-                        ev = gr.fix(events[gr.in(events, ov)])                                
-                        
-                        ## weighing each event by width means that each event will get one
-                        ## total count, and if an event is split between two tile windows
-                        ## then it will contribute a fraction of event proprotional to the number
-                        ## oof bases overlapping
-                        counts = coverage(ev, weight = 1/width(ev))
-                        oix = which(gr.in(ov, events))
-
-                        if(!is.null(maxpatientpergene)){
-                            if(!is.numeric(maxpatientpergene)){
-                                stop("maxpatientpergene must be of type numeric")
-                            }
-                            if(!("ID" %in% colnames(values(events))) & is.null(ptidcol)){
-                                events$ID = c(1:length(events))
-                            }
+                    if(!("ID" %in% colnames(values(events))) & is.null(ptidcol)){
+                        events$ID = c(1:length(events))
+                    }
                             
-                            ev2 = gr.findoverlaps(events,ov, max.chunk = max.chunk, mc.cores = mc.cores)
-                            if(is.null(ptidcol)){
-                                ev2$ID = events$ID[ev2$query.id]
-                            }
-                            else{
-                                ev2$ID = mcols(events)[,ptidcol][ev2$query.id]
-                            }
+                    ev2 = gr.findoverlaps(events,ov, max.chunk = max.chunk, mc.cores = mc.cores)
+
+                    if(is.null(ptidcol)){
+                        ev2$ID = events$ID[ev2$query.id]
+                    }
+                    else{
+                        ev2$ID = mcols(events)[,ptidcol][ev2$query.id]
+                    }
                             
-                            ev2$target.id = ov$query.id[ev2$subject.id]
-                            tab = as.data.table(cbind(ev2$ID,ev2$target.id))
-                            counts.unique = tab[, dummy :=1][, .(count = sum(dummy)), keyby =.(V1, V2)][, count := pmin(maxpatientpergene, count)][, .(final_count = sum(count)), keyby = V2]                          
-                            ## tab = table(tab)
-                            ## tab[tab>maxpatientpergene] = maxpatientpergene
-                            ## counts.unique = colSums(tab)
-                        }
-                        
-                    }
-                    else ## assume it is an Rle of event counts along the genome
-                    {
-                        counts = events
-                        oix = 1:length(ov)
-                    }
-                    
-                    if (verbose)
-                        cat('Computing event counts\n')
-                    
-                    ov$count = 0
-                    
-                    if (length(oix)>0 & is.null(maxpatientpergene)){
-                        ov$count[oix] = fftab(counts, ov[oix], chunksize = ff.chunk, na.rm = TRUE, mc.cores = mc.cores, verbose = verbose)$score
-                    }
-                    if (!is.null(out.path))
-                        tryCatch(saveRDS(ov, paste(out.path, '.intermediate.rds', sep = '')), error = function(e) warning(sprintf('Error writing to file %s', out.file)))
-                    
-                    if (verbose)
-                        cat('Finished counting events\n')
+                    ev2$target.id = ov$query.id[ev2$subject.id]
+                    tab = as.data.table(cbind(ev2$ID,ev2$target.id))
+                    counts.unique = tab[, dummy :=1][, .(count = sum(dummy)), keyby =.(V1, V2)][, count := pmin(maxpatientpergene, count)][, .(final_count = sum(count)), keyby = V2]                          
+                    ## tab = table(tab)
+                    ## tab[tab>maxpatientpergene] = maxpatientpergene
+                    ## counts.unique = colSums(tab)
                 }
-                
-                for (nm in names(covariates))
+                        
+            }
+                    
+            else ## assume it is an Rle of event counts along the genome
+            {
+                counts = events
+                oix = 1:length(ov)
+            }
+                    
+            if (verbose){
+                cat('Computing event counts\n')
+            }
+
+                    
+             ov$count = 0
+                    
+            if (length(oix)>0 & is.null(maxpatientpergene)){
+                ov$count[oix] = fftab(counts, ov[oix], chunksize = ff.chunk, na.rm = TRUE, mc.cores = mc.cores, verbose = verbose)$score
+            }
+                    
+            if (!is.null(out.path)){
+                tryCatch(saveRDS(ov, paste(out.path, '.intermediate.rds', sep = '')), error = function(e) warning(sprintf('Error writing to file %s', out.file)))
+            }
+
+            if (verbose){
+                cat('Finished counting events\n')
+            }
+
+
+            for (nm in names(covariates))
                     {
                         cov = covariates[[nm]]
                         if (verbose)
@@ -282,14 +291,17 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
                                             cov$track = import(cov$track)
                                         }
                                 
-                                if (is(cov, 'GRanges'))
+                                if (is(cov, 'GRanges')){
                                     stop('Interval tracks must be GRanges')
+                                }
 
-                                if (is.null(cov$pad))
+                                if (is.null(cov$pad)){
                                     cov$pad = pad
+                                }
                                 
-                                if (is.null(cov$na.rm))
+                                if (is.null(cov$na.rm)){
                                     cov$na.rm = na.rm
+                                }
 
                                 cov$track = reduce(cov$track)
                                 
@@ -298,66 +310,77 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
                                 names(new.col) = nm
                                 values(ov) = cbind(values(ov), new.col)
 
-                                if (!is.null(out.path))
+                                if (!is.null(out.path)){
                                     tryCatch(saveRDS(ov, paste(out.path, '.intermediate.rds', sep = '')), error = function(e) warning(sprintf('Error writing to file %s', out.file)))
+                                }
                             }               
                     }
 
-            }
-        
-        ovdt = gr2dt(ov)
-        
-        
-        cmd = 'list(coverage = sum(width),';
-        if (!is.null(events))
-            cmd = paste(cmd, 'count = sum(count)', sep = '')
-        else
-            cmd = paste(cmd, 'count = NA', sep = '')        
-        
-        cov.nm = setdiff(names(values(ov)), c('coverage', 'count', 'query.id', 'subject.id'))
-
-        if (length(ov)>0)
-            {
-                if (length(cov.nm)>0)
-                    cmd = paste(cmd,  ',', paste(cov.nm, '= mean(', cov.nm, ')', sep = '', collapse = ', '), ')',  sep = '')
-                else
-                    cmd = paste(cmd, ')',  sep = '')
-                
-                ovdta =  ovdt[, eval(parse(text = cmd)), keyby = query.id]
-                values(targets) = as(as.data.frame(ovdta[list(1:length(targets)), ]), 'DataFrame')
-
-
-                if(!is.null(maxpatientpergene)){
-                    targets$count = 0
-                    targets$count[as.numeric(counts.unique$V2)] = counts.unique$final_count
-                }
-                
-            }
-        else
-            targets$coverage = 0                
-        
-        targets$query.id = 1:length(targets)                
-        
-        ix = is.na(targets$coverage)
-        if (any(ix)){
-            targets$coverage[ix] = 0
-            if(!is.null(maxpatientpergene)){
-                targets$count[targets$coverage == 0] = NA
-            }
-        }
-        if (!is.null(out.path))
-            {
-                if (file.exists(paste(out.path, '.intermediate.rds', sep = '')))
-                    system(paste('rm',  paste(out.path, '.intermediate.rds', sep = '')))
-                tryCatch(saveRDS(targets, out.path), error = function(e) warning(sprintf('Error writing to file %s', out.file)))             
-            }
-        
-        return(targets)        
     }
+        
+
+    ovdt = gr2dt(ov)
+        
+        
+    cmd = 'list(coverage = sum(width),';
+
+    if (!is.null(events)){
+        cmd = paste(cmd, 'count = sum(count)', sep = '')
+    }
+    else{
+        cmd = paste(cmd, 'count = NA', sep = '')  
+    }
+    
+        
+    cov.nm = setdiff(names(values(ov)), c('coverage', 'count', 'query.id', 'subject.id'))
+
+    if (length(ov) > 0){
+        if (length(cov.nm)>0){
+            cmd = paste(cmd,  ',', paste(cov.nm, '= mean(', cov.nm, ')', sep = '', collapse = ', '), ')',  sep = '')
+        }
+        else{
+            cmd = paste(cmd, ')',  sep = '')
+        }
+
+        ovdta =  ovdt[, eval(parse(text = cmd)), keyby = query.id]
+        values(targets) = as(as.data.frame(ovdta[list(1:length(targets)), ]), 'DataFrame')
+
+        if(!is.null(maxpatientpergene)){
+            targets$count = 0
+            targets$count[as.numeric(counts.unique$V2)] = counts.unique$final_count
+        }
+                
+    }
+    else{
+        targets$coverage = 0 
+    }          
+        
+    targets$query.id = 1:length(targets)                
+        
+    ix = is.na(targets$coverage)
+    if (any(ix)){
+        targets$coverage[ix] = 0
+        if(!is.null(maxpatientpergene)){
+            targets$count[targets$coverage == 0] = NA
+        }
+    }
+    if (!is.null(out.path)){
+        if (file.exists(paste(out.path, '.intermediate.rds', sep = ''))){
+            system(paste('rm',  paste(out.path, '.intermediate.rds', sep = '')))  ## error catch above
+        }
+        tryCatch(saveRDS(targets, out.path), error = function(e) warning(sprintf('Error writing to file %s', out.file)))             
+    }
+        
+    return(targets)
+
+}
 
 
 
-#' aggregate.targets
+
+#' @name aggregate.targets
+#' @title title
+#' @description 
 #'
 #' Gathers annotated targets across a vector "by" into meta-intervals returned as a GRangesList, and returns the
 #' aggregated statistics for these meta intervals by summing coverage and counts, and performing a weighted average of all other meta data fields
@@ -373,7 +396,11 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
 #' @param targets annotated GRanges of targets with fields $coverage, optional field, $count and additional numeric covariates, or path to .rds file of the same
 #' @param by  character vector with which to split into meta-territories
 #' @param fields by default all meta data fields of targets EXCEPT reserved field names $coverage, $counts, $query.id
-#' @param rolling if specified, positive integer specifying how many (genome coordinate) adjacent to aggregate in a rolling fashion
+#' @param rolling if specified, positive integer specifying how many (genome coordinate) adjacent to aggregate in a rolling fashion; positive integer with which to performa rolling sum / weighted average WITHIN chromosomes of "rolling" ranges" --> return a granges
+#' @param rolling
+#' @param rolling
+#' @param rolling
+#' @param verbose boolean verbose flag (default == FALSE)
 #' @return GRangesList of input targets annotated with new aggregate covariate statistics OR GRanges if rolling is specified
 #' @author Marcin Imielinski
 #' @import zoo
@@ -384,13 +411,13 @@ annotate.targets = function(targets, ## path to bed or rds containing genomic ta
 aggregate.targets = function(targets, ## path to bed or rds containing genomic target regions with optional target name 
     by = NULL,
     fields = NULL,
-    rolling = NULL, ## positive integer with which to performa rolling sum / weighted average WITHIN chromosomes of "rolling" ranges" --> return a granges
+    rolling = NULL, 
     disjoint = TRUE, ## only take disjoint bins of inpu
     na.rm = FALSE, ## only applicable for sample wise aggregation (i.e. if by = NULL)
     FUN = list(), ## only applies (for now) if by = NULL, this is a named list of functions, where each item named "nm" corresponds to an optional function of how to alternatively aggregate field "nm" per samples, for alternative aggregation of coverage and count.  This function is applied at every iteration of loading a new sample and adding to the existing set.   It is normally sum [for coverage and count] and coverage weighted mean [for all other covariates].  Alternative coverage / count aggregation functions should have two arguments (val1, val2) and all other alt covariate aggregation functions should have four arguments (val1, cov1, val2, cov2) where val1 is the accumulating vector and val2 is the new vector of values. 
     verbose = TRUE
     )
-    {
+{
 
   V1 = sn = st = en = keep = count = width = NULL ## NOTE fix
         if (is.null(by) & is.character(targets))
@@ -617,195 +644,193 @@ aggregate.targets = function(targets, ## path to bed or rds containing genomic t
     }
 
 
-#' score.targets
+
+
+
+#' @name score.targets
+#' @title title
+#' @description 
 #'
 #' Scores targets based on covariates using gamma-poisson model with coverage as constant
 #' 
 #' @param targets annotated targets with fields $coverage, optional field, $count and additional numeric covariates
+#' @param covariates
+#' @param model fit existing model --> covariates must be present
+#' @param return.model 
+#' @param nb  negative binomial, if false then use poisson
+#' @param verbose boolean verbose flag (default == TRUE)
+#' @param iter
+#' @param subsample
+#' @param seed
+#' @param p.randomized
+#' @param classReturn
 #' @return GRanges of scored results
 #' @author Marcin Imielinski
 #' @import GenomicRanges
 #' @export
-score.targets = function(targets, covariates = names(values(targets)),    
-    model = NULL, ## fit existing model --> covariates must be present
-    return.model = FALSE,
-    nb = TRUE, ## negative binomial, if false then use poisson
-    verbose = TRUE,
-    iter = 200,
-    subsample = 1e5,
-    seed = 42,
-    p.randomized = TRUE,
-    classReturn = FALSE)
-    {
+score.targets = function(targets, covariates = names(values(targets)), model = NULL, return.model = FALSE, nb = TRUE, 
+    verbose = TRUE, iter = 200, subsample = 1e5, seed = 42, p.randomized = TRUE, classReturn = FALSE)
+{
+    require(MASS)
+    require(data.table)
+    covariates = setdiff(covariates, c('count', 'coverage', 'query.id'))        
         
-        require(MASS)
-        require(data.table)
-        covariates = setdiff(covariates, c('count', 'coverage', 'query.id'))        
-        
-        if (any(nnin <- !(covariates %in% names(values(targets)))))
-            stop(sprintf('%s covariates (%s) missing from input data', sum(nnin), paste(covariates[nnin], collapse = ',')))
+    if (any(nnin <- !(covariates %in% names(values(targets)))))
+        stop(sprintf('%s covariates (%s) missing from input data', sum(nnin), paste(covariates[nnin], collapse = ',')))
             
-        if ( any(nnum <- !(sapply(covariates, function(x) class(values(targets)[, x])) %in% c('factor', 'numeric'))))
-            {
-                warning(sprintf('%s covariates (%s) fit are non-numeric or factor, removing from model', sum(nnum), paste(covariates[nnum], collapse = ',')))
-                covariates = covariates[!nnum]
-            }
-        
-        if (!all(c('count', 'coverage') %in% names(values(targets))))
-            stop('Targets must have count, coverage, and query.id fields populated')
-
-        if (verbose)
-            cat('Setting up problem\n')
-
-        values(targets)$count = round(values(targets)$count)
-
-        if (length(unique(values(targets)$count))<=1)
-            stop('score.targets input malformed --> count does not vary!')
-
-        set.seed(seed) ## to ensure reproducibility
-        
-        if (is.null(model))
-            {
-                tdt = as.data.table(as.data.frame(values(targets)[, c('count', 'coverage', covariates)]))
-                tdt$coverage = log(tdt$coverage)
-
-                if (subsample>nrow(tdt))
-                    subsample = NULL
-
-                tdt = tdt[rowSums(is.na(tdt[, c('count', 'coverage', covariates), with = FALSE]))==0,]
-
-                if (nrow(tdt)==0)
-                    stop('No rows with non NA counts, coverage, and covariates')
-
-                if (!is.null(subsample))
-                    {
-                        if (subsample<1)
-                            subsample = ceiling(pmax(0, subsample)*nrow(tdt))
-
-                        if (verbose)
-                            cat(sprintf('Subsampling ..\n'))
-
-                        tdt = tdt[sample(1:nrow(tdt), subsample), ]
-                    }
-                
-                if (verbose)
-#                    cat(sprintf('Fitting model with %s data points and 10 covariates\n', prettyNum(nrow(tdt), big.mark = ','), length(covariates)))
-                    cat(sprintf('Fitting model with %s data points and %s covariates\n', prettyNum(nrow(tdt), big.mark = ','), length(covariates)))
-                formula = eval(parse(text = paste('count', " ~ ", paste(c('offset(1*coverage)', covariates), collapse = "+")))) ## make the formula with covariateso
-                if (nb)
-                    g = glm.nb(formula, data = as.data.frame(tdt), maxit = iter)
-                else
-                    {
-                        g = glm(formula, data = as.data.frame(tdt), family = poisson)
-                        g$theta = 1
-                    }
-            }
-        else
-            {
-                g = model                
-                #                covariates = setdiff(names(coefficients(g)), '(Intercept)')                
-            }
-                
-        if(!(classReturn)){
-            if (return.model)
-                return(g)            
+    if ( any(nnum <- !(sapply(covariates, function(x) class(values(targets)[, x])) %in% c('factor', 'numeric'))))
+        {
+            warning(sprintf('%s covariates (%s) fit are non-numeric or factor, removing from model', sum(nnum), paste(covariates[nnum], collapse = ',')))
+            covariates = covariates[!nnum]
         }
-        if (is(targets, 'GRanges'))
-            res = as.data.frame(targets)
-        else
-            res = as.data.frame(values(targets))
-
-        if ( any(is.fact <- (sapply(covariates, function(x) class(res[, x])) %in% c('factor'))))
-            {
-                ix = which(is.fact)
-                new.col = lapply(ix, function(i)
-                    {
-                        val = res[, covariates[i]]
-                        if (verbose)
-                            cat('Factorizing column', covariates[i], 'with', length(val),
-                                'across', length(levels(val)), 'levels\n')
-                        tmp.mat = matrix(as.numeric(rep(val, each = length(levels(val))) == levels(val)),
-                            ncol = length(levels(val)), byrow = TRUE)
-                        colnames(tmp.mat) = paste(covariates[i], levels(val), sep = '')
-                        return(tmp.mat)                        
-                    })
-
-                res = cbind(res[, -match(covariates[ix], names(res))], as.data.frame(do.call('cbind', new.col)))
-                covariates = c(covariates[-ix], do.call('c', lapply(new.col, function(x) colnames(x))))
-            }
-
-        if (any(nnin <- !(covariates %in% names(res))))
-            stop(sprintf('%s covariates (%s) missing from input data', sum(nnin), paste(covariates[nnin], collapse = ',')))
         
-        coef = coefficients(g)
-        na.cov = is.na(coef)
+    if (!all(c('count', 'coverage') %in% names(values(targets))))
+        stop('Targets must have count, coverage, and query.id fields populated')
+
+    if (verbose)
+        cat('Setting up problem\n')
+
+    values(targets)$count = round(values(targets)$count)
+
+    if (length(unique(values(targets)$count))<=1)
+        stop('score.targets input malformed --> count does not vary!')
+
+    set.seed(seed) ## to ensure reproducibility
         
-        if (any(na.cov))
-            {
-                warning(sprintf('%s covariates (%s) fit with an NA value, consider removing', sum(na.cov), paste(names(coef[na.cov]), collapse = ',')))
-                covariates = setdiff(covariates, names(coef)[na.cov])
-                coef = coef[-which(na.cov)]
-            }
+    if (is.null(model))
+        {
+            tdt = as.data.table(as.data.frame(values(targets)[, c('count', 'coverage', covariates)]))
+            tdt$coverage = log(tdt$coverage)
+
+            if (subsample>nrow(tdt))
+                subsample = NULL
+
+            tdt = tdt[rowSums(is.na(tdt[, c('count', 'coverage', covariates), with = FALSE]))==0,]
+
+            if (nrow(tdt)==0)
+                stop('No rows with non NA counts, coverage, and covariates')
+
+            if (!is.null(subsample))
+                {
+                    if (subsample<1)
+                        subsample = ceiling(pmax(0, subsample)*nrow(tdt))
+
+                    if (verbose)
+                        cat(sprintf('Subsampling ..\n'))
+
+                    tdt = tdt[sample(1:nrow(tdt), subsample), ]
+                }
+                
+            if (verbose)
+                cat(sprintf('Fitting model with %s data points and %s covariates\n', prettyNum(nrow(tdt), big.mark = ','), length(covariates)))
+            formula = eval(parse(text = paste('count', " ~ ", paste(c('offset(1*coverage)', covariates), collapse = "+")))) ## make the formula with covariateso
+            if (nb)
+                g = glm.nb(formula, data = as.data.frame(tdt), maxit = iter)
+            else
+                {
+                    g = glm(formula, data = as.data.frame(tdt), family = poisson)
+                    g$theta = 1
+                }
+        }
+    else
+        {
+            g = model                            
+        }
+                
+    if(!(classReturn)){
+        if (return.model)
+            return(g)            
+    }
+    if (is(targets, 'GRanges'))
+        res = as.data.frame(targets)
+    else
+        res = as.data.frame(values(targets))
+
+    if ( any(is.fact <- (sapply(covariates, function(x) class(res[, x])) %in% c('factor')))){
+            ix = which(is.fact)
+            new.col = lapply(ix, function(i){
+                val = res[, covariates[i]]
+                if (verbose)
+                    cat('Factorizing column', covariates[i], 'with', length(val), 'across', length(levels(val)), 'levels\n')
+                tmp.mat = matrix(as.numeric(rep(val, each = length(levels(val))) == levels(val)), ncol = length(levels(val)), byrow = TRUE)
+                colnames(tmp.mat) = paste(covariates[i], levels(val), sep = '')
+                return(tmp.mat)                        
+            })
+
+        res = cbind(res[, -match(covariates[ix], names(res))], as.data.frame(do.call('cbind', new.col)))
+        covariates = c(covariates[-ix], do.call('c', lapply(new.col, function(x) colnames(x))))
+    }
+
+    if (any(nnin <- !(covariates %in% names(res))))
+        stop(sprintf('%s covariates (%s) missing from input data', sum(nnin), paste(covariates[nnin], collapse = ',')))
+        
+    coef = coefficients(g)
+    na.cov = is.na(coef)
+        
+    if (any(na.cov)){
+        warning(sprintf('%s covariates (%s) fit with an NA value, consider removing', sum(na.cov), paste(names(coef[na.cov]), collapse = ',')))
+        covariates = setdiff(covariates, names(coef)[na.cov])
+        coef = coef[-which(na.cov)]
+    }
             
-        ## if (verbose)
-        ##     if (nb)
-        ##         cat(sprintf('final model fit: \n  count ~ gamma-poisson(e^(%s), %s) \n',
-        ##                     paste(signif(coef,2), names(coef), sep = '*', collapse = ' + '), signif(g$theta, 2)))
-        ##     else
-        ##         cat(sprintf('final model fit: \n  count ~ poisson(e^(%s)) \n',
-        ##                     paste(signif(coef,2), names(coef), sep = '*', collapse = ' + ')))
 
-        if (verbose)
-            cat('Scoring results\n')
+
+    if (verbose)
+        cat('Scoring results\n')
 
        
-        M = cbind(1, as.matrix(res[, c('coverage', names(coef[-1])), drop = FALSE]))
+    M = cbind(1, as.matrix(res[, c('coverage', names(coef[-1])), drop = FALSE]))
             
-        M[, 'coverage'] = log(M[, 'coverage'])
-        res$count.pred = exp(M %*% c(coef[('(Intercept)')], 1, coef[colnames(M)[-c(1:2)]]))
-        res$count.pred.density = res$count.pred / res$coverage
-        res$count.density = res$count / res$coverage
+    M[, 'coverage'] = log(M[, 'coverage'])
+    res$count.pred = exp(M %*% c(coef[('(Intercept)')], 1, coef[colnames(M)[-c(1:2)]]))
+    res$count.pred.density = res$count.pred / res$coverage
+    res$count.density = res$count / res$coverage
 
-        ## compute "randomized" p values (since dealing with counts data / discrete distributions
-        if (nb)
-            {
-#                p = pnbinom(ifelse(res$count==0, -1e-15, res$count), mu = res$count.pred, size = g$theta, lower.tail = F)
-                pval = pnbinom(res$count-1, mu = res$count.pred, size = g$theta, lower.tail = F)
-                if (p.randomized)
-                    {
-                        pval.right = pnbinom(res$count, mu = res$count.pred, size = g$theta, lower.tail = F)
-                        pval.right = ifelse(is.na(pval.right), 1, pval.right)
-                        pval = ifelse(is.na(pval), 1, pval)
-                        pval = runif(nrow(res), min = pval.right, max = pval)
-                    }
-                res$p = signif(pval, 2)
-            }           
-        else            
-            {
-                pval = ppois(res$count-1, lambda = res$count.pred, lower.tail = F)                
-                if (p.randomized)
-                    {
-                        pval.right = ppois(res$count, lambda = res$count.pred, lower.tail = F)
-                        pval.right = ifelse(is.na(pval.right), 1, pval.right)
-                        pval = ifelse(is.na(pval), 1, pval)
-                        pval = runif(nrow(res), min = pval.right, max = pval)
-                    }                
-                res$p = signif(pval, 2)
-            }
-        
-        res$q = signif(p.adjust(res$p, 'BH'), 2)
-        if (nb)
-            res$p.neg = signif(pnbinom(res$count, mu = res$count.pred, size = g$theta, lower.tail = T), 2)
-        else
-            res$p.neg = signif(ppois(res$count, lambda = res$count.pred, lower.tail = T), 2)
-        res$q.neg = signif(p.adjust(res$p.neg, 'BH'), 2)
-        res$effectsize = log2(res$count / res$count.pred)
-
-        if(!(classReturn)){
-            return(as.data.table(res))
+    ## compute "randomized" p values (since dealing with counts data / discrete distributions
+    if (nb){
+        pval = pnbinom(res$count-1, mu = res$count.pred, size = g$theta, lower.tail = F)
+        if (p.randomized)
+        {
+            pval.right = pnbinom(res$count, mu = res$count.pred, size = g$theta, lower.tail = F)
+            pval.right = ifelse(is.na(pval.right), 1, pval.right)
+            pval = ifelse(is.na(pval), 1, pval)
+            pval = runif(nrow(res), min = pval.right, max = pval)
         }
-        return(list(as.data.table(res),g))
+        res$p = signif(pval, 2)
+    }           
+    else
+    {
+        pval = ppois(res$count-1, lambda = res$count.pred, lower.tail = F)                
+        if (p.randomized)
+        {
+            pval.right = ppois(res$count, lambda = res$count.pred, lower.tail = F)
+            pval.right = ifelse(is.na(pval.right), 1, pval.right)
+            pval = ifelse(is.na(pval), 1, pval)
+            pval = runif(nrow(res), min = pval.right, max = pval)
+        }                
+        res$p = signif(pval, 2)
     }
+        
+    res$q = signif(p.adjust(res$p, 'BH'), 2)
+    if (nb)
+        res$p.neg = signif(pnbinom(res$count, mu = res$count.pred, size = g$theta, lower.tail = T), 2)
+    else
+        res$p.neg = signif(ppois(res$count, lambda = res$count.pred, lower.tail = T), 2)
+    res$q.neg = signif(p.adjust(res$p.neg, 'BH'), 2)
+    res$effectsize = log2(res$count / res$count.pred)
+
+    if(!(classReturn)){
+        return(as.data.table(res))
+    }
+
+    return(list(as.data.table(res),g))
+
+}
+
+
+
+
+
 
 #' Cov
 #'
@@ -975,7 +1000,11 @@ Cov = R6::R6Class("Cov",
 )
 
 
-#' c.Cov
+
+
+#' @name c.Cov
+#' @title title
+#' @description 
 #'
 #' Override the c operator for covariates so that when you type: c(Cov1,Cov2,Cov3) it returns a Cov_Arr object that support vector like operation.
 #' 
@@ -983,11 +1012,15 @@ Cov = R6::R6Class("Cov",
 #' @return Cov_Arr object that can be passed directly into the FishHook object constructor
 #' @author Zoran Z. Gajic
 #' @export
-'c.Cov' <- function(...){
+'c.Cov' = function(...){
+
     Covs = list(...)
     isc = sapply(Covs, function(x) (class(x)[1] == "Cov" ||  class(x)[1] == "Cov_Arr"))
-    if(any(!isc))
+
+    if(any(!isc)){
         stop("All inputs must be of class Cov or Cov_Arr.")
+    }
+
     Cov_Arrs = lapply(Covs, function(x) {
         if(class(x)[1] == "Cov"){
             return( x$convert2Arr())
@@ -1007,7 +1040,7 @@ Cov = R6::R6Class("Cov",
     grep  = unlist(sapply(Cov_Arrs, function(x) x$grep))
     
     
-    ##Merging Covariates
+    ## Merging Covariates
     covs = lapply(Cov_Arrs, function(x) x$cvs)
     Covs = unlist(covs, recursive = F)
     
@@ -1021,16 +1054,18 @@ Cov = R6::R6Class("Cov",
     ret$pad = pad
     ret$na.rm = na.rm
     ret$grep = grep
-    return(ret)
 
-    
-    
+    return(ret)
 }
 
 
-#' Cov_Arr
+
+
 #'
-#' Stores Covariates for passing to FishHook object constructor.Standard initialization involves calling c(Cov1,Cov2,Cov3). Cov_Arr serves to mask the underlieing list implemenations of Covariates in the FishHook Object. This class attempts to mimic a vector in terms of subsetting and in the future will add more vector like operations.
+#' Stores Covariates for passing to FishHook object constructor. Standard initialization involves calling c(Cov1,Cov2,Cov3). 
+#' Cov_Arr serves to mask the underlieing list implemenations of Covariates in the FishHook Object. 
+#' This class attempts to mimic a vector in terms of subsetting and in the future will add more vector like operations.
+#'
 #' @param ... several Cov objects for packaging.
 #' @return Cov_Arr object that can be passed directly to the FishHook object constructor
 #' @author Zoran Z. Gajic
@@ -1388,7 +1423,12 @@ Cov_Arr = R6::R6Class("Cov_Arr",
 )
 
 
-#' c.Cov_Arr
+
+
+
+#' @name c.Cov_Arr
+#' @title title
+#' @description
 #'
 #' Override the c operator for covariates so that when you type: c(Cov1,Cov2,Cov3) it returns a Cov_Arr object that support vector like operation.
 #' 
@@ -1397,10 +1437,14 @@ Cov_Arr = R6::R6Class("Cov_Arr",
 #' @author Zoran Z. Gajic
 #' @export
 'c.Cov_Arr' = function(...){
+
     Covs = list(...)
     isc = sapply(Covs, function(x) (class(x)[1] == "Cov" ||  class(x)[1] == "Cov_Arr"))
-    if(any(!isc))
+
+    if(any(!isc)){
         stop("All inputs must be of class Cov or Cov_Arr.")
+    }
+
     Cov_Arrs = lapply(Covs, function(x) {
         if(class(x)[1] == "Cov"){
             return( x$convert2Arr())
@@ -1420,7 +1464,7 @@ Cov_Arr = R6::R6Class("Cov_Arr",
     grep  = unlist(sapply(Cov_Arrs, function(x) x$grep))
     
     
-    ##Merging Covariates
+    ## Merging Covariates
     covs = lapply(Cov_Arrs, function(x) x$cvs)
     Covs = unlist(covs, recursive = F)
     
@@ -1434,21 +1478,25 @@ Cov_Arr = R6::R6Class("Cov_Arr",
     ret$pad = pad
     ret$na.rm = na.rm
     ret$grep = grep
+
     return(ret)
 }
 
 
 
-#' [.Cov_Arr
+
+#' @name [.Cov_Arr
+#' @title title
+#' @description
 #'
 #' Overrides the subset operator x[] for use with Cov_Arr to allow for vector like subsetting
 #'
-#' @param obj This is the Cov_Arr to be subset
-#' @param range This is the range of Covariates to return, like subsetting a vector. e.g. c(1,2,3,4,5)[3:4] == c(3,4)
+#' @param obj Cov_Arr This is the Cov_Arr to be subset
+#' @param range vector This is the range of Covariates to return, like subsetting a vector. e.g. c(1,2,3,4,5)[3:4] == c(3,4)
 #' @return A new Cov_Arr object that contains only the Covs within the given range
 #' @author Zoran Z. Gajic
 #' @export
-'[.Cov_Arr' <- function(obj,range){
+'[.Cov_Arr' <- function(obj, range){
     ret = obj$clone()
     ret$subset(range)
     return (ret)
@@ -2302,14 +2350,17 @@ FishHook <- R6::R6Class("FishHook",
 
 #' [.FishHook
 #'
-#' Overrides the subset operator x[] for use with Cov_Arr to allow for vector like subsetting
+#' Overrides the subset operator x[] for use with FishHook to allow for vector like subsetting
 #'
-#' @param obj This is the FishHookObject to be subset
-#' @param range This is the range of Covariates to return, like subsetting a vector. e.g. c(1,2,3,4,5)[3:4] == c(3,4)
-#' @return A new Cov_Arr object that contains only the Covs within the given range
+#' @param obj FishHook object This is the FishHookObject to be subset
+#' @param i vector subset targets
+#' @param j vector subset events 
+#' @param k vector subset covariats
+#' @param l vector susbet eligible
+#' @return A new FishHook object that contains only the Covs within the given range
 #' @author Zoran Z. Gajic
 #' @export
-'[.FishHook' <- function(obj,i,j,k,l){
+'[.FishHook' <- function(obj, i, j, k, l){
     ret = obj$clone()
 
     ##i -> targets
