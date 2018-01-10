@@ -403,13 +403,13 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
 #' intervals in teh same order and aggregation will be computed coverage-weighted mean of covariates, a sum of coverage and counts, and (if present) a Fisher combined
 #' of $p values.  Covariates are inferred from the first file in the list.  
 #' 
-#' @param targets annotated GRanges of targets with fields $coverage, optional field, $count and additional numeric covariates, or path to .rds file of the same
+#' @param targets annotated GRanges of targets with fields $coverage, optional field, $count and additional numeric covariates, or path to .rds file of the same; path to bed or rds containing genomic target regions with optional target name 
 #' @param by  character vector with which to split into meta-territories
 #' @param fields by default all meta data fields of targets EXCEPT reserved field names $coverage, $counts, $query.id
 #' @param rolling if specified, positive integer specifying how many (genome coordinate) adjacent to aggregate in a rolling fashion; positive integer with which to performa rolling sum / weighted average WITHIN chromosomes of "rolling" ranges" --> return a granges
-#' @param rolling
-#' @param rolling
-#' @param rolling
+#' @param disjoint  only take disjoint bins of input
+#' @param na.rm only applicable for sample wise aggregation (i.e. if by = NULL)
+#' @param FUN only applies (for now) if by = NULL, this is a named list of functions, where each item named "nm" corresponds to an optional function of how to alternatively aggregate field "nm" per samples, for alternative aggregation of coverage and count.  This function is applied at every iteration of loading a new sample and adding to the existing set.   It is normally sum [for coverage and count] and coverage weighted mean [for all other covariates].  Alternative coverage / count aggregation functions should have two arguments (val1, val2) and all other alt covariate aggregation functions should have four arguments (val1, cov1, val2, cov2) where val1 is the accumulating vector and val2 is the new vector of values. 
 #' @param verbose boolean verbose flag (default == FALSE)
 #' @return GRangesList of input targets annotated with new aggregate covariate statistics OR GRanges if rolling is specified
 #' @author Marcin Imielinski
@@ -418,141 +418,147 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
 #' @importFrom S4Vectors values values<-
 #' @importFrom GenomeInfoDb seqnames
 #' @export
-aggregate.targets = function(targets, ## path to bed or rds containing genomic target regions with optional target name 
-    by = NULL,
-    fields = NULL,
-    rolling = NULL, 
-    disjoint = TRUE, ## only take disjoint bins of inpu
-    na.rm = FALSE, ## only applicable for sample wise aggregation (i.e. if by = NULL)
-    FUN = list(), ## only applies (for now) if by = NULL, this is a named list of functions, where each item named "nm" corresponds to an optional function of how to alternatively aggregate field "nm" per samples, for alternative aggregation of coverage and count.  This function is applied at every iteration of loading a new sample and adding to the existing set.   It is normally sum [for coverage and count] and coverage weighted mean [for all other covariates].  Alternative coverage / count aggregation functions should have two arguments (val1, val2) and all other alt covariate aggregation functions should have four arguments (val1, cov1, val2, cov2) where val1 is the accumulating vector and val2 is the new vector of values. 
-    verbose = TRUE
-    )
+aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, disjoint = TRUE,  na.rm = FALSE, 
+    FUN = list(), verbose = TRUE)
 {
+    V1 = sn = st = en = keep = count = width = NULL ## NOTE fix
+    if (is.null(by) & is.character(targets)){
+        cat('Applying sample wise merging\n')
+    }        
+    else if (is.null(by) & is.null(rolling)){
+        stop('Error: by must be specified and same length as targets or rolling must be non NULL')
+    }
 
-  V1 = sn = st = en = keep = count = width = NULL ## NOTE fix
-        if (is.null(by) & is.character(targets))
-            {
-                cat('Applying sample wise merging\n')
-            }        
-        else if (is.null(by) & is.null(rolling))
-            stop('by must be specified and same length as targets or rolling must be non NULL')
+    if (is.null(by) & is.character(targets)){
 
-        if (is.null(by) & is.character(targets))
-            {
-                if (!all(ix <- (file.exists(targets)) & grepl('\\.rds$', targets)))
-                    {
-                        warning(sprintf('%s of the  %s input files for sample wise merging either do not exist or are not .rds files.  Sample wise merging (i.e. when by is null) requires .rds files of equal dimension GRanges (same intervals, same meta data column names)', sum(!ix), length(ix)))
-                        if (sum(ix)==0)
-                            stop('No files to process')
-                        targets = targets[ix]                                                        
-                    }
+        if (!all(ix <- (file.exists(targets)) & grepl('\\.rds$', targets))){
+
+            warning(sprintf('%s of the  %s input files for sample wise merging either do not exist or are not .rds files.  Sample wise merging (i.e. when by is null) requires .rds files of equal dimension GRanges (same intervals, same meta data column names)', sum(!ix), length(ix)))
+            if (sum(ix)==0){
+                stop('No files to process')
+            }
+            targets = targets[ix]                                                        
+        }
                 
-                out = readRDS(targets[1])
-                gr = out
-                if (is.null(out$coverage))
-                    stop('Coverage missing for input targets')
+        out = readRDS(targets[1])
+        gr = out
+        if (is.null(out$coverage)){
+            stop('Coverage missing for input targets')
+        }
+    
 
-                core.fields = c('coverage', 'count', 'p', 'query.id')
+        core.fields = c('coverage', 'count', 'p', 'query.id')
                 
-                cfields = setdiff(names(values(out)), core.fields)
+        cfields = setdiff(names(values(out)), core.fields)
 
-                if (!is.null(fields))
-                    cfields = intersect(fields, cfields)
+        if (!is.null(fields)){
+            cfields = intersect(fields, cfields)
+        }
+        
 
-                values(out) = values(out)[, intersect(c(core.fields, cfields), names(values(out)))]
+        values(out) = values(out)[, intersect(c(core.fields, cfields), names(values(out)))]
 
-                if (!is.null(out$p))
-                    {                        
-                        psum = 0
-                        psum.df = rep(0, length(out))
-                    }
+        if (!is.null(out$p)){
+            psum = 0
+            psum.df = rep(0, length(out))
+        }
 
-                ### initialize everything to 0
-                for (cf in cfields)
-                    values(out)[, cf] = 0
+        ### initialize everything to 0
+        for (cf in cfields){
+            values(out)[, cf] = 0
+        }
 
-                if (!is.null(out$count))
-                    out$count = 0
+        if (!is.null(out$count)){
+            out$count = 0
+        }
 
-                out$coverage = 0
-                out$numcases = length(targets)
+        out$coverage = 0
+        out$numcases = length(targets)
 
-                ## for (nm in cfields) ## de normalize coverage
-                ##     values(out)[, nm] = as.numeric(values(out)[, nm])*out$coverage
+        if (length(targets)>1)
+            for (i in 1:length(targets)){
 
-                if (length(targets)>1)
-                    for (i in 1:length(targets))
-                        {
-                            if (verbose)
-                                cat('Processing target file', targets[i], '\n')
+                if (verbose){
+                    cat('Processing target file', targets[i], '\n')
+                }
 
-                            if (i > 1)
-                                gr = readRDS(targets[i])
+                if (i > 1){
+                    gr = readRDS(targets[i])
+                }
                                                             
-                            if (!is.null(out$count))
-                                if (!is.null(FUN[['count']]))
-                                    out$count = do.call(FUN[['count']], list(out$count, gr$count))
-                                else
-                                    out$count = as.numeric(out$count) + gr$count
-                            
-                            for (cf in cfields)
-                                {
-                                    if (cf %in% names(values(gr)))                                        
-                                        val = as.numeric(values(gr)[, cf])
-                                    else
-                                        {
-                                            warning(paste(targets[i], 'missing column', cf))
-                                            val = NA
-                                        }
-                                                                        
-                                    if (na.rm)
-                                        if (!is.null(FUN[[cf]]))
-                                            values(out)[, cf] = ifelse(!is.na(val),
-                                                           do.call(FUN[[cf]], list(values(out)[, cf], out$coverage, + val, gr$coverage)),
-                                                           values(out)[, cf])
-                                        else                                            
-                                            values(out)[, cf] = ifelse(!is.na(val),
-                                                           (values(out)[, cf]*out$coverage + val*gr$coverage)/(out$coverage + gr$coverage),
-                                                           values(out)[, cf])
-                                    else
-                                        if (!is.null(FUN[[cf]]))
-                                            values(out)[, cf] = do.call(FUN[[cf]], list(values(out)[, cf], out$coverage, val, gr$coverage))
-                                        else
-                                            values(out)[, cf] = (values(out)[, cf]*out$coverage + val*gr$coverage)/(out$coverage + gr$coverage)
+                if (!is.null(out$count)){
+                    if (!is.null(FUN[['count']])){
+                        out$count = do.call(FUN[['count']], list(out$count, gr$count))
+                    }
+                    else{
+                        out$count = as.numeric(out$count) + gr$count
+                    }
+                }
 
-                                }
                             
-                            if (!is.null(out$p))
-                                {
-                                    if (!is.null(gr$p))
-                                        {
-                                            has.val = is.na(gr$p)
-                                            psum = ifelse(has.val, psum - 2*log(gr$p), psum)
-                                            psum.df = ifelse(has.val, psum.df + 1, psum.df)
-                                        }                                            
-                                     else
-                                        warning(paste(targets[i], 'missing p value column, ignoring for fisher combined computation'))                                                                            
-                                }
+                for (cf in cfields){
 
-                            if (is.null(FUN[['coverage']]))
-                                out$coverage = as.numeric(out$coverage) + gr$coverage
-                            else
-                                out$coverage = do.call(FUN[['coverage']], list(as.numeric(out$coverage), gr$coverage))                               
+                    if (cf %in% names(values(gr))){
+                        val = as.numeric(values(gr)[, cf])
+                    }
+                    else{
+                        warning(paste(targets[i], 'missing column', cf))
+                        val = NA
+                    }
+
+                    if (na.rm){
+                        if (!is.null(FUN[[cf]])){
+                            values(out)[, cf] = ifelse(!is.na(val), do.call(FUN[[cf]], list(values(out)[, cf], out$coverage, + val, gr$coverage)), values(out)[, cf])
                         }
+                        else{
+                            values(out)[, cf] = ifelse(!is.na(val), (values(out)[, cf]*out$coverage + val*gr$coverage)/(out$coverage + gr$coverage), values(out)[, cf])
+                        }
+                    }
+                    else{
+                        if (!is.null(FUN[[cf]])){
+                            values(out)[, cf] = do.call(FUN[[cf]], list(values(out)[, cf], out$coverage, val, gr$coverage))
+                        }
+                        else{
+                            values(out)[, cf] = (values(out)[, cf]*out$coverage + val*gr$coverage)/(out$coverage + gr$coverage)
+                        }
+                    }
+                }
 
-                if (!is.null(out$p))
+                if (!is.null(out$p)){
+
+                    if (!is.null(gr$p)){
+                        has.val = is.na(gr$p)
+                        psum = ifelse(has.val, psum - 2*log(gr$p), psum)
+                        psum.df = ifelse(has.val, psum.df + 1, psum.df)
+                    }                                            
+                    else{
+                        warning(paste(targets[i], 'missing p value column, ignoring for fisher combined computation'))  
+                    }
+                }
+
+                if (is.null(FUN[['coverage']])){
+                    out$coverage = as.numeric(out$coverage) + gr$coverage
+                }
+                else{
+                    out$coverage = do.call(FUN[['coverage']], list(as.numeric(out$coverage), gr$coverage))  
+                }
+
+
+                if (!is.null(out$p)){
                     out$p = pchisq(psum, psum.df, lower.tail = FALSE)                
+                }
                 return(out)
             }
+        }
 
-        if (is.null(fields))
+        if (is.null(fields)){
             fields = names(values(targets))
+        }
         
-        if (any(nnum <- !(sapply(setdiff(fields, 'query.id'), function(x) class(values(targets)[, x])) %in% 'numeric')))
-            {
-                warning(sprintf('%s meta data fields (%s) fit were found to be non-numeric and not aggregated', sum(nnum), paste(fields[nnum], collapse = ',')))
-                fields = fields[!nnum]
-            }
+        if (any(nnum <- !(sapply(setdiff(fields, 'query.id'), function(x) class(values(targets)[, x])) %in% 'numeric'))){
+            warning(sprintf('%s meta data fields (%s) fit were found to be non-numeric and not aggregated', sum(nnum), paste(fields[nnum], collapse = ',')))
+            fields = fields[!nnum]
+        }
         
         cfields = intersect(names(values(targets)), c('coverage', 'count'))
         
@@ -685,43 +691,45 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
     require(data.table)
     covariates = setdiff(covariates, c('count', 'coverage', 'query.id'))        
         
-    if (any(nnin <- !(covariates %in% names(values(targets)))))
-        stop(sprintf('%s covariates (%s) missing from input data', sum(nnin), paste(covariates[nnin], collapse = ',')))
+    if (any(nnin <- !(covariates %in% names(values(targets))))){
+        stop(sprintf('Error: %s covariates (%s) missing from input data', sum(nnin), paste(covariates[nnin], collapse = ',')))
+    }
             
-    if ( any(nnum <- !(sapply(covariates, function(x) class(values(targets)[, x])) %in% c('factor', 'numeric'))))
-        {
-            warning(sprintf('%s covariates (%s) fit are non-numeric or factor, removing from model', sum(nnum), paste(covariates[nnum], collapse = ',')))
-            covariates = covariates[!nnum]
-        }
+    if ( any(nnum <- !(sapply(covariates, function(x) class(values(targets)[, x])) %in% c('factor', 'numeric')))){
+        warning(sprintf('%s covariates (%s) fit are non-numeric or factor, removing from model', sum(nnum), paste(covariates[nnum], collapse = ',')))
+        covariates = covariates[!nnum]
+    }
         
     if (!all(c('count', 'coverage') %in% names(values(targets))))
-        stop('Targets must have count, coverage, and query.id fields populated')
+        stop('Error: Targets must have count, coverage, and query.id fields populated')
 
     if (verbose)
         cat('Setting up problem\n')
 
     values(targets)$count = round(values(targets)$count)
 
-    if (length(unique(values(targets)$count))<=1)
-        stop('score.targets input malformed --> count does not vary!')
+    if (length(unique(values(targets)$count))<=1){
+        stop('Error: "score.targets" input malformed --> count does not vary!')
+    }
 
     set.seed(seed) ## to ensure reproducibility
         
-    if (is.null(model))
-        {
-            tdt = as.data.table(as.data.frame(values(targets)[, c('count', 'coverage', covariates)]))
-            tdt$coverage = log(tdt$coverage)
+    if (is.null(model)){
 
-            if (subsample>nrow(tdt))
-                subsample = NULL
+        tdt = as.data.table(as.data.frame(values(targets)[, c('count', 'coverage', covariates)]))
+        tdt$coverage = log(tdt$coverage)
 
-            tdt = tdt[rowSums(is.na(tdt[, c('count', 'coverage', covariates), with = FALSE]))==0,]
+        if (subsample>nrow(tdt)){
+            subsample = NULL
+        }
 
-            if (nrow(tdt)==0)
-                stop('No rows with non NA counts, coverage, and covariates')
+        tdt = tdt[rowSums(is.na(tdt[, c('count', 'coverage', covariates), with = FALSE]))==0,]
 
-            if (!is.null(subsample))
-                {
+        if (nrow(tdt)==0){
+            stop('Error: No rows with non NA counts, coverage, and covariates')
+        }
+
+        if (!is.null(subsample)){
                     if (subsample<1)
                         subsample = ceiling(pmax(0, subsample)*nrow(tdt))
 
@@ -729,32 +737,38 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
                         cat(sprintf('Subsampling ..\n'))
 
                     tdt = tdt[sample(1:nrow(tdt), subsample), ]
-                }
+        }
                 
-            if (verbose)
-                cat(sprintf('Fitting model with %s data points and %s covariates\n', prettyNum(nrow(tdt), big.mark = ','), length(covariates)))
-            formula = eval(parse(text = paste('count', " ~ ", paste(c('offset(1*coverage)', covariates), collapse = "+")))) ## make the formula with covariateso
-            if (nb)
-                g = glm.nb(formula, data = as.data.frame(tdt), maxit = iter)
-            else
-                {
-                    g = glm(formula, data = as.data.frame(tdt), family = poisson)
-                    g$theta = 1
-                }
+        if (verbose){
+            cat(sprintf('Fitting model with %s data points and %s covariates\n', prettyNum(nrow(tdt), big.mark = ','), length(covariates)))
         }
-    else
-        {
+
+        formula = eval(parse(text = paste('count', " ~ ", paste(c('offset(1*coverage)', covariates), collapse = "+")))) ## make the formula with covariates
+
+        if (nb){
+            g = glm.nb(formula, data = as.data.frame(tdt), maxit = iter)
+        }
+        else{
+            g = glm(formula, data = as.data.frame(tdt), family = poisson)
+            g$theta = 1
+        }
+    }
+    else{
             g = model                            
-        }
+    }
                 
     if(!(classReturn)){
-        if (return.model)
-            return(g)            
+        if (return.model){
+            return(g)     
+        }
     }
-    if (is(targets, 'GRanges'))
+
+    if (is(targets, 'GRanges')){
         res = as.data.frame(targets)
-    else
+    }
+    else{
         res = as.data.frame(values(targets))
+    }
 
     if ( any(is.fact <- (sapply(covariates, function(x) class(res[, x])) %in% c('factor')))){
             ix = which(is.fact)
@@ -771,8 +785,9 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
         covariates = c(covariates[-ix], do.call('c', lapply(new.col, function(x) colnames(x))))
     }
 
-    if (any(nnin <- !(covariates %in% names(res))))
+    if (any(nnin <- !(covariates %in% names(res)))){
         stop(sprintf('%s covariates (%s) missing from input data', sum(nnin), paste(covariates[nnin], collapse = ',')))
+    }
         
     coef = coefficients(g)
     na.cov = is.na(coef)
@@ -785,8 +800,9 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
             
 
 
-    if (verbose)
+    if (verbose){
         cat('Scoring results\n')
+    }
 
        
     M = cbind(1, as.matrix(res[, c('coverage', names(coef[-1])), drop = FALSE]))
@@ -799,8 +815,7 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
     ## compute "randomized" p values (since dealing with counts data / discrete distributions
     if (nb){
         pval = pnbinom(res$count-1, mu = res$count.pred, size = g$theta, lower.tail = F)
-        if (p.randomized)
-        {
+        if (p.randomized){
             pval.right = pnbinom(res$count, mu = res$count.pred, size = g$theta, lower.tail = F)
             pval.right = ifelse(is.na(pval.right), 1, pval.right)
             pval = ifelse(is.na(pval), 1, pval)
@@ -808,11 +823,9 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
         }
         res$p = signif(pval, 2)
     }           
-    else
-    {
+    else{
         pval = ppois(res$count-1, lambda = res$count.pred, lower.tail = F)                
-        if (p.randomized)
-        {
+        if (p.randomized){
             pval.right = ppois(res$count, lambda = res$count.pred, lower.tail = F)
             pval.right = ifelse(is.na(pval.right), 1, pval.right)
             pval = ifelse(is.na(pval), 1, pval)
@@ -822,10 +835,12 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
     }
         
     res$q = signif(p.adjust(res$p, 'BH'), 2)
-    if (nb)
+    if (nb){
         res$p.neg = signif(pnbinom(res$count, mu = res$count.pred, size = g$theta, lower.tail = T), 2)
-    else
+    }
+    else{
         res$p.neg = signif(ppois(res$count, lambda = res$count.pred, lower.tail = T), 2)
+    }
     res$q.neg = signif(p.adjust(res$p.neg, 'BH'), 2)
     res$effectsize = log2(res$count / res$count.pred)
 
@@ -834,7 +849,7 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
     }
 
     return(list(as.data.table(res),g))
-
+    
 }
 
 

@@ -49,13 +49,19 @@ Interval covariates must be Granges (or paths to GRanges rds) or paths to bed fi
 
 \item{weightEvetns}{If true, will weight events by thier overlap with targets. e.g. if 10% of an event overlaps with a target}
 
-\item{targets}{annotated GRanges of targets with fields $coverage, optional field, $count and additional numeric covariates, or path to .rds file of the same}
+\item{targets}{annotated GRanges of targets with fields $coverage, optional field, $count and additional numeric covariates, or path to .rds file of the same; path to bed or rds containing genomic target regions with optional target name}
 
 \item{by}{character vector with which to split into meta-territories}
 
 \item{fields}{by default all meta data fields of targets EXCEPT reserved field names $coverage, $counts, $query.id}
 
 \item{rolling}{if specified, positive integer specifying how many (genome coordinate) adjacent to aggregate in a rolling fashion; positive integer with which to performa rolling sum / weighted average WITHIN chromosomes of "rolling" ranges" --> return a granges}
+
+\item{disjoint}{only take disjoint bins of input}
+
+\item{na.rm}{only applicable for sample wise aggregation (i.e. if by = NULL)}
+
+\item{FUN}{only applies (for now) if by = NULL, this is a named list of functions, where each item named "nm" corresponds to an optional function of how to alternatively aggregate field "nm" per samples, for alternative aggregation of coverage and count.  This function is applied at every iteration of loading a new sample and adding to the existing set.   It is normally sum [for coverage and count] and coverage weighted mean [for all other covariates].  Alternative coverage / count aggregation functions should have two arguments (val1, val2) and all other alt covariate aggregation functions should have four arguments (val1, cov1, val2, cov2) where val1 is the accumulating vector and val2 is the new vector of values.}
 
 \item{verbose}{boolean verbose flag (default == FALSE)}
 
