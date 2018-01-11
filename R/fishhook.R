@@ -251,82 +251,86 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
                     cat('Finished fftab for track', nm, '\n')
                 }
 
-                                if (!is.null(out.path))
-                                    tryCatch(saveRDS(ov, paste(out.path, '.intermediate.rds', sep = '')), error = function(e) warning(sprintf('Error writing to file %s', out.file)))
-                            }
-                        else if (cov$type == 'numeric')
-                            {
-                                if (is.character(cov$track))
-                                    if (grepl('.rds$', cov$track))
-                                        cov$track = readRDS(cov$track)
-                                    else ## assume it is a UCSC format
-                                        {
-                                            require(rtracklayer)
-                                            cov$track = import(cov$track)
-                                        }
+                if (!is.null(out.path)){
+                     tryCatch(saveRDS(ov, paste(out.path, '.intermediate.rds', sep = '')), error = function(e) warning(sprintf('Error writing to file %s', out.file)))
+                }
+            }
+            else if (cov$type == 'numeric'){
+                if (is.character(cov$track)){
+                    if (grepl('.rds$', cov$track)){
+                        cov$track = readRDS(cov$track)
+                    }
+                    ## assume it is a UCSC format
+                    else{
+                        require(rtracklayer)
+                        cov$track = import(cov$track)
+                    }
+                }
 
-                                if (is.na(cov$pad))
-                                    cov$pad = pad
+                if (is.na(cov$pad)){
+                    cov$pad = pad
+                }
+                if (is(cov$track, 'ffTrack') | is(cov$track, 'RleList')){
+                    val = fftab(cov$track, ov + cov$pad, signature = cov$signature, FUN = sum, verbose = verbose, chunksize = ff.chunk, grep = cov$grep, mc.cores = mc.cores)
+                    values(ov) = values(val)
+                }
+                ## then must be GRanges
+                else{
+                    if (is.na(cov$field)){
 
-                                if (is(cov$track, 'ffTrack') | is(cov$track, 'RleList'))
-                                    {
-                                        val = fftab(cov$track, ov + cov$pad, signature = cov$signature, FUN = sum, verbose = verbose, chunksize = ff.chunk, grep = cov$grep, mc.cores = mc.cores)
-                                        values(ov) = values(val)
-                                    }
-                                else ## then must be GRanges
-                                    {
-                                        if (is.na(cov$field))
-                                            cov$field = 'score'
+                    }
+                    if (is.na(cov$na.rm)){
 
-                                        if (is.na(cov$na.rm))
-                                            cov$na.rm = na.rm
-                                        new.col = data.frame(val = values(gr.val(ov + cov$pad, cov$track, cov$field, mc.cores = mc.cores, verbose = verbose,  max.slice = max.slice, max.chunk = max.chunk, mean = TRUE, na.rm = cov$na.rm))[, cov$field])
-                                        names(new.col) = nm
-                                        values(ov) = cbind(values(ov), new.col)                                
-                                    }
-                                
-                                if (!is.null(out.path))
-                                    tryCatch(saveRDS(ov, paste(out.path, '.intermediate.rds', sep = '')), error = function(e) warning(sprintf('Error writing to file %s', out.file)))
-                            }
-                        else if (cov$type == 'interval')
-                            {
-                                if (is.character(cov$track))
-                                    if (grepl('.rds$', cov$track))
-                                        cov$track = readRDS(cov$track)
-                                    else ## assume it is a UCSC format
-                                        {
-                                            require(rtracklayer)
-                                            cov$track = import(cov$track)
-                                        }
-                                
-                                if (is(cov, 'GRanges')){
-                                    stop('Interval tracks must be GRanges')
-                                }
+                    }
+                    new.col = data.frame(val = values(gr.val(ov + cov$pad, cov$track, cov$field, mc.cores = mc.cores, verbose = verbose,  max.slice = max.slice, max.chunk = max.chunk, mean = TRUE, na.rm = cov$na.rm))[, cov$field])
+                    names(new.col) = nm
+                    values(ov) = cbind(values(ov), new.col)
+                }
 
-                                if (is.null(cov$pad)){
-                                    cov$pad = pad
-                                }
-                                
-                                if (is.null(cov$na.rm)){
-                                    cov$na.rm = na.rm
-                                }
+                if (!is.null(out.path)){
+                    tryCatch(saveRDS(ov, paste(out.path, '.intermediate.rds', sep = '')), error = function(e) warning(sprintf('Error writing to file %s', out.file)))
+                }    
+            }
+            else if (cov$type == 'interval'){
 
-                                cov$track = reduce(cov$track)
-                                
-                                new.col = data.frame(val = gr.val(ov + cov$pad, cov$track[, c()], mean = FALSE, weighted = TRUE,  mc.cores = mc.cores, max.slice = max.slice, max.chunk = max.chunk, na.rm = TRUE)$value/(width(ov)+2*cov$pad))
-                                new.col$val = ifelse(is.na(new.col$val), 0, new.col$val)
-                                names(new.col) = nm
-                                values(ov) = cbind(values(ov), new.col)
+                if (is.character(cov$track)){
 
-                                if (!is.null(out.path)){
-                                    tryCatch(saveRDS(ov, paste(out.path, '.intermediate.rds', sep = '')), error = function(e) warning(sprintf('Error writing to file %s', out.file)))
-                                }
-                            }               
+                    if (grepl('.rds$', cov$track)){
+                        cov$track = readRDS(cov$track)
+                    }
+                    ## assume it is a UCSC format
+                    else{
+                        require(rtracklayer)
+                        cov$track = import(cov$track)
                     }
 
-    }
-        
+                }
 
+                if (is(cov, 'GRanges')){
+                    stop('Error: Interval tracks must be GRanges')
+                }
+
+                if (is.null(cov$pad)){
+                    cov$pad = pad
+                }
+
+                if (is.null(cov$na.rm)){
+                    cov$na.rm = na.rm
+                }
+
+                cov$track = reduce(cov$track)
+
+                new.col = data.frame(val = gr.val(ov + cov$pad, cov$track[, c()], mean = FALSE, weighted = TRUE,  mc.cores = mc.cores, max.slice = max.slice, max.chunk = max.chunk, na.rm = TRUE)$value/(width(ov)+2*cov$pad))
+                new.col$val = ifelse(is.na(new.col$val), 0, new.col$val)
+                names(new.col) = nm
+                values(ov) = cbind(values(ov), new.col)
+
+                if (!is.null(out.path)){
+                    tryCatch(saveRDS(ov, paste(out.path, '.intermediate.rds', sep = '')), error = function(e) warning(sprintf('Error writing to file %s', out.file)))
+                }
+            }
+        }
+    }
     ovdt = gr2dt(ov)
         
         
@@ -2114,7 +2118,7 @@ FishHook <- R6::R6Class("FishHook",
                        model = function(value) {
                            if(!missing(value)){
 
-                               warning("You are editing the regression model generated by fish.hook. Unless you know what you're doing I would reccomend reverting to a safe state using fish$clear()")                               
+                               warning("Warning: You are editing the regression model generated by fish.hook. Unless you know what you're doing I would reccomend reverting to a safe state using fish$clear()")                               
                                                               
                                private$pmodel = value
                                
@@ -2132,7 +2136,7 @@ FishHook <- R6::R6Class("FishHook",
                        mc.cores = function(value) {
                            if(!missing(value)){
                                if(!(class(value) == "numeric")  && !is.null(value)){
-                                   stop("Error: mc.cores must be of class numeric")
+                                   stop('Error: mc.cores must be of class numeric')
                                }
                                                               
                                private$pmc.cores = value
@@ -2149,7 +2153,7 @@ FishHook <- R6::R6Class("FishHook",
                        na.rm = function(value) {
                            if(!missing(value)){
                                if(!(class(value) == "logical")  && !is.null(value)){
-                                   stop("Error:  na.rm must be of class logical")
+                                   stop('Error:  na.rm must be of class logical')
                                }
                                                               
                                private$pna.rm = value
@@ -2167,7 +2171,7 @@ FishHook <- R6::R6Class("FishHook",
                        pad = function(value) {
                            if(!missing(value)){
                                if(!(class(value) == "numeric")  && !is.null(value)){
-                                   stop("Error: pad  must be of class numeric")
+                                   stop('Error: pad  must be of class numeric')
                                }
                                                               
                                private$ppad = value
@@ -2184,7 +2188,7 @@ FishHook <- R6::R6Class("FishHook",
                        verbose = function(value) {
                            if(!missing(value)){
                                if(!(class(value) == "logical")  && !is.null(value)){
-                                   stop("Error: verbose must be of class logical")
+                                   stop('Error: verbose must be of class logical')
                                }
                                                               
                                private$pverbose = value
@@ -2201,7 +2205,7 @@ FishHook <- R6::R6Class("FishHook",
                        max.slice = function(value) {
                            if(!missing(value)){
                                if(!(class(value) == "numeric")  && !is.null(value)){
-                                   stop("Error: max.slice must be of class numeric")
+                                   stop('Error: max.slice must be of class numeric')
                                }
                                                               
                                private$pmax.slice = value
@@ -2218,7 +2222,7 @@ FishHook <- R6::R6Class("FishHook",
                        ff.chunk = function(value) {
                            if(!missing(value)){
                                if(!(class(value) == "numeric")  && !is.null(value)){
-                                   stop("Error: ff.chunk  must be of class numeric")
+                                   stop('Error: ff.chunk  must be of class numeric')
                                }
                                                               
                                private$pff.chunk = value
@@ -2235,7 +2239,7 @@ FishHook <- R6::R6Class("FishHook",
                        max.chunk = function(value) {
                            if(!missing(value)){
                                if(!(class(value) == "numeric")  && !is.null(value)){
-                                   stop("Error: max.chunk must be of class numeric")
+                                   stop('Error: max.chunk must be of class numeric')
                                }
                                                               
                                private$pmax.chunk = value
@@ -2252,7 +2256,7 @@ FishHook <- R6::R6Class("FishHook",
                        ptidcol = function(value) {
                            if(!missing(value)){
                                if(!(class(value) == "character")  && !is.null(value)){
-                                   stop("Error: ptidcol must be of class character")
+                                   stop('Error: ptidcol must be of class character')
                                }
                                                               
                                private$pptidcol = value
