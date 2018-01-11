@@ -1,4 +1,4 @@
 library(testthat)
-library(fishhoook)
+library(fishhook)
 
 test_check('fishhook')

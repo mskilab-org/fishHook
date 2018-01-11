@@ -331,6 +331,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
             }
         }
     }
+    
     ovdt = gr2dt(ov)
         
         
