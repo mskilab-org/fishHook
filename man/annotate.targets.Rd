@@ -17,9 +17,11 @@ annotate.targets(targets, covered = NULL, events = NULL, mc.cores = 1,
 
 \item{events}{optional path to bed or rds containing ranges corresponding to events (ie mutations etc)}
 
-\item{na.rm}{}
+\item{mc.cores}{info}
 
-\item{pad}{}
+\item{na.rm}{info}
+
+\item{pad}{info}
 
 \item{verbose}{boolean verbose flag (default == FALSE)}
 
@@ -67,13 +69,25 @@ Interval covariates must be Granges (or paths to GRanges rds) or paths to bed fi
 
 \item{targets}{annotated targets with fields $coverage, optional field, $count and additional numeric covariates}
 
+\item{covariates}{info}
+
 \item{model}{fit existing model --> covariates must be present}
 
-\item{return.model}{}
+\item{return.model}{info}
 
 \item{nb}{negative binomial, if false then use poisson}
 
 \item{verbose}{boolean verbose flag (default == TRUE)}
+
+\item{iter}{info}
+
+\item{subsample}{info}
+
+\item{seed}{info}
+
+\item{p.randomized}{info}
+
+\item{classReturn}{info}
 
 \item{Covariate}{object of type, GRanges, ffTrack, RleList or character. Note that character objects must be paths to files containing one of the other types as a .rds file}
 

@@ -38,9 +38,9 @@
 #' @param targets path to bed or rds containing genomic target regions with optional target name
 #' @param covered  optional path to bed or rds containing  granges object containing "covered" genomic regions
 #' @param events  optional path to bed or rds containing ranges corresponding to events (ie mutations etc)
-#' @param mc.cores
-#' @param na.rm 
-#' @param pad 
+#' @param mc.cores info
+#' @param na.rm info
+#' @param pad  info
 #' @param verbose boolean verbose flag (default == FALSE)
 #' @param max.slice integer Max slice of intervals to evaluate with  gr.val
 #' @param ff.chunk integer Max chunk to evaluate with fftab
@@ -107,7 +107,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
         stop(sprintf('Error: Malformed covariate input: each covariate must be a list with fields $tracks and $type, $track must be of class GRanges, ffTrack, Rle, object, or character path to rds object with the latter or .bw, .bed file, $type must have value %s', paste(COV.TYPES, collapse = ',')))
     }
          
-    if (any(ix <- (cov.types == 'sequence'))){
+    if (any(ix = (cov.types == 'sequence'))){
         for (cov in covariates[ix]){
             if (is.character(cov$track)){
                 cov$track = tryCatch(readRDS(cov$track), error = function(e) 'Error: not ffTrack')   
@@ -117,7 +117,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
             }
         }
         
-    if (any(ix <- (cov.classes == 'ffTrack' & cov.types == 'sequence'))){
+    if (any(ix = (cov.classes == 'ffTrack' & cov.types == 'sequence'))){
         if (!all(sapply(covariates, function(x) !is.null(x$signature)))){
             stop('sequence tracks must be ffTracks and have a $signature field specified (see fftab in ffTrack)') 
         }               
@@ -138,7 +138,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
         cat('Finished overlapping with covered intervals\n')
     }
 
-    if (length(ov)>0){
+    if (length(ov) > 0){
 
         if (!is.null(events)){
 
@@ -178,9 +178,8 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
                 }
                         
             }
-                    
-            else ## assume it is an Rle of event counts along the genome
-            {
+            ## assume it is an Rle of event counts along the genome  
+            else{
                 counts = events
                 oix = 1:length(ov)
             }
@@ -189,8 +188,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
                 cat('Computing event counts\n')
             }
 
-                    
-             ov$count = 0
+            ov$count = 0
                     
             if (length(oix)>0 & is.null(maxpatientpergene)){
                 ov$count[oix] = fftab(counts, ov[oix], chunksize = ff.chunk, na.rm = TRUE, mc.cores = mc.cores, verbose = verbose)$score
@@ -670,16 +668,16 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
 #' Scores targets based on covariates using gamma-poisson model with coverage as constant
 #' 
 #' @param targets annotated targets with fields $coverage, optional field, $count and additional numeric covariates
-#' @param covariates
+#' @param covariates info
 #' @param model fit existing model --> covariates must be present
-#' @param return.model 
+#' @param return.model info
 #' @param nb  negative binomial, if false then use poisson
 #' @param verbose boolean verbose flag (default == TRUE)
-#' @param iter
-#' @param subsample
-#' @param seed
-#' @param p.randomized
-#' @param classReturn
+#' @param iter info
+#' @param subsample info
+#' @param seed info 
+#' @param p.randomized info
+#' @param classReturn info
 #' @return GRanges of scored results
 #' @author Marcin Imielinski
 #' @import GenomicRanges
@@ -3175,7 +3173,7 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, bestfit=T, col = N
         
         ##adding shapes (lines) + title  note that html <b></b> style is used for mods and plotting lines
         ##is done by specifying two points on the line (x0/y0 and x1/y1) 
-        p <- layout(p,title = sprintf("<b>%s</b>" ,titleText),titlefont = list(size = 24),
+        p = layout(p,title = sprintf("<b>%s</b>" ,titleText),titlefont = list(size = 24),
                     shapes = list(list(type = "line",line = list(color = 'black'),
                     x0 = 0, x1  = max, xref = "x", y0 = 0, y1 = max,yref ="y"),
                     list( type = "line", line = list(color = "red"),

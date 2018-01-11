@@ -4,7 +4,7 @@
 # see the wiki:
 #   https://github.com/craigcitro/r-travis/wiki
 
-language: r
+language: c
 sudo: required
 
 before_install:
@@ -14,9 +14,9 @@ before_install:
 install:
   - ./travis-tool.sh install_bioc_deps
   - ./travis-tool.sh install_deps
+  - ./travis-tool.sh install_github r-lib/testthat
   - ./travis-tool.sh install_github mskilab/gUtils
-  - ./travis-tool.sh install_github mskilab/ffTrack
-
+  
 script: ./travis-tool.sh run_tests
 
 after_failure:
