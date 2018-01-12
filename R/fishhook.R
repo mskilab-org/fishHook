@@ -828,17 +828,21 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
 }
 
 
-
-
-
-
+        
 #' Cov
+#' @title title
+#' @description
 #'
-#' Stores Covariate for passing to FishHook object. To be packaged in the Cov_Array Class by calling c(Cov1,Cov2,Cov3)
+#'  Stores Covariate for passing to FishHook object. To be packaged in the Cov_Array Class by calling c(Cov1,Cov2,Cov3)
 #' 
-#' @param Covariate object of type, GRanges, ffTrack, RleList or character. Note that character objects must be paths to files containing one of the other types as a .rds file
-#' @param type a string indicating the type of Covariate, valid options are: numeric, sequence, interval. See Annotate Targets for more information on Covariate types
-#' @param signature In the case where a ffTrack object is of type sequence, a signature field is required, see fftab in ffTrack for more information.
+#' @param Covariate, object of type, GRanges, ffTrack, RleList or character. Note that character objects must be paths to files containing one of the other types as a .rds file
+#' @param type, a string indicating the type of Covariate, valid options are: numeric, sequence, interval. See Annotate Targets for more information on Covariate types
+#' @param signature, In the case where a ffTrack object is of type sequence, a signature field is required, see fftab in ffTrack for more information.
+#' @param name, a character vector  indicating the name that this covariate will be refered to as
+#' @param pad, the number of nuleotides upstream and downstream to extend the covariate i.e. a covariate from position 10-20 with a pad of 5 will have a range from 5-25
+#' @param field, this is for numeric covariates and is the column name where the 'score' is held. Note that it is set to 'score' by default
+#' @param grep, Sequence covariates must be ffTrack objects, and can have optional logical argument $grep to specify inexact matches (see fftab)
+#' @param chr.sub, indicates if the seqlevels are in the format chrI, chrV, etc. if false, the chr will be added automatically during the analysis.
 #' @return Cov object that can be passed to FishHook object constructor
 #' @import R6
 #' @author Zoran Z. Gajic
@@ -1061,6 +1065,9 @@ Cov = R6::R6Class("Cov",
 
 
 
+#' @name Cov_Arr
+#' @title title
+#' @description 
 #'
 #' Stores Covariates for passing to FishHook object constructor. Standard initialization involves calling c(Cov1,Cov2,Cov3). 
 #' Cov_Arr serves to mask the underlieing list implemenations of Covariates in the FishHook Object. 
