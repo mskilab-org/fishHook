@@ -20,7 +20,8 @@ Imports:
     GenomeInfoDb,
     S4Vectors,
     BiocGenerics,
-    R6
+    R6, 
+    plotly
 Suggests:
     parallel,
     testthat

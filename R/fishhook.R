@@ -2754,7 +2754,6 @@ Score = R6::R6Class('Score',
 #' @param highlight vector optional arg specifying indices of data points to highlight (ie color red)
 #' @param exp info
 #' @param lwd integer, optional, specifying thickness of line fit to data (default == 1)
-#' @param bestfit boolean
 #' @param col NULL
 #' @param col.bg string
 #' @param pch integer dot type for scatter plot 
@@ -2773,7 +2772,7 @@ Score = R6::R6Class('Score',
 #' @param key
 #' @author Marcin Imielinski, Eran Hodis, Zoran Z. Gajic
 #' @export
-qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, bestfit = TRUE, col = NULL, col.bg = 'black', pch = 18, cex = 1, conf.lines = TRUE, max = NULL, max.x = NULL, 
+qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg = 'black', pch = 18, cex = 1, conf.lines = TRUE, max = NULL, max.x = NULL, 
     max.y = NULL, qvalues = NULL, label = NULL, plotly = FALSE, annotations = list(), gradient = list(), titleText = "", subsample = NA, key = NULL,  ...)
 {
     if(!(plotly)){
@@ -3053,7 +3052,7 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, bestfit = TRUE, co
         ## and removing the extra from the non-sig
         ## (looks to be -logp of 2.6 here can make this more dynamic later )
    
-        if (nrow(dat) <=  8000){
+        if (nrow(dat) <= 8000){
 
             dat4 = dat
             dat4$obs = NULL

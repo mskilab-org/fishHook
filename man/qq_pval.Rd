@@ -4,10 +4,10 @@
 \alias{qq_pval}
 \title{qq plot given input p values}
 \usage{
-qq_pval(obs, highlight = c(), exp = NULL, lwd = 1, bestfit = TRUE,
-  col = NULL, col.bg = "black", pch = 18, cex = 1, conf.lines = TRUE,
-  max = NULL, max.x = NULL, max.y = NULL, qvalues = NULL,
-  label = NULL, plotly = FALSE, annotations = list(), gradient = list(),
+qq_pval(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL,
+  col.bg = "black", pch = 18, cex = 1, conf.lines = TRUE, max = NULL,
+  max.x = NULL, max.y = NULL, qvalues = NULL, label = NULL,
+  plotly = FALSE, annotations = list(), gradient = list(),
   titleText = "", subsample = NA, key = NULL, ...)
 }
 \arguments{
@@ -18,8 +18,6 @@ qq_pval(obs, highlight = c(), exp = NULL, lwd = 1, bestfit = TRUE,
 \item{exp}{info}
 
 \item{lwd}{integer, optional, specifying thickness of line fit to data (default == 1)}
-
-\item{bestfit}{boolean}
 
 \item{col}{NULL}
 
