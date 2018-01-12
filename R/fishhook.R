@@ -17,9 +17,6 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ###############################################################################
 
-#' @import R6
-#' @import GenomicRanges
-
 #' @name annotate.targets
 #' @title title
 #' @description 
@@ -61,7 +58,6 @@
 #' Interval covariates must be Granges (or paths to GRanges rds) or paths to bed files
 #' @return GRanges of input targets annotated with covariate statistics (+/- constrained to the subranges in optional argument covered)
 #' @author Marcin Imielinski
-#' @importFrom ffTrack fftab
 #' @export
 annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 1, na.rm = TRUE, pad = 0, verbose = TRUE, max.slice = 1e3, 
     ff.chunk = 1e6, max.chunk = 1e11, out.path = NULL, covariates = list(), maxpatientpergene = Inf, ptidcol = NULL, weightEvents = FALSE, ...)
@@ -116,6 +112,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
                 stop('Error: Sequence tracks must have ffTrack object as $track field or $track must be a path to an ffTrack object rds file')
             }
         }
+    }
         
     if (any(ix = (cov.classes == 'ffTrack' & cov.types == 'sequence'))){
         if (!all(sapply(covariates, function(x) !is.null(x$signature)))){
@@ -383,7 +380,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
         }
         tryCatch(saveRDS(targets, out.path), error = function(e) warning(sprintf('Error writing to file %s', out.file)))             
     }
-        
+
     return(targets)
 
 }
@@ -2672,7 +2669,7 @@ Score = R6::R6Class('Score',
             return(qq_pval(res$p, annotations = c(annotations,annotation_columns),
                     gradient = list(Count = res$count), titleText = "",  plotly = plotly, key = key))
                          
-            },
+        },
 
         ## Returns the scored targets as well as target names
         getScore = function(...){
@@ -2728,18 +2725,19 @@ Score = R6::R6Class('Score',
                 stop('Error: argument metadata must have a "name" column')
             }
             private$meta = meta
-        }
-        ),
-        private = list(
-            ## The output of the score.targets() function called during initialization
-            score = NULL,
+        }),
 
-            ## The output model of score.targets()
-            model = NULL,
+    private = list(
+        ## The output of the score.targets() function called during initialization
+        score = NULL,
+        
+        ## The output model of score.targets()
+        model = NULL,
                      
-            ## Target Metadata
-            meta = NULL              
-        ),
+        ## Target Metadata
+        meta = NULL              
+    ),
+
     active = list()
 )
 
@@ -3084,7 +3082,7 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, bestfit = TRUE, co
                                yaxis = list(title = '<i>Observed -log<sub>10</sub>(P)</i>')) ]
             }
         }
-        else {
+        else{
         
             dat$ID = c(1:nrow(dat))
             dat2 = dat[ y < 2.6,]
@@ -3151,8 +3149,16 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, bestfit = TRUE, co
             ),
             margin = list(t = 100),
             hovermode = 'compare')
-        }
     }
 }
+
+
+
+
+
+
+
+
+
 
  
