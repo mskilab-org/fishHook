@@ -2929,7 +2929,7 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, bestfit = TRUE, co
         lambda = lm(y ~ x-1, dat)$coefficients;
 
         lines(x=c(0, max.x), y = c(0, lambda*max.y), col = 'red', lty = 2, lwd = lwd);
-        legend('bottomright', vsprintf('lambda=\n %.2f', lambda), text.col = 'red', bty = 'n')
+        legend('bottomright', sprintf('lambda=\n %.2f', lambda), text.col = 'red', bty = 'n')
     }
     else{
 
