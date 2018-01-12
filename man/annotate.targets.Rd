@@ -13,32 +13,31 @@ annotate.targets(targets, covered = NULL, events = NULL, mc.cores = 1,
 \arguments{
 \item{targets}{path to bed or rds containing genomic target regions with optional target name}
 
-\item{covered}{optional path to bed or rds containing  granges object containing "covered" genomic regions}
+\item{covered}{optional path to bed or rds containing  granges object containing "covered" genomic regions (default == NULL)}
 
-\item{events}{optional path to bed or rds containing ranges corresponding to events (ie mutations etc)}
+\item{events}{optional path to bed or rds containing ranges corresponding to events (ie mutations etc) (default == NULL)}
 
-\item{mc.cores}{info}
+\item{mc.cores}{integer info (default == 1)}
 
-\item{na.rm}{info}
+\item{na.rm}{info (default == TRUE)}
 
-\item{pad}{info}
+\item{pad}{info (default == 0)}
 
 \item{verbose}{boolean verbose flag (default == FALSE)}
 
-\item{max.slice}{integer Max slice of intervals to evaluate with  gr.val}
+\item{max.slice}{integer Max slice of intervals to evaluate with  gr.val (default == 1e3)}
 
-\item{ff.chunk}{integer Max chunk to evaluate with fftab}
+\item{ff.chunk}{integer Max chunk to evaluate with fftab (default == 1e6)}
 
-\item{max.chunk}{integer gr.findoverlaps parameter}
+\item{max.chunk}{integer gr.findoverlaps parameter (default == 1e11)}
 
-\item{out.path}{out.path to save variable to}
+\item{out.path}{out.path to save variable to (default == NULL)}
 
 \item{covariates}{list}
 
-\item{maxpatientpergene}{Sets the maximum number of events a patient can contribute per target}
+\item{maxpatientpergene}{Sets the maximum number of events a patient can contribute per target (default == Inf)}
 
-\item{ptidcol}{string Column where patient ID is stored
-region, that target region will get assigned a score of 0.1 for that event. If false, any overlap will be given a weight of 1.}
+\item{ptidcol}{string Column where patient ID is stored}
 
 \item{...}{paths to sequence covariates whose output names will be their argument names, and each consists of a list with
 $track field corresponding to a GRanges, RleList, ffTrack object (or path to rds containing that object), $type which can
@@ -49,45 +48,46 @@ Sequence covariates must be ffTrack objects (or paths to ffTrack rds) and requir
 will be used as input to fftab, and can have optional logical argument $grep to specify inexact matches (see fftab)
 Interval covariates must be Granges (or paths to GRanges rds) or paths to bed files}
 
-\item{weightEvetns}{If true, will weight events by thier overlap with targets. e.g. if 10% of an event overlaps with a target}
+\item{weightEvetns}{boolean If true, will weight events by their overlap with targets. e.g. if 10% of an event overlaps with a target (default == FALSE)
+region, that target region will get assigned a score of 0.1 for that event. If false, any overlap will be given a weight of 1.}
 
 \item{targets}{annotated GRanges of targets with fields $coverage, optional field, $count and additional numeric covariates, or path to .rds file of the same; path to bed or rds containing genomic target regions with optional target name}
 
-\item{by}{character vector with which to split into meta-territories}
+\item{by}{character vector with which to split into meta-territories (default == NULL)}
 
-\item{fields}{by default all meta data fields of targets EXCEPT reserved field names $coverage, $counts, $query.id}
+\item{fields}{by default all meta data fields of targets EXCEPT reserved field names $coverage, $counts, $query.id (default == NULL)}
 
-\item{rolling}{if specified, positive integer specifying how many (genome coordinate) adjacent to aggregate in a rolling fashion; positive integer with which to performa rolling sum / weighted average WITHIN chromosomes of "rolling" ranges" --> return a granges}
+\item{rolling}{if specified, positive integer specifying how many (genome coordinate) adjacent to aggregate in a rolling fashion; positive integer with which to performa rolling sum / weighted average WITHIN chromosomes of "rolling" ranges" --> return a granges (default == NULL)}
 
-\item{disjoint}{only take disjoint bins of input}
+\item{disjoint}{boolean only take disjoint bins of input (default == TRUE)}
 
-\item{na.rm}{only applicable for sample wise aggregation (i.e. if by = NULL)}
+\item{na.rm}{boolean only applicable for sample wise aggregation (i.e. if by = NULL) (default == FALSE)}
 
-\item{FUN}{only applies (for now) if by = NULL, this is a named list of functions, where each item named "nm" corresponds to an optional function of how to alternatively aggregate field "nm" per samples, for alternative aggregation of coverage and count.  This function is applied at every iteration of loading a new sample and adding to the existing set.   It is normally sum [for coverage and count] and coverage weighted mean [for all other covariates].  Alternative coverage / count aggregation functions should have two arguments (val1, val2) and all other alt covariate aggregation functions should have four arguments (val1, cov1, val2, cov2) where val1 is the accumulating vector and val2 is the new vector of values.}
+\item{FUN}{list only applies (for now) if by = NULL, this is a named list of functions, where each item named "nm" corresponds to an optional function of how to alternatively aggregate field "nm" per samples, for alternative aggregation of coverage and count.  This function is applied at every iteration of loading a new sample and adding to the existing set.   It is normally sum [for coverage and count] and coverage weighted mean [for all other covariates].  Alternative coverage / count aggregation functions should have two arguments (val1, val2) and all other alt covariate aggregation functions should have four arguments (val1, cov1, val2, cov2) where val1 is the accumulating vector and val2 is the new vector of values.}
 
-\item{verbose}{boolean verbose flag (default == FALSE)}
+\item{verbose}{boolean verbose flag (default == TRUE)}
 
 \item{targets}{annotated targets with fields $coverage, optional field, $count and additional numeric covariates}
 
 \item{covariates}{info}
 
-\item{model}{fit existing model --> covariates must be present}
+\item{model}{fit existing model --> covariates must be present (default == NULL)}
 
-\item{return.model}{info}
+\item{return.model}{boolean info (default == FALSE)}
 
-\item{nb}{negative binomial, if false then use poisson}
+\item{nb}{boolean negative binomial, if false then use poisson}
 
 \item{verbose}{boolean verbose flag (default == TRUE)}
 
-\item{iter}{info}
+\item{iter}{integer info (default == 200)}
 
-\item{subsample}{info}
+\item{subsample}{interger info (default == 1e5)}
 
-\item{seed}{info}
+\item{seed}{integer (default == 42)}
 
-\item{p.randomized}{info}
+\item{p.randomized}{boolean info (default == TRUE)}
 
-\item{classReturn}{info}
+\item{classReturn}{boolean info (default == FALSE)}
 
 \item{Covariate}{object of type, GRanges, ffTrack, RleList or character. Note that character objects must be paths to files containing one of the other types as a .rds file}
 
@@ -139,11 +139,17 @@ Interval covariates must be Granges (or paths to GRanges rds) or paths to bed fi
 
 \item{obs}{vector of pvalues to plot, names of obs can be intepreted as labels}
 
-\item{highlight}{optional arg specifying indices of data points to highlight (ie color red)}
+\item{highlight}{vector optional arg specifying indices of data points to highlight (ie color red)}
 
-\item{samp}{integer, optional specifying how many samples to draw from input data (default NULL)}
+\item{exp}{info}
 
-\item{lwd}{integer, optional, specifying thickness of line fit to data}
+\item{lwd}{integer, optional, specifying thickness of line fit to data (default == 1)}
+
+\item{bestfit}{boolean}
+
+\item{col}{NULL}
+
+\item{col.bg}{string}
 
 \item{pch}{integer dot type for scatter plot}
 
@@ -152,6 +158,12 @@ Interval covariates must be Granges (or paths to GRanges rds) or paths to bed fi
 \item{conf.lines}{logical, optional, whether to draw 95 percent confidence interval lines around x-y line}
 
 \item{max}{numeric, optional, threshold to max the input p values}
+
+\item{max.x}{info}
+
+\item{max.y}{info}
+
+\item{qvalues}{info}
 
 \item{label}{character vector, optional specifying which data points to label (obs vector has to be named, for this to work)}
 
@@ -216,9 +228,25 @@ Scores targets based on covariates using gamma-poisson model with coverage as co
 
 Override the c operator for covariates so that when you type: c(Cov1,Cov2,Cov3) it returns a Cov_Arr object that support vector like operation.
 
+Stores Covariates for passing to FishHook object constructor. Standard initialization involves calling c(Cov1,Cov2,Cov3). 
+Cov_Arr serves to mask the underlieing list implemenations of Covariates in the FishHook Object. 
+This class attempts to mimic a vector in terms of subsetting and in the future will add more vector like operations.
+
 Override the c operator for covariates so that when you type: c(Cov1,Cov2,Cov3) it returns a Cov_Arr object that support vector like operation.
 
 Overrides the subset operator x[] for use with Cov_Arr to allow for vector like subsetting
+
+Stores Events, Targets, Eligible, Covariates.
+
+Overrides the subset operator x[] for use with FishHook to allow for vector like subsetting
+
+Stores the annotated data from a FishHook object. and allows users to aggregate,manipulate and score that data. This object should be generated by calling FishHook$annotateTargets(). Note that this is where the meat of the computational burden lies. For example, in our test cases, running 8k pts worth of exome seq on 20k genes took 20seconds without covariates and 20sec + ~5min per covariate added.
+
+Overrides the "[" operator for the Annotated object. This allows subsetting of the annotated data in Annotated Objects.
+
+Stores the scored targets. Note that this constructors should be called from Annotated$scoreTargets(). Scores can also be plotted on qqplots using included functions. For other params see score.targets()
+
+Explanation
 }
 \author{
 Marcin Imielinski

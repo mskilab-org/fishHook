@@ -446,7 +446,7 @@ plot <- fish$qq_plot(plotly = F)
 
 
 
-![](DemoImages/standard_plot_noplotly.png)
+![](images/standard_plot_noplotly.png)
 
 ## Visualizing the Data cont.
 The above is cool and all but we probably want to annotate the hover text of each point with targets metadata, to do that we can use the columns param in qq_plot(). Note that you can specify any column that is present in the 'all' output. You can also provide your own vectors through annotations. P value will be included in all graphs created but Count, Effectsize, HypothesisID and q will only be added by default if not annotations are specified by the user.
@@ -485,11 +485,11 @@ plot2
 
         Column Annotations
 
-![](DemoImages/plotly1.png)
+![](images/plotly1.png)
 
         Novel Annotations
 
-![](DemoImages/plotly2.png)
+![](images/plotly2.png)
 
 
 
@@ -784,7 +784,7 @@ plot
 
 
 
-![](DemoImages/plotly3.png)
+![](images/plotly3.png)
 
 
 
@@ -885,7 +885,7 @@ plot
 
 
 
-![](DemoImages/plotly4.png)
+![](images/plotly4.png)
 
 
 ## FishHook Extras: Subsetting
