@@ -1,15 +1,5 @@
 library(fishhook)
 
-print("location")
-
-getwd()
-
-print(getwd())
-
-print("location")
-
-print(getwd())
-
 
 Sys.setenv(DEFAULT_BSGENOME = 'BSgenome.Hsapiens.UCSC.hg19::Hsapiens')
 
@@ -17,16 +7,16 @@ Sys.setenv(DEFAULT_BSGENOME = 'BSgenome.Hsapiens.UCSC.hg19::Hsapiens')
 events = readRDS('/home/travis/build/mskilab/fish.hook/data/events.rds')
 
 # Sample Targets
-targets = readRDS('./data/targets.rds')
+targets = readRDS('/home/travis/build/mskilab/fish.hook/data/targets.rds')
 
 # Sample Covariate
-replication_timing = readRDS('./data/covariate.rds')
+replication_timing = readRDS('/home/travis/build/mskilab/fish.hook/data/covariate.rds')
 
 # Same Eligible Subset
-eligible = readRDS('./data/eligible.rds')
+eligible = readRDS('/home/travis/build/mskilab/fish.hook/data/eligible.rds')
 
 # indexed pathways
-indexed_pathways = readRDS('./data/indexed_pathways.rds')
+indexed_pathways = readRDS('/home/travis/build/mskilab/fish.hook/data/indexed_pathways.rds')
 
 
 context('test fishhook operations')
