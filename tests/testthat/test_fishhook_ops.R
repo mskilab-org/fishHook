@@ -87,8 +87,16 @@ test_that('FishHook', {
     expect_true(inherits(fish2$aggregated[[2]] , 'GRanges'))
 	## testing aggregation
     tiles = gr.tile(hg_seqlengths(), 100000)
-    segs = as.data.table(read.table('./data/jabba_segs_11517.txt'))
+    segs = readRDS('./data/jabba_segs_11517.rds')
+    expect_equal(nrow(segs), 134231)
+    colnames(segs) = c('ID', 'chr', 'start', 'end', 'd', 'cn')
+    segs = segs[cn >= 1.2]
+    expect_equal(nrow(segs), 12373)
+    exptect_true(inherits(segs, 'data.table'))
+    segs = dt2gr(segs)
+    exptect_true(inherits(segs, 'GRanges'))
 })
+
 
 
 
