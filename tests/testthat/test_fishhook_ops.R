@@ -94,9 +94,9 @@ test_that('FishHook', {
     colnames(segs) = c('ID', 'chr', 'start', 'end', 'd', 'cn')
     segs = segs[cn >= 1.2]
     expect_equal(nrow(segs), 12373)
-    exptect_true(inherits(segs, 'data.table'))
+    expect_true(inherits(segs, 'data.table'))
     segs = dt2gr(segs)
-    exptect_true(inherits(segs, 'GRanges'))
+    expect_true(inherits(segs, 'GRanges'))
 })
 
 
