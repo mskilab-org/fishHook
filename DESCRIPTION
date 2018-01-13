@@ -10,7 +10,8 @@ Description: Package for performing Gamma-Poisson regression on somatic mutation
 Depends:
     R (>= 3.1.0),
     GenomicRanges (>= 1.18),
-    gUtils
+    gUtils, 
+    ffTrack
 Imports:
     MASS,
     rtracklayer (>= 1.26),
