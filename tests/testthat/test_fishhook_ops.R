@@ -18,6 +18,7 @@ eligible = readRDS('/home/travis/build/mskilab/fish.hook/data/eligible.rds')
 # indexed pathways
 indexed_pathways = readRDS('/home/travis/build/mskilab/fish.hook/data/indexed_pathways.rds')
 
+segs = readRDS('home/travis/build/mskilab/fish.hook/data/jabba_segs_11517.rds')
 
 context('test fishhook operations')
 
@@ -88,7 +89,6 @@ test_that('FishHook', {
     expect_true(inherits(fish2$aggregated[[2]] , 'GRanges'))
 	## testing aggregation
     tiles = gr.tile(hg_seqlengths(), 100000)
-    segs = readRDS('./data/jabba_segs_11517.rds')
     expect_equal(nrow(segs), 134231)
     colnames(segs) = c('ID', 'chr', 'start', 'end', 'd', 'cn')
     segs = segs[cn >= 1.2]
