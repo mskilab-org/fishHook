@@ -1,9 +1,16 @@
 library(fishhook)
 
+print("location")
+
+getwd()
+
+print("location")
+
+
 Sys.setenv(DEFAULT_BSGENOME = 'BSgenome.Hsapiens.UCSC.hg19::Hsapiens')
 
 # Sample Events
-events = readRDS('./data/events.rds')
+events = readRDS('fish.hook/data/events.rds')
 
 # Sample Targets
 targets = readRDS('./data/targets.rds')
