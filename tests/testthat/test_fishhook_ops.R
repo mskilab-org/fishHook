@@ -4,13 +4,17 @@ print("location")
 
 getwd()
 
+print(getwd())
+
 print("location")
+
+print(getwd())
 
 
 Sys.setenv(DEFAULT_BSGENOME = 'BSgenome.Hsapiens.UCSC.hg19::Hsapiens')
 
 # Sample Events
-events = readRDS('fish.hook/data/events.rds')
+events = readRDS('/home/travis/build/mskilab/fish.hook/data/events.rds')
 
 # Sample Targets
 targets = readRDS('./data/targets.rds')
