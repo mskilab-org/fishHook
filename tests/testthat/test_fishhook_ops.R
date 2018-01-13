@@ -18,7 +18,7 @@ eligible = readRDS('/home/travis/build/mskilab/fish.hook/data/eligible.rds')
 # indexed pathways
 indexed_pathways = readRDS('/home/travis/build/mskilab/fish.hook/data/indexed_pathways.rds')
 
-segs = readRDS('home/travis/build/mskilab/fish.hook/data/jabba_segs_11517.rds')
+segs = readRDS('/home/travis/build/mskilab/fish.hook/data/jabba_segs_11517.rds')
 
 context('test fishhook operations')
 
