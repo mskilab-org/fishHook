@@ -962,7 +962,7 @@ Cov = R6::R6Class("Cov",
     },
 
     toString = function(...){
-        paste(c('Name:', self$name,
+        paste(c('Name: ', self$name,
         '\ntype: ',self$type, '\tsignature: ', self$signature,
         '\nfield: ',self$field, '\tpad: ', self$pad,
         '\nna.rm: ', self$na.rm, '\tgrep: ', self$grep,
@@ -975,7 +975,7 @@ Cov = R6::R6Class("Cov",
                           
     ## Prints covariate to output
     print = function(...){
-        cat(c('Name:', self$name,
+        cat(c('Name: ', self$name,
         '\ntype: ', self$type, '\tsignature: ', self$signature,
         '\nfield: ', self$field, '\tpad: ', self$pad,
         '\na.rm: ', self$na.rm, '\tgrep: ', self$grep,
@@ -1225,10 +1225,10 @@ Cov_Arr = R6::R6Class('Cov_Arr',
     print = function(...){
         out= sapply(c(1:length(private$pCovs)), 
             function(x){
-                cat(c('Covariate Number: ' , x, '\nName:', private$pnames[x],
+                cat(c('Covariate Number: ' , x, '\nName: ', private$pnames[x],
                 '\ntype: ',private$ptype[x], '\tsignature: ', private$psignature[x],
                 '\nfield: ',private$pfield[x], '\tpad: ', private$ppad[x],
-                '\n","na.rm: ', private$pna.rm[x], '\tgrep: ', private$pgrep[x],
+                '\nna.rm: ', private$pna.rm[x], '\tgrep: ', private$pgrep[x],
                 '\nCovariate Class: ', class(private$pCovs[[x]]), '\n\n'), collapse = '', sep = '')
         })
     }
