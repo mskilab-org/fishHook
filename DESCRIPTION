@@ -11,13 +11,12 @@ Depends:
     R (>= 3.1.0),
     GenomicRanges (>= 1.18),
     gUtils, 
-    ffTrack
+    ffTrack, 
+    data.table (>= 1.9),
 Imports:
     MASS,
     rtracklayer (>= 1.26),
     zoo,
-    ffTrack,
-    data.table (>= 1.9),
     GenomeInfoDb,
     S4Vectors,
     BiocGenerics,

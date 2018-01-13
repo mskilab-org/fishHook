@@ -65,6 +65,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
     if(weightEvents){
         maxpatientpergene = NULL
     }
+
     if (is.character(targets)){
         if (grepl('\\.rds$', targets[1])){
             targets = readRDS(targets[1])
@@ -123,6 +124,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
     if (verbose){
         cat('Overlapping with covered intervals\n')
     }
+
     if (!is.null(covered)){
         ov = gr.findoverlaps(targets, covered, verbose = verbose, max.chunk = max.chunk, mc.cores = mc.cores)
     }
@@ -133,13 +135,17 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
 
     if (verbose){
         cat('Finished overlapping with covered intervals\n')
+        cat('hithit')
     }
 
     if (length(ov) > 0){
+        cat('AWAA')
 
         if (!is.null(events)){
+            cat('if (!is.null(events))')
 
             if (is(events, 'GRanges')){
+                cat('fuck')
 
                 ev = gr.fix(events[gr.in(events, ov)])                                
                         
@@ -170,7 +176,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
                     }
                             
                     ev2$target.id = ov$query.id[ev2$subject.id]
-                    tab = as.data.table(cbind(ev2$ID,ev2$target.id))
+                    tab = as.data.table(cbind(ev2$ID, ev2$target.id))
                     counts.unique = tab[, dummy :=1][, .(count = sum(dummy)), keyby =.(V1, V2)][, count := pmin(maxpatientpergene, count)][, .(final_count = sum(count)), keyby = V2]                          
                 }
                         
@@ -199,8 +205,8 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
                 cat('Finished counting events\n')
             }
         }
-
         for (nm in names(covariates)){
+            cat('for loop!!!')
 
             cov = covariates[[nm]]
 
@@ -345,6 +351,8 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
     cov.nm = setdiff(names(values(ov)), c('coverage', 'count', 'query.id', 'subject.id'))
 
     if (length(ov) > 0){
+        cat('fuck line 354')
+
         if (length(cov.nm) > 0){
             cmd = paste(cmd,  ',', paste(cov.nm, '= mean(', cov.nm, ')', sep = '', collapse = ', '), ')',  sep = '')
         }
@@ -426,7 +434,7 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
         cat('Applying sample wise merging\n')
     }        
     else if (is.null(by) & is.null(rolling)){
-        stop('Error: by must be specified and same length as targets or rolling must be non NULL')
+        stop('Error: argument "by" must be specified and same length as targets or "rolling" must be non NULL')
     }
 
     if (is.null(by) & is.character(targets)){
@@ -555,7 +563,7 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
             fields = names(values(targets))
         }
         
-        if (any(nnum <- !(sapply(setdiff(fields, 'query.id'), function(x) class(values(targets)[, x])) %in% 'numeric'))){
+        if (any(nnum = !(sapply(setdiff(fields, 'query.id'), function(x) class(values(targets)[, x])) %in% 'numeric'))){
             warning(sprintf('Warning: %s meta data fields (%s) fit were found to be non-numeric and not aggregated', sum(nnum), paste(fields[nnum], collapse = ',')))
             fields = fields[!nnum]
         }
@@ -603,12 +611,12 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
         }
         else{
 
-            if (is.na(rolling <- as.integer(rolling))){
+            if (is.na(rolling = as.integer(rolling))){   ## check not NA
                 stop('Error: rolling must be a positive integer')
             }
 
-            if (is.na(rolling<=1)){
-                stop('Error: rolling must be a positive integer')
+            if (rolling <= 1){
+                stop('Error: rolling must be a positive integer greater than one')
             }
 
             if (verbose){
@@ -619,7 +627,7 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
 
             tadt[, width := as.numeric(width)]
 
-            tadt <- tadt[seqnames %in% c(seq(22), "X")]
+            tadt = tadt[seqnames %in% c(seq(22), "X")]
                 
             if ('count' %in% cfields ) {
                 print("rolling count")
@@ -702,7 +710,6 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
     verbose = TRUE, iter = 200, subsample = 1e5, seed = 42, p.randomized = TRUE, classReturn = FALSE)
 {
     require(MASS)
-    require(data.table)
     covariates = setdiff(covariates, c('count', 'coverage', 'query.id'))        
         
     if (any(nnin = !(covariates %in% names(values(targets))))){

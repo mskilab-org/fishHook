@@ -24,6 +24,15 @@ segs = readRDS('/home/travis/build/mskilab/fish.hook/data/jabba_segs_11517.rds')
 context('test fishhook operations')
 
 
+test_that('aggregate.targets', {
+	## default args
+	foobar = aggregate.targets(targets, by = 'gene_name')
+	expect_true(is(foobar, 'GRangesList'))
+	expect_equal(length(foobar[[1]]), 16352)
+	## disjoint
+	expect_equal(length(aggregate.targets(targets, by = 'gene_name', disjoint = FALSE)[[1]]), 19688)
+	## na.rm example?
+})
 
 test_that('qq_pval', {
 	pvals = c(0.0001, 0.0001, 0.032, 0.005, 0.9, 0.15)
