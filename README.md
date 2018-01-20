@@ -1,6 +1,6 @@
-[![Build Status](https://travis-ci.org/mskilab/fish.hook.svg?branch=master)](https://travis-ci.org/mskilab/fish.hook)
+[![Build Status](https://travis-ci.org/mskilab/fishHook.svg?branch=master)](https://travis-ci.org/mskilab/fishHook)
 
-fish.hook
+fishHook
 ======
 
 R package for applying Gamma-Poisson regression to identify statistical enrichment or depletion of somatic mutations in regions after correcting for genomic covariates.
@@ -16,29 +16,23 @@ Installation
   install.packages('devtools')
   ```
 
-2. Load devtools
+2. Install gUtils 
 
   ```
-  library(devtools)
-  ````
-
-3. Install gUtils (if you don't have it already)
-
-  ```
-  install_github('mskilab/gUtils')
+  devtools::install_github('mskilab/gUtils')
   ````
 
 
-4. Install ffTrack
+3. Install ffTrack
 
   ```
-  install_github('mskilab/ffTrack')
+  devtools::install_github('mskilab/ffTrack')
   ````
 
-5. Install fish.hook
+4. Install fishHook
 
   ```
-  install_github('mskilab/fish.hook')
+  devtools::install_github('mskilab/fishHook')
   ````
 
 See Demo
@@ -70,7 +64,7 @@ See Below.
 
 
 ```R
-library(fishhook)
+library(fishHook)
 library(skitools)
 ```
 
@@ -79,7 +73,7 @@ fishHook utilizes gamme poisson regression to idenfity frequently mutated or amp
 
 
 ```R
-setwd("~/git/fish.hook/data")
+setwd("~/git/fishHook/data")
 ```
 
 ## Mutational Events
@@ -164,7 +158,7 @@ eligible
 
 
 ## The FishHook Object
-All of the data manipulations are handled by the fish.hook object given entered data. You can initialize it as follows. 
+All of the data manipulations are handled by the fishHook object given entered data. You can initialize it as follows. 
 
 
 ```R

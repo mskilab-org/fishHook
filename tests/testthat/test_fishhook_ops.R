@@ -4,24 +4,24 @@ library(fishhook)
 Sys.setenv(DEFAULT_BSGENOME = 'BSgenome.Hsapiens.UCSC.hg19::Hsapiens')
 
 # Sample Events
-events = readRDS('/home/travis/build/mskilab/fish.hook/data/events.rds')
+events = readRDS('/home/travis/build/mskilab/fishHook/data/events.rds')
 
 # Sample Targets
-targets = readRDS('/home/travis/build/mskilab/fish.hook/data/targets.rds')
+targets = readRDS('/home/travis/build/mskilab/fishHook/data/targets.rds')
 
 # Sample Covariate
-replication_timing = readRDS('/home/travis/build/mskilab/fish.hook/data/covariate.rds')
+replication_timing = readRDS('/home/travis/build/mskilab/fishHook/data/covariate.rds')
 
 # Same Eligible Subset
-eligible = readRDS('/home/travis/build/mskilab/fish.hook/data/eligible.rds')
+eligible = readRDS('/home/travis/build/mskilab/fishHook/data/eligible.rds')
 
 # indexed pathways
-indexed_pathways = readRDS('/home/travis/build/mskilab/fish.hook/data/indexed_pathways.rds')
+indexed_pathways = readRDS('/home/travis/build/mskilab/fishHook/data/indexed_pathways.rds')
 
-segs = readRDS('/home/travis/build/mskilab/fish.hook/data/jabba_segs_11517.rds')
+segs = readRDS('/home/travis/build/mskilab/fishHook/data/jabba_segs_11517.rds')
 
 
-context('test fishhook operations')
+context('unit testing fishhook operations')
 
 
 test_that('aggregate.targets', {
