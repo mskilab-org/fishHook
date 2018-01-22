@@ -65,11 +65,10 @@ See Below.
 
 ```R
 library(fishHook)
-library(skitools)
 ```
 
 ## Now we will need some data
-fishHook utilizes gamme poisson regression to idenfity frequently mutated or amplified/delete regions of the genome from sequencing and microarray data. To do this we need to take a set of genomic targets, and test each one against the hypothesis that they are significantly altered in comparison to the other targets. In this first example we will use genes as our targets and use exome data as the mutational events. Since exome sequencing tends to exhibt strong sequencing bias, we want to include this information in our analysis. To do this we constructed a GRanges called eligible that will indicate the regions that have sufficeint coverage. 
+fishHook utilizes Gamma-Poisson regression to identify frequently-mutated or amplified/deleted regions of the genome from sequencing and microarray data. To do this we need to take a set of genomic targets, and test each one against the hypothesis that they are significantly altered in comparison to the other targets. In this first example we will use genes as our targets and use exome data as the mutational events. Since exome sequencing tends to exhibit strong sequencing bias, we want to include this information in our analysis. To do this we constructed a GRanges called eligible that will indicate the regions that have sufficient coverage. 
 
 
 ```R
@@ -312,7 +311,7 @@ fish$anno
 
 
 ## Scoring the Targets
-Now that we have determined the mutational burden (count) at each target, we can now need to create a null model and test each of our hypothesize against this model. Note that because we are using the targets as thier own controlls there is an assumption that a majority of the targets will follow the null hypothesis.
+Now that we have determined the mutational burden (count) at each target, we can now need to create a null model and test each of our hypothesize against this model. Note that because we are using the targets as their own controls there is an assumption that a majority of the targets will follow the null hypothesis.
 
 
 ```R
@@ -660,7 +659,7 @@ rept
 
 
 ## Accessing Covariate Fields
-Covariate fields such as type are stored as vectors and when you acess the field you will be returned a vector or list in the case of the Covariates themselves that is the same length as your covariates object.
+Covariate fields such as type are stored as vectors and when you access the field you will be returned a vector or list in the case of the Covariates themselves that is the same length as your covariates object.
 
 
 ```R
@@ -718,7 +717,7 @@ rep3$signature
 
 
 ## fishHook Analysis using Covariates
-The only difference is that when we intiate the class, we will need to pass in the Covariates. Note that annotating the covariates takes some extra time. You can speed this part up by using mc.cores (set number of cores) or with parameters we will cover in the next section.
+The only difference is that when we initiate the class, we will need to pass in the Covariates. Note that annotating the covariates takes some extra time. You can speed this part up by using mc.cores (set number of cores) or with parameters we will cover in the next section.
 
 
 ```R
@@ -782,8 +781,8 @@ plot
 
 
 
-## fishHook Analysis using Covariates cont.
-Covariates rely on our prior knowledge about mutational processes. However, there are likely facotrs that influence mutations that are not known as thus it would be impossible for us to define a covariate for them. However, all of the mutational evidence is present in the mutational landscape (events) and as such we can create a covariate from our events that we will call local mutational density that can model the mutational landscape in the area surrounding our targets. We can use the flag use_local_mut_density for this. The bin for this covariate be specified using local_mut_density_bin and is by default set to 1e6.
+## fishHook Analysis using Covariates (cont.)
+Covariates rely on our prior knowledge about mutational processes. However, there are likely factors that influence mutations that are not known as thus it would be impossible for us to define a covariate for them. However, all of the mutational evidence is present in the mutational landscape (events) and as such we can create a covariate from our events that we will call local mutational density that can model the mutational landscape in the area surrounding our targets. We can use the flag 'use_local_mut_density' for this. The bin for this covariate be specified using 'local_mut_density_bin' and is by default set to 1e6.
 
 
 ```R
@@ -883,11 +882,16 @@ plot
 
 
 ## FishHook Extras: Subsetting
-The fishHook obeject can be subseted in the following way: fish[i,j,k,l] where: 
-i is a vector indicating which targets to keep, 
-j is a vector indicating which events to keep,
-k is a vector indicating which covariates to keep, and
-l is a vector indicating which eligible regions to keep
+The fishHook object can be subseted in the following way: 
+
+    fish[i,j,k,l] 
+
+where: 
+* i is a vector indicating which targets to keep, 
+* j is a vector indicating which events to keep,
+* k is a vector indicating which covariates to keep, and
+* l is a vector indicating which eligible regions to keep
+
 Here are some examples to play with using the previous fish object
 
 
