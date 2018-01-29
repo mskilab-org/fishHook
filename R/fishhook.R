@@ -136,6 +136,8 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
         cat('Finished overlapping with covered intervals\n')
     }
 
+    counts.unique = NULL
+
     if (length(ov) > 0){
 
         if (!is.null(events)){
@@ -419,6 +421,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
 aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, disjoint = TRUE,  na.rm = FALSE, 
     FUN = list(), verbose = TRUE)
 {
+
     V1 = sn = st = en = keep = count = width = NULL ## NOTE fix
     if (is.null(by) & is.character(targets)){
         cat('Applying sample wise merging\n')
@@ -553,11 +556,11 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
             fields = names(values(targets))
         }
         
-        if (any(nnum = !(sapply(setdiff(fields, 'query.id'), function(x) class(values(targets)[, x])) %in% 'numeric'))){
-            ## output: 'object 'nnum' not found'
-            ## warning(sprintf('Warning: %s meta data fields (%s) fit were found to be non-numeric and not aggregated', sum(nnum), paste(fields[nnum], collapse = ',')))
-            fields = fields[!nnum]
+        if (any(nnum <- !(sapply(setdiff(fields, 'query.id'), function(x) class(values(targets)[, x])) %in% 'numeric'))){
+                warning(sprintf('%s meta data fields (%s) fit were found to be non-numeric and not aggregated', sum(nnum), paste(fields[nnum], collapse = ',')))
+                fields = fields[!nnum]
         }
+        
         
         cfields = intersect(names(values(targets)), c('coverage', 'count'))
         

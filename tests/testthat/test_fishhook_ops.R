@@ -1,4 +1,4 @@
-library(fishhook)
+library(fishHook)
 
 library(testthat)
 
@@ -6,65 +6,97 @@ Sys.setenv(DEFAULT_BSGENOME = 'BSgenome.Hsapiens.UCSC.hg19::Hsapiens')
 
 # Sample Events
 events = readRDS('/home/travis/build/mskilab/fishHook/data/events.rds')
+## events = readRDS('events.rds')
 
 # Sample Targets
 targets = readRDS('/home/travis/build/mskilab/fishHook/data/targets.rds')
+## targets = readRDS('targets.rds')
+
 
 # Sample Covariate
 replication_timing = readRDS('/home/travis/build/mskilab/fishHook/data/covariate.rds')
+## replication_timing = readRDS('covariate.rds')
+
 
 # Same Eligible Subset
 eligible = readRDS('/home/travis/build/mskilab/fishHook/data/eligible.rds')
+## eligible  = readRDS('eligible.rds')
+
 
 # indexed pathways
 indexed_pathways = readRDS('/home/travis/build/mskilab/fishHook/data/indexed_pathways.rds')
+## indexed_pathways = readRDS('indexed_pathways.rds')
+
 
 segs = readRDS('/home/travis/build/mskilab/fishHook/data/jabba_segs_11517.rds')
+## segs = readRDS('jabba_segs_11517.rds')
+
 
 
 context('unit testing fishhook operations')
 
 
 
-
-
-covered = NULL  
-mc.cores = 1 
-na.rm = TRUE
-pad = 0
-verbose = TRUE
-max.slice = 1e3
-ff.chunk = 1e6
-max.chunk = 1e11
-out.path = NULL
-covariates = list()
-maxpatientpergene = Inf
-ptidcol = NULL
-weightEvents = FALSE
-
-
-
-
-##  > foo = annotate.targets(targets, events)
-##  Overlapping with covered intervals
-##  Finished overlapping with covered intervals
-##  Error in annotate.targets(targets, events) : 
-##    object 'counts.unique' not found
-
-
-
-
+## annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 1, na.rm = TRUE, pad = 0, verbose = TRUE, max.slice = 1e3, 
+##    ff.chunk = 1e6, max.chunk = 1e11, out.path = NULL, covariates = list(), maxpatientpergene = Inf, ptidcol = NULL, weightEvents = FALSE, ...)
 
 test_that('annotate.targets', {
 	## default args
-	expect_error(annotate.targets(targets)) ## Error in annotate.targets(targets, by = "gene_name") :  object 'counts.unique' not found
+	expect_true(is(annotate.targets(targets), 'GRanges'))
+    expect_equal(length(annotate.targets(targets)), 19688)
+    foo = annotate.targets(targets)
+    expect_equal(max(foo$query.id), 19688)
+    expect_equal(max(foo$coverage), 2304638)
+    expect_equal(max(foo$count), 0)
+    ## covered
+    ## events
+    ## mc.cores
+    expect_true(is(annotate.targets(targets, mc.cores=2), 'GRanges'))
+    expect_equal(length(annotate.targets(targets, mc.cores=2)), 19688)
+    expect_equal(max(annotate.targets(targets, mc.cores=2)$query.id), 19688)
+    expect_equal(max(annotate.targets(targets, mc.cores=2)$coverage), 2304638)
+    expect_equal(max(annotate.targets(targets, mc.cores=2)$count), 0)
+    ## na.rm
+    ## pad
+    ## verbose
+    expect_true(is(annotate.targets(targets, verbose=FALSE), 'GRanges'))
+    expect_equal(length(annotate.targets(targets, verbose=FALSE)), 19688)
+    expect_equal(max(annotate.targets(targets, verbose=FALSE)$query.id), 19688)
+    expect_equal(max(annotate.targets(targets, verbose=FALSE)$coverage), 2304638)
+    expect_equal(max(annotate.targets(targets, verbose=FALSE)$count), 0)
+    ## max.slice
+    ## annotate.targets(targets, max.slice=1e8)
+    ## ff.chunk
+    ## 
+    ## max.chunk
+    ## out.path
+    ## covariates
+    ## maxpatientpergene
+    ## ptidcol
+    ## weightEvents
 
-##	expect_true(is(foobar, 'GRangesList'))
-##	expect_equal(length(foobar[[1]]), 16352)
-##	## disjoint
-##	expect_equal(length(aggregate.targets(targets, by = 'gene_name', disjoint = FALSE)[[1]]), 19688)
-	## na.rm example?
 })
+
+
+
+## aggregate.targets
+
+test_that('aggregate.targets', {
+
+    expect_error(aggregate.targets(targets))  ## Error: argument "by" must be specified and same length as targets or "rolling" must be non NULL
+    foo = aggregate.targets(targets, by='gene_name')
+    expect_equal(length(foo$gene_name), 16352)
+
+})
+
+
+
+
+
+
+
+
+
 
 
 

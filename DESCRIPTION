@@ -1,4 +1,4 @@
-Package: fishhook
+Package: fishHook
 Title: R Package for performing Gamma-Poisson regression on somatic mutation count data
 Version: 0.1
 Authors@R: c(person(given = "Marcin",
