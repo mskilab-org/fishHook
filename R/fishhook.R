@@ -33,20 +33,20 @@
 #' 
 #' 
 #' @param targets path to bed or rds containing genomic target regions with optional target name
-#' @param covered  optional path to bed or rds containing  granges object containing "covered" genomic regions (default == NULL)
-#' @param events  optional path to bed or rds containing ranges corresponding to events (ie mutations etc) (default == NULL)
-#' @param mc.cores integer info (default == 1)
-#' @param na.rm info (default == TRUE)
-#' @param pad  info (default == 0)
-#' @param verbose boolean verbose flag (default == FALSE)
-#' @param max.slice integer Max slice of intervals to evaluate with  gr.val (default == 1e3)
-#' @param ff.chunk integer Max chunk to evaluate with fftab (default == 1e6)
-#' @param max.chunk integer gr.findoverlaps parameter (default == 1e11)
-#' @param out.path  out.path to save variable to (default == NULL)
+#' @param covered  optional path to bed or rds containing  granges object containing "covered" genomic regions (default = NULL)
+#' @param events  optional path to bed or rds containing ranges corresponding to events (ie mutations etc) (default = NULL)
+#' @param mc.cores integer info (default = 1)
+#' @param na.rm info (default = TRUE)
+#' @param pad  info (default = 0)
+#' @param verbose boolean verbose flag (default = FALSE)
+#' @param max.slice integer Max slice of intervals to evaluate with  gr.val (default = 1e3)
+#' @param ff.chunk integer Max chunk to evaluate with fftab (default = 1e6)
+#' @param max.chunk integer gr.findoverlaps parameter (default = 1e11)
+#' @param out.path  out.path to save variable to (default = NULL)
 #' @param covariates list 
-#' @param maxpatientpergene Sets the maximum number of events a patient can contribute per target (default == Inf)
+#' @param maxpatientpergene Sets the maximum number of events a patient can contribute per target (default = Inf)
 #' @param ptidcol string Column where patient ID is stored
-#' @param weightEvetns boolean If true, will weight events by their overlap with targets. e.g. if 10% of an event overlaps with a target (default == FALSE)
+#' @param weightEvetns boolean If true, will weight events by their overlap with targets. e.g. if 10% of an event overlaps with a target (default = FALSE)
 #' region, that target region will get assigned a score of 0.1 for that event. If false, any overlap will be given a weight of 1.
 #' @param ... paths to sequence covariates whose output names will be their argument names, and each consists of a list with
 #' $track field corresponding to a GRanges, RleList, ffTrack object (or path to rds containing that object), $type which can
@@ -412,13 +412,13 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
 #' of $p values.  Covariates are inferred from the first file in the list.  
 #' 
 #' @param targets annotated GRanges of targets with fields $coverage, optional field, $count and additional numeric covariates, or path to .rds file of the same; path to bed or rds containing genomic target regions with optional target name 
-#' @param by  character vector with which to split into meta-territories (default == NULL)
-#' @param fields by default all meta data fields of targets EXCEPT reserved field names $coverage, $counts, $query.id (default == NULL)
-#' @param rolling if specified, positive integer specifying how many (genome coordinate) adjacent to aggregate in a rolling fashion; positive integer with which to performa rolling sum / weighted average WITHIN chromosomes of "rolling" ranges" --> return a granges (default == NULL)
-#' @param disjoint boolean only take disjoint bins of input (default == TRUE)
-#' @param na.rm boolean only applicable for sample wise aggregation (i.e. if by = NULL) (default == FALSE)
+#' @param by  character vector with which to split into meta-territories (default = NULL)
+#' @param fields by default all meta data fields of targets EXCEPT reserved field names $coverage, $counts, $query.id (default = NULL)
+#' @param rolling if specified, positive integer specifying how many (genome coordinate) adjacent to aggregate in a rolling fashion; positive integer with which to performa rolling sum / weighted average WITHIN chromosomes of "rolling" ranges" --> return a granges (default = NULL)
+#' @param disjoint boolean only take disjoint bins of input (default = TRUE)
+#' @param na.rm boolean only applicable for sample wise aggregation (i.e. if by = NULL) (default = FALSE)
 #' @param FUN list only applies (for now) if by = NULL, this is a named list of functions, where each item named "nm" corresponds to an optional function of how to alternatively aggregate field "nm" per samples, for alternative aggregation of coverage and count.  This function is applied at every iteration of loading a new sample and adding to the existing set.   It is normally sum [for coverage and count] and coverage weighted mean [for all other covariates].  Alternative coverage / count aggregation functions should have two arguments (val1, val2) and all other alt covariate aggregation functions should have four arguments (val1, cov1, val2, cov2) where val1 is the accumulating vector and val2 is the new vector of values. 
-#' @param verbose boolean verbose flag (default == TRUE)
+#' @param verbose boolean verbose flag (default = TRUE)
 #' @return GRangesList of input targets annotated with new aggregate covariate statistics OR GRanges if rolling is specified
 #' @author Marcin Imielinski
 #' @import zoo
@@ -689,19 +689,19 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
 #' @title title
 #' @description 
 #'
-#' Scores targets based on covariates using gamma-poisson model with coverage as constant
+#' Scores targets based on covariates using Gamma-Poisson model with coverage as constant
 #' 
 #' @param targets annotated targets with fields $coverage, optional field, $count and additional numeric covariates
 #' @param covariates info
-#' @param model fit existing model --> covariates must be present (default == NULL)
-#' @param return.model boolean info (default == FALSE)
+#' @param model fit existing model --> covariates must be present (default = NULL)
+#' @param return.model boolean info (default = FALSE)
 #' @param nb boolean negative binomial, if false then use poisson
-#' @param verbose boolean verbose flag (default == TRUE)
-#' @param iter integer info (default == 200)
-#' @param subsample interger info (default == 1e5)
-#' @param seed integer (default == 42)
-#' @param p.randomized boolean info (default == TRUE)
-#' @param classReturn boolean info (default == FALSE)
+#' @param verbose boolean verbose flag (default = TRUE)
+#' @param iter integer info (default = 200)
+#' @param subsample interger info (default = 1e5)
+#' @param seed integer (default = 42)
+#' @param p.randomized boolean Flag info (default = TRUE)
+#' @param classReturn boolean Flag info (default = FALSE)
 #' @return GRanges of scored results
 #' @author Marcin Imielinski
 #' @import GenomicRanges
@@ -785,11 +785,9 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
     }
                 
     if(!(classReturn)){
-
         if (return.model){
             return(g)     
         }
-
     }
 
     if (is(targets, 'GRanges')){
@@ -1263,6 +1261,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
 
             ##Covariate Names
             names = function(value) {
+
                 if(!missing(value)){
 
                     if(!is.character(value) && !all(is.na(value)) ){
@@ -1289,9 +1288,8 @@ Cov_Arr = R6::R6Class('Cov_Arr',
 
             ##Covariate type
             type = function(value) {
-
+                
                 if(!missing(value)){
-
                     if(!is.character(value) && !all(is.na(value))){
                         stop('Error: type must be of class character')
                     }
@@ -2758,10 +2756,10 @@ Score = R6::R6Class('Score',
 #' Explanation 
 #'
 #' @param obs vector of pvalues to plot, names of obs can be intepreted as labels
-#' @param highlight vector optional arg specifying indices of data points to highlight (ie color red)
-#' @param exp info
-#' @param lwd integer, optional, specifying thickness of line fit to data (default == 1)
-#' @param col NULL
+#' @param highlight vector optional arg specifying indices of data points to highlight (i.e. color red) (default = c())
+#' @param exp info (default = NULL)
+#' @param lwd integer, optional, specifying thickness of line fit to data (default = 1)
+#' @param col info (default = NULL)
 #' @param col.bg string
 #' @param pch integer dot type for scatter plot 
 #' @param cex integer dot size for scatter plot
