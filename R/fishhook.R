@@ -135,17 +135,14 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
 
     if (verbose){
         cat('Finished overlapping with covered intervals\n')
-        cat('hithit')
     }
 
     if (length(ov) > 0){
-        cat('AWAA')
 
         if (!is.null(events)){
             cat('if (!is.null(events))')
 
             if (is(events, 'GRanges')){
-                cat('fuck')
 
                 ev = gr.fix(events[gr.in(events, ov)])                                
                         
@@ -206,7 +203,6 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
             }
         }
         for (nm in names(covariates)){
-            cat('for loop!!!')
 
             cov = covariates[[nm]]
 
@@ -351,7 +347,6 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
     cov.nm = setdiff(names(values(ov)), c('coverage', 'count', 'query.id', 'subject.id'))
 
     if (length(ov) > 0){
-        cat('fuck line 354')
 
         if (length(cov.nm) > 0){
             cmd = paste(cmd,  ',', paste(cov.nm, '= mean(', cov.nm, ')', sep = '', collapse = ', '), ')',  sep = '')
