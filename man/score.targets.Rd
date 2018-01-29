@@ -14,29 +14,29 @@ score.targets(targets, covariates = names(values(targets)), model = NULL,
 
 \item{covariates}{info}
 
-\item{model}{fit existing model --> covariates must be present (default == NULL)}
+\item{model}{fit existing model --> covariates must be present (default = NULL)}
 
-\item{return.model}{boolean info (default == FALSE)}
+\item{return.model}{boolean info (default = FALSE)}
 
 \item{nb}{boolean negative binomial, if false then use poisson}
 
-\item{verbose}{boolean verbose flag (default == TRUE)}
+\item{verbose}{boolean verbose flag (default = TRUE)}
 
-\item{iter}{integer info (default == 200)}
+\item{iter}{integer info (default = 200)}
 
-\item{subsample}{interger info (default == 1e5)}
+\item{subsample}{interger info (default = 1e5)}
 
-\item{seed}{integer (default == 42)}
+\item{seed}{integer (default = 42)}
 
-\item{p.randomized}{boolean info (default == TRUE)}
+\item{p.randomized}{boolean Flag info (default = TRUE)}
 
-\item{classReturn}{boolean info (default == FALSE)}
+\item{classReturn}{boolean Flag info (default = FALSE)}
 }
 \value{
 GRanges of scored results
 }
 \description{
-Scores targets based on covariates using gamma-poisson model with coverage as constant
+Scores targets based on covariates using Gamma-Poisson model with coverage as constant
 }
 \author{
 Marcin Imielinski

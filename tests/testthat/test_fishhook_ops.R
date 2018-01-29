@@ -1,5 +1,6 @@
 library(fishhook)
 
+library(testthat)
 
 Sys.setenv(DEFAULT_BSGENOME = 'BSgenome.Hsapiens.UCSC.hg19::Hsapiens')
 
@@ -24,20 +25,53 @@ segs = readRDS('/home/travis/build/mskilab/fishHook/data/jabba_segs_11517.rds')
 context('unit testing fishhook operations')
 
 
-##test_that('aggregate.targets', {
-##	## default args
-##	foobar = aggregate.targets(targets, by = 'gene_name')
+
+
+
+covered = NULL  
+mc.cores = 1 
+na.rm = TRUE
+pad = 0
+verbose = TRUE
+max.slice = 1e3
+ff.chunk = 1e6
+max.chunk = 1e11
+out.path = NULL
+covariates = list()
+maxpatientpergene = Inf
+ptidcol = NULL
+weightEvents = FALSE
+
+
+
+
+##  > foo = annotate.targets(targets, events)
+##  Overlapping with covered intervals
+##  Finished overlapping with covered intervals
+##  Error in annotate.targets(targets, events) : 
+##    object 'counts.unique' not found
+
+
+
+
+
+test_that('annotate.targets', {
+	## default args
+	expect_error(annotate.targets(targets)) ## Error in annotate.targets(targets, by = "gene_name") :  object 'counts.unique' not found
+
 ##	expect_true(is(foobar, 'GRangesList'))
 ##	expect_equal(length(foobar[[1]]), 16352)
 ##	## disjoint
 ##	expect_equal(length(aggregate.targets(targets, by = 'gene_name', disjoint = FALSE)[[1]]), 19688)
 	## na.rm example?
-##})
+})
+
+
 
 test_that('qq_pval', {
-	pvals = c(0.0001, 0.0001, 0.032, 0.005, 0.9, 0.15)
-	## check default params
-	foo = qq_pval(pvals)
+    pvals = c(0.0001, 0.0001, 0.032, 0.005, 0.9, 0.15)
+    ## check default params
+    foo = qq_pval(pvals)
     expect_match(names(foo)[1], 'rect')
     expect_match(names(foo)[2], 'text')
     expect_equal(round(foo$rect$w, 3), round(0.8597488, 3))  ## rounding; otherwise, 'double' types not exactly the same

@@ -13,29 +13,29 @@ annotate.targets(targets, covered = NULL, events = NULL, mc.cores = 1,
 \arguments{
 \item{targets}{path to bed or rds containing genomic target regions with optional target name}
 
-\item{covered}{optional path to bed or rds containing  granges object containing "covered" genomic regions (default == NULL)}
+\item{covered}{optional path to bed or rds containing  granges object containing "covered" genomic regions (default = NULL)}
 
-\item{events}{optional path to bed or rds containing ranges corresponding to events (ie mutations etc) (default == NULL)}
+\item{events}{optional path to bed or rds containing ranges corresponding to events (ie mutations etc) (default = NULL)}
 
-\item{mc.cores}{integer info (default == 1)}
+\item{mc.cores}{integer info (default = 1)}
 
-\item{na.rm}{info (default == TRUE)}
+\item{na.rm}{info (default = TRUE)}
 
-\item{pad}{info (default == 0)}
+\item{pad}{info (default = 0)}
 
-\item{verbose}{boolean verbose flag (default == FALSE)}
+\item{verbose}{boolean verbose flag (default = FALSE)}
 
-\item{max.slice}{integer Max slice of intervals to evaluate with  gr.val (default == 1e3)}
+\item{max.slice}{integer Max slice of intervals to evaluate with  gr.val (default = 1e3)}
 
-\item{ff.chunk}{integer Max chunk to evaluate with fftab (default == 1e6)}
+\item{ff.chunk}{integer Max chunk to evaluate with fftab (default = 1e6)}
 
-\item{max.chunk}{integer gr.findoverlaps parameter (default == 1e11)}
+\item{max.chunk}{integer gr.findoverlaps parameter (default = 1e11)}
 
-\item{out.path}{out.path to save variable to (default == NULL)}
+\item{out.path}{out.path to save variable to (default = NULL)}
 
 \item{covariates}{list}
 
-\item{maxpatientpergene}{Sets the maximum number of events a patient can contribute per target (default == Inf)}
+\item{maxpatientpergene}{Sets the maximum number of events a patient can contribute per target (default = Inf)}
 
 \item{ptidcol}{string Column where patient ID is stored}
 
@@ -48,7 +48,7 @@ Sequence covariates must be ffTrack objects (or paths to ffTrack rds) and requir
 will be used as input to fftab, and can have optional logical argument $grep to specify inexact matches (see fftab)
 Interval covariates must be Granges (or paths to GRanges rds) or paths to bed files}
 
-\item{weightEvetns}{boolean If true, will weight events by their overlap with targets. e.g. if 10% of an event overlaps with a target (default == FALSE)
+\item{weightEvetns}{boolean If true, will weight events by their overlap with targets. e.g. if 10% of an event overlaps with a target (default = FALSE)
 region, that target region will get assigned a score of 0.1 for that event. If false, any overlap will be given a weight of 1.}
 }
 \value{

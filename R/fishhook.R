@@ -127,8 +127,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
 
     if (!is.null(covered)){
         ov = gr.findoverlaps(targets, covered, verbose = verbose, max.chunk = max.chunk, mc.cores = mc.cores)
-    }
-    else{
+    }else {
         ov = targets[, c()]
         ov$query.id = ov$subject.id = 1:length(targets)
     }
@@ -140,7 +139,6 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
     if (length(ov) > 0){
 
         if (!is.null(events)){
-            cat('if (!is.null(events))')
 
             if (is(events, 'GRanges')){
 
@@ -334,12 +332,11 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
     ovdt = gr2dt(ov)
         
         
-    cmd = 'list(coverage = sum(width),';
+    cmd = 'list(coverage = sum(width), ';
 
     if (!is.null(events)){
         cmd = paste(cmd, 'count = sum(count)', sep = '')
-    }
-    else{
+    }else{
         cmd = paste(cmd, 'count = NA', sep = '')  
     }
     
@@ -350,8 +347,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
 
         if (length(cov.nm) > 0){
             cmd = paste(cmd,  ',', paste(cov.nm, '= mean(', cov.nm, ')', sep = '', collapse = ', '), ')',  sep = '')
-        }
-        else{
+        }else{
             cmd = paste(cmd, ')',  sep = '')
         }
 
@@ -363,8 +359,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
             targets$count[as.numeric(counts.unique$V2)] = counts.unique$final_count
         }
                 
-    }
-    else{
+    }else{
         targets$coverage = 0 
     }          
         
@@ -559,7 +554,8 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
         }
         
         if (any(nnum = !(sapply(setdiff(fields, 'query.id'), function(x) class(values(targets)[, x])) %in% 'numeric'))){
-            warning(sprintf('Warning: %s meta data fields (%s) fit were found to be non-numeric and not aggregated', sum(nnum), paste(fields[nnum], collapse = ',')))
+            ## output: 'object 'nnum' not found'
+            ## warning(sprintf('Warning: %s meta data fields (%s) fit were found to be non-numeric and not aggregated', sum(nnum), paste(fields[nnum], collapse = ',')))
             fields = fields[!nnum]
         }
         

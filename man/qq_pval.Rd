@@ -13,13 +13,13 @@ qq_pval(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL,
 \arguments{
 \item{obs}{vector of pvalues to plot, names of obs can be intepreted as labels}
 
-\item{highlight}{vector optional arg specifying indices of data points to highlight (ie color red)}
+\item{highlight}{vector optional arg specifying indices of data points to highlight (i.e. color red) (default = c())}
 
-\item{exp}{info}
+\item{exp}{info (default = NULL)}
 
-\item{lwd}{integer, optional, specifying thickness of line fit to data (default == 1)}
+\item{lwd}{integer, optional, specifying thickness of line fit to data (default = 1)}
 
-\item{col}{NULL}
+\item{col}{info (default = NULL)}
 
 \item{col.bg}{string}
 
