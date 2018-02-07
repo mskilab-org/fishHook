@@ -22,7 +22,8 @@ Imports:
     BiocGenerics,
     R6
 Suggests:
-    parallel
+    parallel,
+    testthat
 License: GPL-2
 LazyData: true
 RoxygenNote: 6.0.1.9000
