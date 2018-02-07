@@ -1,6 +1,6 @@
-[![Build Status](https://travis-ci.org/mskilab/fish.hook.svg?branch=master)](https://travis-ci.org/mskilab/fish.hook)
+[![Build Status](https://travis-ci.org/mskilab/fishHook.svg?branch=master)](https://travis-ci.org/mskilab/fishHook)
 
-fish.hook
+fishHook
 ======
 
 R package for applying Gamma-Poisson regression to identify statistical enrichment or depletion of somatic mutations in regions after correcting for genomic covariates.
@@ -16,29 +16,23 @@ Installation
   install.packages('devtools')
   ```
 
-2. Load devtools
+2. Install gUtils 
 
   ```
-  library(devtools)
-  ````
-
-3. Install gUtils (if you don't have it already)
-
-  ```
-  install_github('mskilab/gUtils')
+  devtools::install_github('mskilab/gUtils')
   ````
 
 
-4. Install ffTrack
+3. Install ffTrack
 
   ```
-  install_github('mskilab/ffTrack')
+  devtools::install_github('mskilab/ffTrack')
   ````
 
-5. Install fish.hook
+4. Install fishHook
 
   ```
-  install_github('mskilab/fish.hook')
+  devtools::install_github('mskilab/fishHook')
   ````
 
 See Demo
@@ -70,16 +64,15 @@ See Below.
 
 
 ```R
-library(fishhook)
-library(skitools)
+library(fishHook)
 ```
 
 ## Now we will need some data
-fishHook utilizes gamme poisson regression to idenfity frequently mutated or amplified/delete regions of the genome from sequencing and microarray data. To do this we need to take a set of genomic targets, and test each one against the hypothesis that they are significantly altered in comparison to the other targets. In this first example we will use genes as our targets and use exome data as the mutational events. Since exome sequencing tends to exhibt strong sequencing bias, we want to include this information in our analysis. To do this we constructed a GRanges called eligible that will indicate the regions that have sufficeint coverage. 
+fishHook utilizes Gamma-Poisson regression to identify frequently-mutated or amplified/deleted regions of the genome from sequencing and microarray data. To do this we need to take a set of genomic targets, and test each one against the hypothesis that they are significantly altered in comparison to the other targets. In this first example we will use genes as our targets and use exome data as the mutational events. Since exome sequencing tends to exhibit strong sequencing bias, we want to include this information in our analysis. To do this we constructed a GRanges called eligible that will indicate the regions that have sufficient coverage. 
 
 
 ```R
-setwd("~/git/fish.hook/data")
+setwd("~/git/fishHook/data")
 ```
 
 ## Mutational Events
@@ -164,7 +157,7 @@ eligible
 
 
 ## The FishHook Object
-All of the data manipulations are handled by the fish.hook object given entered data. You can initialize it as follows. 
+All of the data manipulations are handled by the fishHook object given entered data. You can initialize it as follows. 
 
 
 ```R
@@ -318,7 +311,7 @@ fish$anno
 
 
 ## Scoring the Targets
-Now that we have determined the mutational burden (count) at each target, we can now need to create a null model and test each of our hypothesize against this model. Note that because we are using the targets as thier own controlls there is an assumption that a majority of the targets will follow the null hypothesis.
+Now that we have determined the mutational burden (count) at each target, we can now need to create a null model and test each of our hypothesize against this model. Note that because we are using the targets as their own controls there is an assumption that a majority of the targets will follow the null hypothesis.
 
 
 ```R
@@ -446,7 +439,7 @@ plot <- fish$qq_plot(plotly = F)
 
 
 
-![](DemoImages/standard_plot_noplotly.png)
+![](images/standard_plot_noplotly.png)
 
 ## Visualizing the Data cont.
 The above is cool and all but we probably want to annotate the hover text of each point with targets metadata, to do that we can use the columns param in qq_plot(). Note that you can specify any column that is present in the 'all' output. You can also provide your own vectors through annotations. P value will be included in all graphs created but Count, Effectsize, HypothesisID and q will only be added by default if not annotations are specified by the user.
@@ -485,11 +478,11 @@ plot2
 
         Column Annotations
 
-![](DemoImages/plotly1.png)
+![](images/plotly1.png)
 
         Novel Annotations
 
-![](DemoImages/plotly2.png)
+![](images/plotly2.png)
 
 
 
@@ -666,7 +659,7 @@ rept
 
 
 ## Accessing Covariate Fields
-Covariate fields such as type are stored as vectors and when you acess the field you will be returned a vector or list in the case of the Covariates themselves that is the same length as your covariates object.
+Covariate fields such as type are stored as vectors and when you access the field you will be returned a vector or list in the case of the Covariates themselves that is the same length as your covariates object.
 
 
 ```R
@@ -724,7 +717,7 @@ rep3$signature
 
 
 ## fishHook Analysis using Covariates
-The only difference is that when we intiate the class, we will need to pass in the Covariates. Note that annotating the covariates takes some extra time. You can speed this part up by using mc.cores (set number of cores) or with parameters we will cover in the next section.
+The only difference is that when we initiate the class, we will need to pass in the Covariates. Note that annotating the covariates takes some extra time. You can speed this part up by using mc.cores (set number of cores) or with parameters we will cover in the next section.
 
 
 ```R
@@ -784,12 +777,12 @@ plot
 
 
 
-![](DemoImages/plotly3.png)
+![](images/plotly3.png)
 
 
 
-## fishHook Analysis using Covariates cont.
-Covariates rely on our prior knowledge about mutational processes. However, there are likely facotrs that influence mutations that are not known as thus it would be impossible for us to define a covariate for them. However, all of the mutational evidence is present in the mutational landscape (events) and as such we can create a covariate from our events that we will call local mutational density that can model the mutational landscape in the area surrounding our targets. We can use the flag use_local_mut_density for this. The bin for this covariate be specified using local_mut_density_bin and is by default set to 1e6.
+## fishHook Analysis using Covariates (cont.)
+Covariates rely on our prior knowledge about mutational processes. However, there are likely factors that influence mutations that are not known as thus it would be impossible for us to define a covariate for them. However, all of the mutational evidence is present in the mutational landscape (events) and as such we can create a covariate from our events that we will call local mutational density that can model the mutational landscape in the area surrounding our targets. We can use the flag 'use_local_mut_density' for this. The bin for this covariate be specified using 'local_mut_density_bin' and is by default set to 1e6.
 
 
 ```R
@@ -885,15 +878,20 @@ plot
 
 
 
-![](DemoImages/plotly4.png)
+![](images/plotly4.png)
 
 
 ## FishHook Extras: Subsetting
-The fishHook obeject can be subseted in the following way: fish[i,j,k,l] where: 
-i is a vector indicating which targets to keep, 
-j is a vector indicating which events to keep,
-k is a vector indicating which covariates to keep, and
-l is a vector indicating which eligible regions to keep
+The fishHook object can be subseted in the following way: 
+
+    fish[i,j,k,l] 
+
+where: 
+* i is a vector indicating which targets to keep, 
+* j is a vector indicating which events to keep,
+* k is a vector indicating which covariates to keep, and
+* l is a vector indicating which eligible regions to keep
+
 Here are some examples to play with using the previous fish object
 
 

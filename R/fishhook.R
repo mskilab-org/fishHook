@@ -17,9 +17,6 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ###############################################################################
 
-#' @import R6
-#' @import GenomicRanges
-
 #' @name annotate.targets
 #' @title title
 #' @description 
@@ -36,20 +33,20 @@
 #' 
 #' 
 #' @param targets path to bed or rds containing genomic target regions with optional target name
-#' @param covered  optional path to bed or rds containing  granges object containing "covered" genomic regions
-#' @param events  optional path to bed or rds containing ranges corresponding to events (ie mutations etc)
-#' @param mc.cores info
-#' @param na.rm info
-#' @param pad  info
-#' @param verbose boolean verbose flag (default == FALSE)
-#' @param max.slice integer Max slice of intervals to evaluate with  gr.val
-#' @param ff.chunk integer Max chunk to evaluate with fftab
-#' @param max.chunk integer gr.findoverlaps parameter
-#' @param out.path  out.path to save variable to
+#' @param covered  optional path to bed or rds containing  granges object containing "covered" genomic regions (default = NULL)
+#' @param events  optional path to bed or rds containing ranges corresponding to events (ie mutations etc) (default = NULL)
+#' @param mc.cores integer info (default = 1)
+#' @param na.rm info (default = TRUE)
+#' @param pad  info (default = 0)
+#' @param verbose boolean verbose flag (default = FALSE)
+#' @param max.slice integer Max slice of intervals to evaluate with  gr.val (default = 1e3)
+#' @param ff.chunk integer Max chunk to evaluate with fftab (default = 1e6)
+#' @param max.chunk integer gr.findoverlaps parameter (default = 1e11)
+#' @param out.path  out.path to save variable to (default = NULL)
 #' @param covariates list 
-#' @param maxpatientpergene Sets the maximum number of events a patient can contribute per target
-#' @param weightEvetns If true, will weight events by thier overlap with targets. e.g. if 10% of an event overlaps with a target
+#' @param maxpatientpergene Sets the maximum number of events a patient can contribute per target (default = Inf)
 #' @param ptidcol string Column where patient ID is stored
+#' @param weightEvetns boolean If true, will weight events by their overlap with targets. e.g. if 10% of an event overlaps with a target (default = FALSE)
 #' region, that target region will get assigned a score of 0.1 for that event. If false, any overlap will be given a weight of 1.
 #' @param ... paths to sequence covariates whose output names will be their argument names, and each consists of a list with
 #' $track field corresponding to a GRanges, RleList, ffTrack object (or path to rds containing that object), $type which can
@@ -61,7 +58,6 @@
 #' Interval covariates must be Granges (or paths to GRanges rds) or paths to bed files
 #' @return GRanges of input targets annotated with covariate statistics (+/- constrained to the subranges in optional argument covered)
 #' @author Marcin Imielinski
-#' @importFrom ffTrack fftab
 #' @export
 annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 1, na.rm = TRUE, pad = 0, verbose = TRUE, max.slice = 1e3, 
     ff.chunk = 1e6, max.chunk = 1e11, out.path = NULL, covariates = list(), maxpatientpergene = Inf, ptidcol = NULL, weightEvents = FALSE, ...)
@@ -69,6 +65,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
     if(weightEvents){
         maxpatientpergene = NULL
     }
+
     if (is.character(targets)){
         if (grepl('\\.rds$', targets[1])){
             targets = readRDS(targets[1])
@@ -116,6 +113,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
                 stop('Error: Sequence tracks must have ffTrack object as $track field or $track must be a path to an ffTrack object rds file')
             }
         }
+    }
         
     if (any(ix = (cov.classes == 'ffTrack' & cov.types == 'sequence'))){
         if (!all(sapply(covariates, function(x) !is.null(x$signature)))){
@@ -126,10 +124,10 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
     if (verbose){
         cat('Overlapping with covered intervals\n')
     }
+
     if (!is.null(covered)){
         ov = gr.findoverlaps(targets, covered, verbose = verbose, max.chunk = max.chunk, mc.cores = mc.cores)
-    }
-    else{
+    }else {
         ov = targets[, c()]
         ov$query.id = ov$subject.id = 1:length(targets)
     }
@@ -137,6 +135,8 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
     if (verbose){
         cat('Finished overlapping with covered intervals\n')
     }
+
+    counts.unique = NULL
 
     if (length(ov) > 0){
 
@@ -173,7 +173,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
                     }
                             
                     ev2$target.id = ov$query.id[ev2$subject.id]
-                    tab = as.data.table(cbind(ev2$ID,ev2$target.id))
+                    tab = as.data.table(cbind(ev2$ID, ev2$target.id))
                     counts.unique = tab[, dummy :=1][, .(count = sum(dummy)), keyby =.(V1, V2)][, count := pmin(maxpatientpergene, count)][, .(final_count = sum(count)), keyby = V2]                          
                 }
                         
@@ -202,7 +202,6 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
                 cat('Finished counting events\n')
             }
         }
-
         for (nm in names(covariates)){
 
             cov = covariates[[nm]]
@@ -335,12 +334,11 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
     ovdt = gr2dt(ov)
         
         
-    cmd = 'list(coverage = sum(width),';
+    cmd = 'list(coverage = sum(width), ';
 
     if (!is.null(events)){
         cmd = paste(cmd, 'count = sum(count)', sep = '')
-    }
-    else{
+    }else{
         cmd = paste(cmd, 'count = NA', sep = '')  
     }
     
@@ -348,10 +346,10 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
     cov.nm = setdiff(names(values(ov)), c('coverage', 'count', 'query.id', 'subject.id'))
 
     if (length(ov) > 0){
+
         if (length(cov.nm) > 0){
             cmd = paste(cmd,  ',', paste(cov.nm, '= mean(', cov.nm, ')', sep = '', collapse = ', '), ')',  sep = '')
-        }
-        else{
+        }else{
             cmd = paste(cmd, ')',  sep = '')
         }
 
@@ -363,8 +361,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
             targets$count[as.numeric(counts.unique$V2)] = counts.unique$final_count
         }
                 
-    }
-    else{
+    }else{
         targets$coverage = 0 
     }          
         
@@ -383,7 +380,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
         }
         tryCatch(saveRDS(targets, out.path), error = function(e) warning(sprintf('Error writing to file %s', out.file)))             
     }
-        
+
     return(targets)
 
 }
@@ -407,13 +404,13 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
 #' of $p values.  Covariates are inferred from the first file in the list.  
 #' 
 #' @param targets annotated GRanges of targets with fields $coverage, optional field, $count and additional numeric covariates, or path to .rds file of the same; path to bed or rds containing genomic target regions with optional target name 
-#' @param by  character vector with which to split into meta-territories
-#' @param fields by default all meta data fields of targets EXCEPT reserved field names $coverage, $counts, $query.id
-#' @param rolling if specified, positive integer specifying how many (genome coordinate) adjacent to aggregate in a rolling fashion; positive integer with which to performa rolling sum / weighted average WITHIN chromosomes of "rolling" ranges" --> return a granges
-#' @param disjoint  only take disjoint bins of input
-#' @param na.rm only applicable for sample wise aggregation (i.e. if by = NULL)
-#' @param FUN only applies (for now) if by = NULL, this is a named list of functions, where each item named "nm" corresponds to an optional function of how to alternatively aggregate field "nm" per samples, for alternative aggregation of coverage and count.  This function is applied at every iteration of loading a new sample and adding to the existing set.   It is normally sum [for coverage and count] and coverage weighted mean [for all other covariates].  Alternative coverage / count aggregation functions should have two arguments (val1, val2) and all other alt covariate aggregation functions should have four arguments (val1, cov1, val2, cov2) where val1 is the accumulating vector and val2 is the new vector of values. 
-#' @param verbose boolean verbose flag (default == FALSE)
+#' @param by  character vector with which to split into meta-territories (default = NULL)
+#' @param fields by default all meta data fields of targets EXCEPT reserved field names $coverage, $counts, $query.id (default = NULL)
+#' @param rolling if specified, positive integer specifying how many (genome coordinate) adjacent to aggregate in a rolling fashion; positive integer with which to performa rolling sum / weighted average WITHIN chromosomes of "rolling" ranges" --> return a granges (default = NULL)
+#' @param disjoint boolean only take disjoint bins of input (default = TRUE)
+#' @param na.rm boolean only applicable for sample wise aggregation (i.e. if by = NULL) (default = FALSE)
+#' @param FUN list only applies (for now) if by = NULL, this is a named list of functions, where each item named "nm" corresponds to an optional function of how to alternatively aggregate field "nm" per samples, for alternative aggregation of coverage and count.  This function is applied at every iteration of loading a new sample and adding to the existing set.   It is normally sum [for coverage and count] and coverage weighted mean [for all other covariates].  Alternative coverage / count aggregation functions should have two arguments (val1, val2) and all other alt covariate aggregation functions should have four arguments (val1, cov1, val2, cov2) where val1 is the accumulating vector and val2 is the new vector of values. 
+#' @param verbose boolean verbose flag (default = TRUE)
 #' @return GRangesList of input targets annotated with new aggregate covariate statistics OR GRanges if rolling is specified
 #' @author Marcin Imielinski
 #' @import zoo
@@ -424,19 +421,20 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
 aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, disjoint = TRUE,  na.rm = FALSE, 
     FUN = list(), verbose = TRUE)
 {
+
     V1 = sn = st = en = keep = count = width = NULL ## NOTE fix
     if (is.null(by) & is.character(targets)){
         cat('Applying sample wise merging\n')
     }        
     else if (is.null(by) & is.null(rolling)){
-        stop('Error: by must be specified and same length as targets or rolling must be non NULL')
+        stop('Error: argument "by" must be specified and same length as targets or "rolling" must be non NULL')
     }
 
     if (is.null(by) & is.character(targets)){
 
         if (!all(ix <- (file.exists(targets)) & grepl('\\.rds$', targets))){
 
-            warning(sprintf('%s of the  %s input files for sample wise merging either do not exist or are not .rds files.  Sample wise merging (i.e. when by is null) requires .rds files of equal dimension GRanges (same intervals, same meta data column names)', sum(!ix), length(ix)))
+            warning(sprintf('Warning: %s of the  %s input files for sample wise merging either do not exist or are not .rds files. Sample wise merging (i.e. when by is null) requires .rds files of equal dimension GRanges (same intervals, same meta data column names)', sum(!ix), length(ix)))
             if (sum(ix)==0){
                 stop('No files to process')
             }
@@ -559,9 +557,10 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
         }
         
         if (any(nnum <- !(sapply(setdiff(fields, 'query.id'), function(x) class(values(targets)[, x])) %in% 'numeric'))){
-            warning(sprintf('%s meta data fields (%s) fit were found to be non-numeric and not aggregated', sum(nnum), paste(fields[nnum], collapse = ',')))
-            fields = fields[!nnum]
+                warning(sprintf('%s meta data fields (%s) fit were found to be non-numeric and not aggregated', sum(nnum), paste(fields[nnum], collapse = ',')))
+                fields = fields[!nnum]
         }
+        
         
         cfields = intersect(names(values(targets)), c('coverage', 'count'))
         
@@ -606,12 +605,12 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
         }
         else{
 
-            if (is.na(rolling <- as.integer(rolling))){
+            if (is.na(rolling = as.integer(rolling))){   ## check not NA
                 stop('Error: rolling must be a positive integer')
             }
 
-            if (is.na(rolling<=1)){
-                stop('Error: rolling must be a positive integer')
+            if (rolling <= 1){
+                stop('Error: rolling must be a positive integer greater than one')
             }
 
             if (verbose){
@@ -622,7 +621,7 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
 
             tadt[, width := as.numeric(width)]
 
-            tadt <- tadt[seqnames %in% c(seq(22), "X")]
+            tadt = tadt[seqnames %in% c(seq(22), "X")]
                 
             if ('count' %in% cfields ) {
                 print("rolling count")
@@ -684,19 +683,19 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
 #' @title title
 #' @description 
 #'
-#' Scores targets based on covariates using gamma-poisson model with coverage as constant
+#' Scores targets based on covariates using Gamma-Poisson model with coverage as constant
 #' 
 #' @param targets annotated targets with fields $coverage, optional field, $count and additional numeric covariates
 #' @param covariates info
-#' @param model fit existing model --> covariates must be present
-#' @param return.model info
-#' @param nb  negative binomial, if false then use poisson
-#' @param verbose boolean verbose flag (default == TRUE)
-#' @param iter info
-#' @param subsample info
-#' @param seed info 
-#' @param p.randomized info
-#' @param classReturn info
+#' @param model fit existing model --> covariates must be present (default = NULL)
+#' @param return.model boolean info (default = FALSE)
+#' @param nb boolean negative binomial, if false then use poisson
+#' @param verbose boolean verbose flag (default = TRUE)
+#' @param iter integer info (default = 200)
+#' @param subsample interger info (default = 1e5)
+#' @param seed integer (default = 42)
+#' @param p.randomized boolean Flag info (default = TRUE)
+#' @param classReturn boolean Flag info (default = FALSE)
 #' @return GRanges of scored results
 #' @author Marcin Imielinski
 #' @import GenomicRanges
@@ -705,7 +704,6 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
     verbose = TRUE, iter = 200, subsample = 1e5, seed = 42, p.randomized = TRUE, classReturn = FALSE)
 {
     require(MASS)
-    require(data.table)
     covariates = setdiff(covariates, c('count', 'coverage', 'query.id'))        
         
     if (any(nnin = !(covariates %in% names(values(targets))))){
@@ -781,11 +779,9 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
     }
                 
     if(!(classReturn)){
-
         if (return.model){
             return(g)     
         }
-
     }
 
     if (is(targets, 'GRanges')){
@@ -795,7 +791,7 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
         res = as.data.frame(values(targets))
     }
 
-    if (any(is.fact <- (sapply(covariates, function(x) class(res[, x])) %in% c('factor')))){
+    if (any(is.fact = (sapply(covariates, function(x) class(res[, x])) %in% c('factor')))){
         ix = which(is.fact)
         new.col = lapply(ix, function(i){
             val = res[, covariates[i]]
@@ -879,12 +875,6 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
 }
 
 
-<<<<<<< HEAD
-        
-=======
-
-
->>>>>>> 9231bfe93310f0656885f484f27a060b6973ae2a
 #' Cov
 #' @title title
 #' @description
@@ -908,12 +898,12 @@ Cov = R6::R6Class("Cov",
     public = list(
 
     initialize = function(Covariate = NA, type = NA, signature = NA,
-        name = "", pad = NA, na.rm = NA, field = NA,
+        name = '', pad = NA, na.rm = NA, field = NA,
         grep = NA, chr.sub = FALSE){
 
         ## Checks to see if covariates and type were supplied
         if(is.null(Covariate) | is.null(type)){
-            stop('Error: Both Covariate and track must be non-null.')
+            stop('Error: Both "Covariate" and "track" arguments must be supplied.')
         }
 
         ## Checks to see if covariate type is one of the specified types in self$COV.TYPES
@@ -928,7 +918,7 @@ Cov = R6::R6Class("Cov",
 
         ## Requires any name provided to be a character
         if(!(is.character(name))){
-            stop("Error: Name must be of type 'character'")
+            stop('Error: Name must be of type "character"')
         }
 
         ## Sequence Covariates
@@ -954,7 +944,7 @@ Cov = R6::R6Class("Cov",
 
         ## Assigns and initialized the Cov if all of the above is satisfied
     
-        if(class(Covariate) == "GRanges" & chr.sub){
+        if(class(Covariate) == 'GRanges' & chr.sub){
             seqlevels(Covariate) = gsub('chr','',seqlevels(Covariate))
         }
 
@@ -969,44 +959,44 @@ Cov = R6::R6Class("Cov",
     },
 
     seqlevels = function(...){
-        if(class(self$Covariate) == "GRanges"){
+        if(class(self$Covariate) == 'GRanges'){
             return(seqlevels(self$Covariate))
         }
         return (NA)                              
     },
 
     toString = function(...){
-        paste(c('Name:', self$name,
+        paste(c('Name: ', self$name,
         '\ntype: ',self$type, '\tsignature: ', self$signature,
         '\nfield: ',self$field, '\tpad: ', self$pad,
         '\nna.rm: ', self$na.rm, '\tgrep: ', self$grep,
-        '\nCovariate: ', class(self$Covariate), '\n'),collapse = "", sep = '')
+        '\nCovariate: ', class(self$Covariate), '\n'), collapse = '', sep = '')
     },
 
     convert2Arr = function(...){
         return(Cov_Arr$new(self))
     },
                           
-    ## prints covariate to output
+    ## Prints covariate to output
     print = function(...){
-        cat(c("Name:", self$name,
-        "\ntype: ",self$type,"\tsignature: ", self$signature,
-        "\nfield: ",self$field, "\tpad: ", self$pad,
-        "\na.rm: ", self$na.rm, "\tgrep: ", self$grep,
-        "\nCovariate Class: ", class(self$Covariate), '\n'),collapse = "")
+        cat(c('Name: ', self$name,
+        '\ntype: ', self$type, '\tsignature: ', self$signature,
+        '\nfield: ', self$field, '\tpad: ', self$pad,
+        '\na.rm: ', self$na.rm, '\tgrep: ', self$grep,
+        '\nCovariate Class: ', class(self$Covariate), '\n'), collapse = '')
     },
 
     ## Checks to see if this covariate has seqlevels that begin with chr. must be a GRanges to do this
     chr = function(...){
-        if(class(self$Covariate) == "GRanges"){
-            return(any(grepl("chr",seqlevels(self$Covariate))))
+        if(class(self$Covariate) == 'GRanges'){
+            return(any(grepl('chr', seqlevels(self$Covariate))))
         }
         return (NA)
     },
 
     ## Converts a Cov object to a list that can be passed as input for annotate.targets
     toList = function(...){
-        if(!(is.null(self$signature)) & class(self$Covariate) == "ffTrack"){
+        if(!(is.null(self$signature)) & class(self$Covariate) == 'ffTrack'){
             return (list(track = self$Covariate, 
                 type = self$type,
                 signature = self$signature, 
@@ -1075,14 +1065,14 @@ Cov = R6::R6Class("Cov",
 'c.Cov' = function(...){
 
     Covs = list(...)
-    isc = sapply(Covs, function(x) (class(x)[1] == "Cov" ||  class(x)[1] == "Cov_Arr"))
+    isc = sapply(Covs, function(x) (class(x)[1] == 'Cov' ||  class(x)[1] == 'Cov_Arr'))
 
     if(any(!isc)){
-        stop("All inputs must be of class Cov or Cov_Arr.")
+        stop('Error: All inputs must be of class Cov or Cov_Arr.')
     }
 
     Cov_Arrs = lapply(Covs, function(x) {
-        if(class(x)[1] == "Cov"){
+        if(class(x)[1] == 'Cov'){
             return( x$convert2Arr())
         }
         else{
@@ -1133,7 +1123,7 @@ Cov = R6::R6Class("Cov",
 #' @author Zoran Z. Gajic
 #' @import R6 
 #' @export
-Cov_Arr = R6::R6Class("Cov_Arr",
+Cov_Arr = R6::R6Class('Cov_Arr',
     public = list(
 
     ## Creates a Cov_Arr object. This function is noramlly called from using the c operator on Cov objects
@@ -1144,9 +1134,9 @@ Cov_Arr = R6::R6Class("Cov_Arr",
             return()
         }
         ## Checks to make sure that all items within the c() operator are all of class Cov
-        isc = sapply(Covs, function(x) class(x)[1] == "Cov")
+        isc = sapply(Covs, function(x) class(x)[1] == 'Cov')
         if(any(!isc)){
-            stop("Error: All inputs must be of class Cov.")
+            stop('Error: All inputs must be of class Cov.')
         }
         ## ## Extracts names from all Covs
         ## names = sapply(Covs,function(x) x$name)
@@ -1162,14 +1152,16 @@ Cov_Arr = R6::R6Class("Cov_Arr",
         private$pgrep = sapply(Covs, function(x) x$grep)
     },
 
-    merge = function(...){return (c(self,...))},
+    merge = function(...){
+        return (c(self,...))
+    },
 
     ## Returns a vector where TRUE indicates a chr based seqlevels e.g. chr14, False -> 14
     ## Note that non-GRanges Covariates will not return anything
     chr = function(...){
         chrs = lapply(c(1:length(private$pCovs)), function(x){
-            if(class(private$pCovs[[x]]) == "GRanges"){
-                return(any(grepl("chr",seqlevels(private$pCovs[[x]]))))
+            if(class(private$pCovs[[x]]) == 'GRanges'){
+                return(any(grepl('chr', seqlevels(private$pCovs[[x]]))))
             }
             else{
                 return(NA)
@@ -1177,10 +1169,11 @@ Cov_Arr = R6::R6Class("Cov_Arr",
         })
         return(unlist(chrs))
     },
+
     seqlevels = function(...){
         seqs = lapply(c(1:length(private$pCovs)), function(x){
             cov = private$pCovs[[x]]
-            if(class(cov) == "GRanges"){
+            if(class(cov) == 'GRanges'){
                 return(seqlevels(cov))
             }
             else{
@@ -1189,8 +1182,9 @@ Cov_Arr = R6::R6Class("Cov_Arr",
         })
         return(seqs)
     },
+
     ## Returns a subset of the Covariates as a list
-    subset = function(range,...){
+    subset = function(range, ...){
         private$pCovs = private$pCovs[range]
         private$pnames = private$pnames[range]
         private$ptype = private$ptype[range]
@@ -1200,6 +1194,7 @@ Cov_Arr = R6::R6Class("Cov_Arr",
         private$pna.rm = private$pna.rm[range]
         private$pgrep = private$pgrep[range]
     },
+
     ## Creates a list of lists for passing to annotate.targets.
     ## The inner list constitutes a Cov$toList()
     ## The outer list serves to hold all of the Cov lists
@@ -1208,7 +1203,7 @@ Cov_Arr = R6::R6Class("Cov_Arr",
             return(list())
         }
         out = lapply(c(1:length(private$pCovs)), function(x){
-            if(!(is.na(private$psignature[x])) & class(private$pCovs[[x]]) == "ffTrack"){
+            if(!(is.na(private$psignature[x])) & class(private$pCovs[[x]]) == 'ffTrack'){
                 return (list(track = private$pCovs[[x]], type = private$ptype[x],
                     signature = private$psignature[x],
                     pad = private$ppad[x],
@@ -1231,18 +1226,18 @@ Cov_Arr = R6::R6Class("Cov_Arr",
 
         },
 
-        print = function(...){
-            out= sapply(c(1:length(private$pCovs)), 
-                function(x){
-                    cat(c("Covariate Number: " , x, "\nName:", private$pnames[x],
-                    "\ntype: ",private$ptype[x],"\tsignature: ", private$psignature[x],
-                    "\nfield: ",private$pfield[x], "\tpad: ", private$ppad[x],
-                    "\n","na.rm: ", private$pna.rm[x], "\tgrep: ", private$pgrep[x],
-                    "\nCovariate Class: ", class(private$pCovs[[x]]), '\n\n'),collapse = "",sep = "")
-            })
-        }
+    print = function(...){
+        out= sapply(c(1:length(private$pCovs)), 
+            function(x){
+                cat(c('Covariate Number: ' , x, '\nName: ', private$pnames[x],
+                '\ntype: ',private$ptype[x], '\tsignature: ', private$psignature[x],
+                '\nfield: ',private$pfield[x], '\tpad: ', private$ppad[x],
+                '\nna.rm: ', private$pna.rm[x], '\tgrep: ', private$pgrep[x],
+                '\nCovariate Class: ', class(private$pCovs[[x]]), '\n\n'), collapse = '', sep = '')
+        })
+    }
 
-        ),
+    ),
 
         private = list(
             pCovs = list(),
@@ -1265,14 +1260,15 @@ Cov_Arr = R6::R6Class("Cov_Arr",
 
             ##Covariate Names
             names = function(value) {
+
                 if(!missing(value)){
 
                     if(!is.character(value) && !all(is.na(value)) ){
-                        stop("Error: names must be of class character")
+                        stop('Error: names must be of class character')
                     }
 
                     if(length(value) != length(private$pCovs) & length(private$pCovs) %% length(value) != 0){
-                        stop("Error: Length of names must be of length equal to the number of Covariates or a divisor of number of covariates.")
+                        stop('Error: Length of names must be of length equal to the number of Covariates or a divisor of number of covariates.')
                     }
 
                     if(length(private$pCovs) / length(value) != 1){
@@ -1291,15 +1287,14 @@ Cov_Arr = R6::R6Class("Cov_Arr",
 
             ##Covariate type
             type = function(value) {
-
+                
                 if(!missing(value)){
-
                     if(!is.character(value) && !all(is.na(value))){
-                        stop("Error: type must be of class character")
+                        stop('Error: type must be of class character')
                     }
 
                     if(length(value) != length(private$pCovs) & length(private$pCovs) %% length(value) != 0){
-                        stop("Error: Length of type must be of length equal to the number of Covariates or a divisor of number of covariates.")
+                        stop('Error: Length of type must be of length equal to the number of Covariates or a divisor of number of covariates.')
                     }
 
                     if(!all(value %in% private$COV.TYPES)){
@@ -1325,10 +1320,10 @@ Cov_Arr = R6::R6Class("Cov_Arr",
             signature = function(value) {               
                 if(!missing(value)){
                     if(!is.character(value) && !all(is.na(value))){
-                        stop("Error: signature must be of class character")
+                        stop('Error: signature must be of class character')
                     }
                     if(length(value) != length(private$pCovs) & length(private$pCovs) %% length(value) != 0){
-                        stop("Error: Length of signature must be of length equal to the number of Covariates or a divisor of number of covariates.")
+                        stop('Error: Length of signature must be of length equal to the number of Covariates or a divisor of number of covariates.')
                     }
                     if(length(private$pCovs) / length(value) != 1){
                         private$psignature = rep(value, length(private$pCovs)/length(value))
@@ -1348,10 +1343,10 @@ Cov_Arr = R6::R6Class("Cov_Arr",
             field = function(value) {
                 if(!missing(value)){
                     if(!is.character(value) && !all(is.na(value))){
-                       stop("Error: field must be of class character")
+                       stop('Error: field must be of class character')
                     }
                     if(length(value) != length(private$pCovs) & length(private$pCovs) %% length(value) != 0){
-                        stop("Error: Length of field must be of length equal to the number of Covariates or a divisor of number of covariates.")
+                        stop('Error: Length of field must be of length equal to the number of Covariates or a divisor of number of covariates.')
                     }
 
                     if(length(private$pCovs) / length(value) != 1){
@@ -1468,14 +1463,14 @@ Cov_Arr = R6::R6Class("Cov_Arr",
 'c.Cov_Arr' = function(...){
 
     Covs = list(...)
-    isc = sapply(Covs, function(x) (class(x)[1] == "Cov" ||  class(x)[1] == "Cov_Arr"))
+    isc = sapply(Covs, function(x) (class(x)[1] == 'Cov' ||  class(x)[1] == 'Cov_Arr'))
 
     if(any(!isc)){
-        stop("All inputs must be of class Cov or Cov_Arr.")
+        stop('Error: All inputs must be of class Cov or Cov_Arr.')
     }
 
     Cov_Arrs = lapply(Covs, function(x) {
-        if(class(x)[1] == "Cov"){
+        if(class(x)[1] == 'Cov'){
             return( x$convert2Arr())
         }
         else{
@@ -1523,7 +1518,7 @@ Cov_Arr = R6::R6Class("Cov_Arr",
 #' @return A new Cov_Arr object that contains only the Covs within the given range
 #' @author Zoran Z. Gajic
 #' @export
-'[.Cov_Arr' <- function(obj, range){
+'[.Cov_Arr' = function(obj, range){
     ret = obj$clone()
     ret$subset(range)
     return (ret)
@@ -1531,7 +1526,9 @@ Cov_Arr = R6::R6Class("Cov_Arr",
 
 
 
-#' FishHook
+#' @name FishHook
+#' @title title
+#' @description
 #'
 #' Stores Events, Targets, Eligible, Covariates. 
 #'
@@ -1543,10 +1540,12 @@ Cov_Arr = R6::R6Class("Cov_Arr",
 #' @author Zoran Z. Gajic
 #' @importFrom R6 R6Class
 #' @export
-FishHook <- R6::R6Class("FishHook",
+FishHook = R6::R6Class('FishHook',
+
     public = list(
+
         initialize = function(targets = NULL, out.path = NULL, eligible = NULL, ... ,events = NULL, covariates = NULL,
-            use_local_mut_density = FALSE, local_mut_density_bin = 1e6, genome =  "BSgenome.Hsapiens.UCSC.hg19::Hsapiens",
+            use_local_mut_density = FALSE, local_mut_density_bin = 1e6, genome = 'BSgenome.Hsapiens.UCSC.hg19::Hsapiens',
             mc.cores = 1, na.rm = TRUE, pad = 0, verbose = TRUE, max.slice = 1e3, ff.chunk = 1e6, max.chunk = 1e11, ptidcol = NULL,
             maxpatientpergene = Inf, weightEvents = FALSE, nb = TRUE){
              ## This next portion checks to make sure that the seqlevels are in the same format
@@ -1555,38 +1554,38 @@ FishHook <- R6::R6Class("FishHook",
                 seqLevelsStatus_Covariates = covariates$chr()
                 ## Warns if there is a heterogenetiy of seqlevels (chr or not)
                 if(length(unique(seqLevelsStatus_Covariates)) > 1){
-                    warning("Warning:Covariates appears to have mismatched seqlevels, make sure all Covariates have seqlevels that start with chr or don't", call.=TRUE)
+                    warning('Warning:Covariates appears to have mismatched seqlevels, make sure all Covariates have seqlevels that start with chr or do not', call.=TRUE)
                 }
             }
 
             ## gets the seqlevels and looks for chr to indicate USCS format
-            seqLevelsStatus_Targets = any(grepl("chr",seqlevels(targets)))
-            seqLevelsStatus_Events = any(grepl("chr",seqlevels(events)))
+            seqLevelsStatus_Targets = any(grepl('chr', seqlevels(targets)))
+            seqLevelsStatus_Events = any(grepl('chr', seqlevels(events)))
 
             if(!is.null(covariates)){
                 if(any(!(seqLevelsStatus_Targets %in% seqLevelsStatus_Covariates))){
-                    warning("Warning: seqlevels of Targets and Covariates appear to be in different formats")
+                    warning('Warning: seqlevels of Targets and Covariates appear to be in different formats')
                 }
             }    
 
             if(!is.null(eligible)){
                 seqLevelsStatus_Eligible = any(grepl("chr",seqlevels(eligible)))
                 if(seqLevelsStatus_Targets != seqLevelsStatus_Eligible){
-                    warning("Warning: seqlevels of Targets and Eligible appear to be in different formats")
+                    warning('Warning: seqlevels of Targets and Eligible appear to be in different formats')
                 }
             }
             if(seqLevelsStatus_Targets != seqLevelsStatus_Events){
-                warning("Warning: seqlevels of Targets and Events appear to be in different formats")
+                warning('Warning: seqlevels of Targets and Events appear to be in different formats')
             }
 
             ## This next portion checks to make sure there is atleast some overlap of seqlevels i.e. some mapability
             if(!any(seqlevels(targets) %in% seqlevels(events))){
-                stop("Error: there are no seqlevels of events that match targets")
+                stop('Error: there are no seqlevels of events that match targets')
             }
 
             if(!is.null(eligible)){
                 if(!any(seqlevels(targets) %in% seqlevels(eligible))){
-                    stop("Error: there are no seqlevels of eligible that match targets")
+                    stop('Error: there are no seqlevels of eligible that match targets')
                 }
             }
                             
@@ -1765,30 +1764,30 @@ FishHook <- R6::R6Class("FishHook",
             private$pstate = 'Scored'
         },
 
-        clear = function(state = "Initialized"){
-            if(state == "Initialized"){
-                private$pstate = "Initialized"
+        clear = function(state = 'Initialized'){
+            if(state == 'Initialized'){
+                private$pstate = 'Initialized'
                 private$pmodel = NULL
                 private$pscore = NULL
                 private$panno = NULL
                 private$paggregated = NULL
-                return("Clear Completed")
+                return('Clear Completed')
             }
-            if(state == "Annotated"){
-                private$pstate = "Annotated"
+            if(state == 'Annotated'){
+                private$pstate = 'Annotated'
                 private$pmodel = NULL
                 private$pscore = NULL
                 private$paggregated = NULL
-                return("Clear Completed")                               
+                return('Clear Completed')                               
             }
-            if(state == "Aggregated"){
-                private$pstate = "Aggregated"
+            if(state == 'Aggregated'){
+                private$pstate = 'Aggregated'
                 private$pmodel = NULL
                 private$pscore = NULL
-                return("Clear Completed")                               
+                return('Clear Completed')                               
             }
 
-            return("Valid reversion state not specified. This is not a major error, just letting you know that nothing has been chaged")
+            return('Valid reversion state not specified. This is not a major error, just letting you know that nothing has been chaged')
         },
                        
         ## Produces a plotly html output of the scored targets
@@ -1896,8 +1895,8 @@ FishHook <- R6::R6Class("FishHook",
 
         cvs = function(value) {
             if(!missing(value)){
-                if(!(class(value)[1] == "Cov_Arr")  & !is.null(value)){
-                    stop("Error: covariates must be of class Cov_Arr")
+                if(!(class(value)[1] == 'Cov_Arr')  & !is.null(value)){
+                    stop('Error: covariates must be of class Cov_Arr')
                 }
 
                 self$clear()
@@ -1914,8 +1913,8 @@ FishHook <- R6::R6Class("FishHook",
 
         eligible = function(value) {
             if(!missing(value)){
-                if((!class(value) == "GRanges") & !is.null(value)){
-                    stop("Error: eligible must be of class GRanges")
+                if((!class(value) == 'GRanges') & !is.null(value)){
+                    stop('Error: eligible must be of class GRanges')
                 }
 
                 self$clear()
@@ -1934,14 +1933,14 @@ FishHook <- R6::R6Class("FishHook",
         targets = function(value) {
                            
             if(!missing(value)){
-                if(!(class(value) == "GRanges")){
-                    stop("Error: targets must be of class GRanges")
+                if(!(class(value) == 'GRanges')){
+                    stop('Error: targets must be of class GRanges')
                 }
                                
             targets = value
             ## checks if targets is NULL
             if (is.null(targets)){
-                stop('Targets cannot be "NULL".')
+                stop('Targets cannot be NULL.')
             }
                                
             ## checks to see if targets is a path & import if so
@@ -1955,7 +1954,7 @@ FishHook <- R6::R6Class("FishHook",
             }
 
             ## Forces targets to be a GRanges Objects
-            if(class(targets) != "GRanges"){
+            if(class(targets) != 'GRanges'){
                 stop('Error: Loaded or provided class of targets must be "GRanges"')
             }
                                
@@ -1986,7 +1985,7 @@ FishHook <- R6::R6Class("FishHook",
                                               
         events = function(value) {
             if(!missing(value)){
-                if(!(class(value) == "GRanges")){
+                if(!(class(value) == 'GRanges')){
                     stop('Error: Events must be of class GRanges')
                }
 
@@ -1994,11 +1993,11 @@ FishHook <- R6::R6Class("FishHook",
 
                ## Forces Events to Exist
                if(is.null(events)){
-                   stop('Error: Events must exist and cannot be "NULL"')
+                   stop('Error: Events must exist and cannot be NULL')
                }
                                
                ## Forces Events to be a GRanges  Object
-               if (class(events) != "GRanges"){
+               if (class(events) != 'GRanges'){
                    stop('Error: Events must be of class "GRanges"')
                }
 
@@ -2017,7 +2016,7 @@ FishHook <- R6::R6Class("FishHook",
 
         out.path = function(value) {
             if(!missing(value)){
-                if(!(class(value) == "character")  && !is.null(value)){
+                if(!(class(value) == 'character')  && !is.null(value)){
                     stop('Error: out.path must be of class character')
                 }
 
@@ -2041,11 +2040,11 @@ FishHook <- R6::R6Class("FishHook",
 
         anno = function(value) {
             if(!missing(value)){
-                if(!(class(value) == "GRanges")  && !is.null(value)){
+                if(!(class(value) == 'GRanges')  && !is.null(value)){
                     stop('Error: anno must be of class GRanges')
                 }
                 else{
-                    warning("Warning: You are editing the annotated dataset generated by fish.hook, if you are trying to change targets use fish$targets.")
+                    warning('Warning: You are editing the annotated dataset generated by fish.hook, if you are trying to change targets use fish$targets.')
                 }
                                
                 private$panno = value
@@ -2060,11 +2059,11 @@ FishHook <- R6::R6Class("FishHook",
 
         scores = function(value) {
             if(!missing(value)){
-                if(!(class(value) == "data.table")  && !is.null(value)){
-                    stop("Error: score must be of class data.table")
+                if(!(class(value) == 'data.table')  && !is.null(value)){
+                    stop('Error: score must be of class data.table')
                 }
                 else{
-                    warning("Warning: You are editing the annotated dataset generated by fish.hook, if you are trying to change targets use fish$targets.")
+                    warning('Warning: You are editing the annotated dataset generated by fish.hook, if you are trying to change targets use fish$targets.')
                 }
                                                               
                 private$pscore = value
@@ -2080,7 +2079,7 @@ FishHook <- R6::R6Class("FishHook",
         model = function(value) {
             if(!missing(value)){
                 
-                warning("Warning: You are editing the regression model generated by fish.hook. Unless you know what you're doing I would reccomend reverting to a safe state using fish$clear()")                               
+                warning('Warning: You are editing the regression model generated by fish.hook. Unless you know what you arere doing I would reccomend reverting to a safe state using fish$clear()')                               
                                                               
                 private$pmodel = value
                                
@@ -2094,7 +2093,7 @@ FishHook <- R6::R6Class("FishHook",
 
         mc.cores = function(value) {
             if(!missing(value)){
-                if(!(class(value) == "numeric")  && !is.null(value)){
+                if(!(class(value) == 'numeric')  && !is.null(value)){
                     stop('Error: mc.cores must be of class numeric')
                 }
                                                               
@@ -2110,8 +2109,8 @@ FishHook <- R6::R6Class("FishHook",
                        
         na.rm = function(value) {
             if(!missing(value)){
-                if(!(class(value) == "logical")  && !is.null(value)){
-                    stop('Error:  na.rm must be of class logical')
+                if(!(class(value) == 'logical')  && !is.null(value)){
+                    stop('Error: na.rm must be of class logical')
                 }
                                                               
                 private$pna.rm = value
@@ -2126,8 +2125,8 @@ FishHook <- R6::R6Class("FishHook",
 
         pad = function(value) {
             if(!missing(value)){
-                if(!(class(value) == "numeric")  && !is.null(value)){
-                    stop('Error: pad  must be of class numeric')
+                if(!(class(value) == 'numeric')  && !is.null(value)){
+                    stop('Error: pad must be of class numeric')
                 }
                                                               
                 private$ppad = value
@@ -2142,7 +2141,7 @@ FishHook <- R6::R6Class("FishHook",
                        
         verbose = function(value) {
             if(!missing(value)){
-                if(!(class(value) == "logical")  && !is.null(value)){
+                if(!(class(value) == 'logical')  && !is.null(value)){
                     stop('Error: verbose must be of class logical')
                 }
                                                               
@@ -2310,7 +2309,11 @@ FishHook <- R6::R6Class("FishHook",
 )
 
 
-#' [.FishHook
+
+
+#' @name [.FishHook
+#' @title title
+#' @description
 #'
 #' Overrides the subset operator x[] for use with FishHook to allow for vector like subsetting
 #'
@@ -2322,7 +2325,7 @@ FishHook <- R6::R6Class("FishHook",
 #' @return A new FishHook object that contains only the Covs within the given range
 #' @author Zoran Z. Gajic
 #' @export
-'[.FishHook' <- function(obj, i, j, k, l){
+'[.FishHook' = function(obj, i, j, k, l){
     ret = obj$clone()
 
     ##i -> targets
@@ -2350,7 +2353,9 @@ FishHook <- R6::R6Class("FishHook",
 
 
 
-#' Annotated
+#' @name Annotated
+#' @title title
+#' @description
 #'
 #' Stores the annotated data from a FishHook object. and allows users to aggregate,manipulate and score that data. This object should be generated by calling FishHook$annotateTargets(). Note that this is where the meat of the computational burden lies. For example, in our test cases, running 8k pts worth of exome seq on 20k genes took 20seconds without covariates and 20sec + ~5min per covariate added. 
 #'
@@ -2362,7 +2367,8 @@ FishHook <- R6::R6Class("FishHook",
 #' @author Zoran Z. Gajic
 #' @importFrom R6 R6Class
 #' @export
-Annotated <- R6::R6Class("Annotate",
+Annotated = R6::R6Class('Annotate',
+
     public = list(
         ## Initialize takes in all of the same params as annotate.targets
         initialize = function(targets = NULL, 
@@ -2445,6 +2451,7 @@ Annotated <- R6::R6Class("Annotate",
 
                 ## Assume that the data has not been aggregated
                 grl = FALSE
+
                 ## Checks if the data has been aggregated, if so:
                 ## get rid of the old meta as it will not pertain to the
                 ## output and you can get it from accessing the current object
@@ -2495,8 +2502,8 @@ Annotated <- R6::R6Class("Annotate",
                 ## is much more complicated and can be done much more simply by breaking
                 ## up the grls into GRanges and aggregating each one, and then merging
                 ## the resultant grls into one large grl
-                if(class(private$pannotated_targets) == "GRangesList"){
-                    stop("Error: Data already aggregated")
+                if(class(private$pannotated_targets) == 'GRangesList'){
+                    stop('Error: Data already aggregated')
                 }
                              
                 private$pannotated_targets= aggregate.targets(private$pannotated_targets,
@@ -2531,7 +2538,6 @@ Annotated <- R6::R6Class("Annotate",
             ## Discriminator: if output of annotate.targets -> class(annotated_targets) = "GRanges
             ## if result of aggregate -> class(annotated_targets) = "GRangesList
             pannotated_targets = NULL
-
         ),
 
     active = list()
@@ -2540,8 +2546,9 @@ Annotated <- R6::R6Class("Annotate",
 
 
 
-
-#' [.Annotate
+#' @name [.Annotate
+#' @title title
+#' @description
 #'
 #' Overrides the "[" operator for the Annotated object. This allows subsetting of the annotated data in Annotated Objects.
 #'
@@ -2559,7 +2566,9 @@ Annotated <- R6::R6Class("Annotate",
 
 
 
-#' Score
+#' @name Score
+#' @title title
+#' @description
 #'
 #' Stores the scored targets. Note that this constructors should be called from Annotated$scoreTargets(). Scores can also be plotted on qqplots using included functions. For other params see score.targets()
 #'
@@ -2568,7 +2577,8 @@ Annotated <- R6::R6Class("Annotate",
 #' @author Zoran Z. Gajic
 #' @importFrom R6 R6Class
 #' @export
-Score = R6::R6Class("Score",
+Score = R6::R6Class('Score',
+
     public = list(
         ## Initialize takes in all of the params for the fish.hook function
         ## "score.targets" and an optional meta param that will be used to remember
@@ -2631,7 +2641,7 @@ Score = R6::R6Class("Score",
         qq_plot = function(plotly = TRUE, columns = NULL, annotations = NULL, key = NULL, ...){
             res = self$getAll()
 
-            if(class(res)[1] != "data.table"){
+            if(class(res)[1] != 'data.table'){
                 res = gr2dt(res)
             }
                          
@@ -2663,15 +2673,9 @@ Score = R6::R6Class("Score",
             return(qq_pval(res$p, annotations = c(annotations,annotation_columns),
                     gradient = list(Count = res$count), titleText = "",  plotly = plotly, key = key))
                          
-            },
+        },
 
-            ## produces a html widjet and write to file ~/public_html/plot.html
-            ## render = function(annotations = NULL){
-            ##    wij(self$qq_plot(annotations = annotations))
-
-            ## },
-
-            ## Returns the scored targets as well as target names
+        ## Returns the scored targets as well as target names
         getScore = function(...){
             if(is.null(private$meta)){
                 return(private$score)
@@ -2725,18 +2729,19 @@ Score = R6::R6Class("Score",
                 stop('Error: argument metadata must have a "name" column')
             }
             private$meta = meta
-        }
-        ),
-        private = list(
-            ## The output of the score.targets() function called during initialization
-            score = NULL,
+        }),
 
-            ## The output model of score.targets()
-            model = NULL,
+    private = list(
+        ## The output of the score.targets() function called during initialization
+        score = NULL,
+        
+        ## The output model of score.targets()
+        model = NULL,
                      
-            ## Target Metadata
-            meta = NULL              
-        ),
+        ## Target Metadata
+        meta = NULL              
+    ),
+
     active = list()
 )
 
@@ -2745,23 +2750,34 @@ Score = R6::R6Class("Score",
 
 #' @name qq_pval
 #' @title qq plot given input p values
+#' @description
+#'
+#' Explanation 
+#'
 #' @param obs vector of pvalues to plot, names of obs can be intepreted as labels
-#' @param highlight optional arg specifying indices of data points to highlight (ie color red)
-#' @param samp integer, optional specifying how many samples to draw from input data (default NULL)
-#' @param lwd integer, optional, specifying thickness of line fit to data
-#' @param pch integer dot type for scatter plot
+#' @param highlight vector optional arg specifying indices of data points to highlight (i.e. color red) (default = c())
+#' @param exp info (default = NULL)
+#' @param lwd integer, optional, specifying thickness of line fit to data (default = 1)
+#' @param col info (default = NULL)
+#' @param col.bg string
+#' @param pch integer dot type for scatter plot 
 #' @param cex integer dot size for scatter plot
 #' @param conf.lines logical, optional, whether to draw 95 percent confidence interval lines around x-y line
 #' @param max numeric, optional, threshold to max the input p values
+#' @param max.x info
+#' @param max.y info
+#' @param qvalues info
 #' @param label character vector, optional specifying which data points to label (obs vector has to be named, for this to work)
 #' @param plotly toggles between creating a pdf (FALSE) or an interactive html widget (TRUE)
 #' @param annotations named list of vectors containing information to present as hover text (html widget), must be in same order as obs input 
 #' @param gradient named list that contains one vector that color codes points based on value, must bein same order as obs input 
 #' @param titleText title for plotly (html) graph only
+#' @param subsample
+#' @param key
 #' @author Marcin Imielinski, Eran Hodis, Zoran Z. Gajic
 #' @export
-qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, bestfit=T, col = NULL, col.bg='black', pch=18, cex=1, conf.lines=T, max=NULL, max.x = NULL, 
-    max.y = NULL, qvalues=NULL, label = NULL, plotly = FALSE, annotations = list(), gradient = list(), titleText = "", subsample = NA, key = NULL,  ...)
+qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg = 'black', pch = 18, cex = 1, conf.lines = TRUE, max = NULL, max.x = NULL, 
+    max.y = NULL, qvalues = NULL, label = NULL, plotly = FALSE, annotations = list(), gradient = list(), titleText = "", subsample = NA, key = NULL,  ...)
 {
     if(!(plotly)){
         is.exp.null = is.null(exp)
@@ -2856,9 +2872,9 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, bestfit=T, col = N
 
             if (conf.lines){
                 ## plot the two confidence lines
-                plot(tmp.exp, -log(c95,10), ylim=c(0,max.y), xlim=c(0,max.x), type="l", axes=FALSE, xlab="", ylab="")
+                plot(tmp.exp, -log(c95,10), ylim=c(0,max.y), xlim=c(0,max.x), type = 'l', axes = FALSE, xlab = '', ylab = '')
                 par(new=T)
-                plot(tmp.exp, -log(c05,10), ylim=c(0,max.y), xlim=c(0,max.x), type="l", axes=FALSE, xlab="", ylab="")
+                plot(tmp.exp, -log(c05,10), ylim=c(0,max.y), xlim=c(0,max.x), type = 'l', axes = FALSE, xlab = '', ylab = '')
                 par(new=T)
 
                 p1 = rep(tmp.exp[1], 2)
@@ -2875,7 +2891,7 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, bestfit=T, col = N
         ord = order(obs)
 
         colors = col
-        colors[highlight] = "red";
+        colors[highlight] = 'red';
 
         dat = data.table(x = sort(exp), y = obs[ord], colors = colors[ord], pch = pch, cex = cex)
         if (!is.null(names(obs))){
@@ -2907,7 +2923,7 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, bestfit=T, col = N
             }
         }
 
-        lines(x=c(0, max(max.y, max.x)), y = c(0, max(max.x, max.y)), col = "black", lwd = lwd)
+        lines(x=c(0, max(max.y, max.x)), y = c(0, max(max.x, max.y)), col = 'black', lwd = lwd)
 
         if (!is.na(subsample)){
             dat = dat[sample(nrow(dat), subsample*nrow(dat)), ]
@@ -2915,8 +2931,8 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, bestfit=T, col = N
 
         lambda = lm(y ~ x-1, dat)$coefficients;
 
-        lines(x=c(0, max.x), y = c(0, lambda*max.y), col = "red", lty = 2, lwd = lwd);
-        legend('bottomright',vsprintf('lambda=\n %.2f', lambda), text.col='red', bty='n')
+        lines(x=c(0, max.x), y = c(0, lambda*max.y), col = 'red', lty = 2, lwd = lwd);
+        legend('bottomright', sprintf('lambda=\n %.2f', lambda), text.col = 'red', bty = 'n')
     }
     else{
 
@@ -2933,12 +2949,12 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, bestfit=T, col = N
         
         is.exp.null = is.null(exp)
         if (is.null(col)){
-            col = "black"
+            col = 'black'
         } 
         ix1 = !is.na(hover$p)
         if (!is.null(exp)){
             if (length(exp) != length(hover$p)){
-                stop("Error: length of exp must be = length(hover$obs)")
+                stop('Error: length of exp must be = length(hover$obs)')
             }
             else{
                 ix1 = ix1 & !is.na(exp)
@@ -2986,19 +3002,19 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, bestfit=T, col = N
             if (FALSE){   
                 ## Don't need if not using conf.line (might put this in the future)
                 plot(tmp.exp, -log(c95, 10), ylim = c(0, max), xlim = c(0, max),
-                type = "l", axes = FALSE, xlab = "", ylab = "")
+                type = "l", axes = FALSE, xlab = '', ylab = '')
 
                 par(new = T)
                 plot(tmp.exp, -log(c05, 10), ylim = c(0, max), xlim = c(0, max),
-                type = "l", axes = FALSE, xlab = "", ylab = "")
+                type = "l", axes = FALSE, xlab = '', ylab = '')
 
                 par(new = T)
-                p1 <- rep(tmp.exp[1], 2)
-                p2 <- c(-log(c95, 10)[1], -log(c05, 10)[1])
+                p1 = rep(tmp.exp[1], 2)
+                p2 = c(-log(c95, 10)[1], -log(c05, 10)[1])
                 lines(x = p1, y = p2)
-                x.coords <- c(tmp.exp, rev(tmp.exp))
-                y.coords <- c(-log(c95, 10), rev(-log(c05, 10)))
-                polygon(x.coords, y.coords, col = "light gray", border = NA)
+                x.coords = c(tmp.exp, rev(tmp.exp))
+                y.coords = c(-log(c95, 10), rev(-log(c05, 10)))
+                polygon(x.coords, y.coords, col = 'light gray', border = NA)
                 par(new = T)
             }
         }
@@ -3011,13 +3027,13 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, bestfit=T, col = N
 
         ## Creating the hover text
         if(length(colnames(hover)) > 1){                                   
-            annotation_names  = sapply(colnames(hover), paste0, " : ")
-            annotation_names_wLineBreak  = paste("<br>", annotation_names[2:length(annotation_names)],
-            sep = "")
+            annotation_names  = sapply(colnames(hover), paste0, ' : ')
+            annotation_names_wLineBreak  = paste('<br>', annotation_names[2:length(annotation_names)],
+            sep = '')
             annotation_names = c(annotation_names[1], annotation_names_wLineBreak)
         }
         else{
-            annotation_names  = sapply(colnames(hover), paste0, " : ")
+            annotation_names  = sapply(colnames(hover), paste0, ' : ')
         }
 
         ## Checking if there is a gradient and if so adding it to the plotting data.table (dat)
@@ -3040,7 +3056,7 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, bestfit=T, col = N
         ## and removing the extra from the non-sig
         ## (looks to be -logp of 2.6 here can make this more dynamic later )
    
-        if (nrow(dat) <=  8000){
+        if (nrow(dat) <= 8000){
 
             dat4 = dat
             dat4$obs = NULL
@@ -3051,25 +3067,25 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, bestfit=T, col = N
             trans = t(dat4)
             hover_text = c()
             for (i in 1:dim(trans)[2]){
-                outstr = paste(c(rbind(annotation_names, trans[,i])), sep = "", collapse = "")
+                outstr = paste(c(rbind(annotation_names, trans[,i])), sep = '', collapse = '')
                 hover_text = c(hover_text,outstr)
             }
 
             if(gradient_control){
-                p = dat[, plot_ly(data = dat, x=x, y=y, key = dat$key, hoverinfo = "text",text = hover_text, color = grad,
-                                   colors = c("blue2","gold"),marker = list(colorbar = list(title = names(gradient[1]), len = 1)),
-                                   mode = "markers",type = 'scatter')
-                    %>% layout(xaxis = list(title = "<i>Expected -log<sub>10</sub>(P)</i>"),
-                               yaxis = list(title = "<i>Observed -log<sub>10</sub>(P)</i>")) ]
+                p = dat[, plot_ly(data = dat, x=x, y=y, key = dat$key, hoverinfo = 'text', text = hover_text, color = grad,
+                                   colors = c('blue2', 'gold'), marker = list(colorbar = list(title = names(gradient[1]), len = 1)),
+                                   mode = 'markers', type = 'scatter')
+                    %>% layout(xaxis = list(title = '<i>Expected -log<sub>10</sub>(P)</i>'),
+                               yaxis = list(title = '<i>Observed -log<sub>10</sub>(P)</i>')) ]
             }
             else{
-                p = dat[, plot_ly(data = dat, x=x, y=y, key = dat$key, hoverinfo = "text",text = hover_text,
-                                   mode = "markers",type = 'scatter')
-                    %>% layout(xaxis = list(title = "<i>Expected -log<sub>10</sub>(P)</i>"),
-                               yaxis = list(title = "<i>Observed -log<sub>10</sub>(P)</i>")) ]
+                p = dat[, plot_ly(data = dat, x=x, y=y, key = dat$key, hoverinfo = 'text', text = hover_text,
+                                   mode = 'markers', type = 'scatter')
+                    %>% layout(xaxis = list(title = '<i>Expected -log<sub>10</sub>(P)</i>'),
+                               yaxis = list(title = '<i>Observed -log<sub>10</sub>(P)</i>')) ]
             }
         }
-        else {
+        else{
         
             dat$ID = c(1:nrow(dat))
             dat2 = dat[ y < 2.6,]
@@ -3099,16 +3115,16 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, bestfit=T, col = N
 
             test2 <<- dat2
             if(gradient_control){
-                p = dat2[, plot_ly(data = dat2, x=x, y=y,hoverinfo = "text",key = dat2$key,  text = hover_text, color = grad,
-                                    colors = c("blue2","gold"),marker = list(colorbar = list(title = names(gradient[1]), len = 1, lenmode = "fraction" )),
-                                    mode = "markers",type = 'scatter')
-                     %>% layout(xaxis = list(title = "<i>Expected -log<sub>10</sub>(P)</i>"),
-                                yaxis = list(title = "<i>Observed -log<sub>10</sub>(P)</i>")) ]
+                p = dat2[, plot_ly(data = dat2, x=x, y=y, hoverinfo = 'text', key = dat2$key,  text = hover_text, color = grad,
+                                    colors = c('blue2', 'gold'), marker = list(colorbar = list(title = names(gradient[1]), len = 1, lenmode = 'fraction')),
+                                    mode = 'markers', type = 'scatter')
+                     %>% layout(xaxis = list(title = '<i>Expected -log<sub>10</sub>(P)</i>'),
+                                yaxis = list(title = '<i>Observed -log<sub>10</sub>(P)</i>')) ]
             }
             else{
-                p = dat2[,  plot_ly(data = dat2, x=x, y=y,hoverinfo = "text", text = hover_text, mode = "markers",type = 'scatter')
-                     %>% layout(xaxis = list(title = "<i>Expected -log<sub>10</sub>(P)</i>"),
-                                yaxis = list(title = "<i>Observed -log<sub>10</sub>(P)</i>")) ]
+                p = dat2[,  plot_ly(data = dat2, x=x, y=y,hoverinfo = "text", text = hover_text, mode = 'markers', type = 'scatter')
+                     %>% layout(xaxis = list(title = '<i>Expected -log<sub>10</sub>(P)</i>'),
+                                yaxis = list(title = '<i>Observed -log<sub>10</sub>(P)</i>')) ]
             }
             
         }
@@ -3119,29 +3135,33 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, bestfit=T, col = N
 
         ## adding shapes (lines) + title  note that html <b></b> style is used for mods and plotting lines
         ## is done by specifying two points on the line (x0/y0 and x1/y1) 
-        p = layout(p,title = sprintf("<b>%s</b>" ,titleText),titlefont = list(size = 24),
-            shapes = list(list(type = "line",line = list(color = 'black'),
-            x0 = 0, x1  = max, xref = "x", y0 = 0, y1 = max,yref ="y"),
-            list( type = "line", line = list(color = "red"),
-            x0 = 0, x1 = max, xref = "x", y0 = 0, y1 = lambda_max, yref = "y")),
+        p = layout(p, 
+            title = sprintf('<b>%s</b>' ,titleText), 
+            titlefont = list(size = 24),
+            shapes = list(
+                list(type = 'line', line = list(color = 'black'), x0 = 0, x1  = max, xref = 'x', y0 = 0, y1 = max, yref ='y'),
+                list(type = 'line', line = list(color = 'red'), x0 = 0, x1 = max, xref = 'x', y0 = 0, y1 = lambda_max, yref = 'y')),
             annotations = list(
                 x = (0.9 * max),
                 y = (0.03 * max),
-                text = paste("lambda =",sprintf("%.2f", signif(lambda,3)), collapse = " "),
-                font = list(
-                    color = 'red',
-                    size = 20
-                ),
+                text = paste('lambda =', sprintf('%.2f', signif(lambda,3)), collapse = ' '),
+                font = list(color = 'red', size = 20),
                 showarrow = FALSE,
                 xref = 'x',
                 yref = 'y'
             ),
-            margin = list(
-                t = 100
-            ),
+            margin = list(t = 100),
             hovermode = 'compare')
-        }
     }
 }
+
+
+
+
+
+
+
+
+
 
  

@@ -1,29 +1,31 @@
-Package: fishhook
-Title: R Package for performing Gamma-Poisson regression on somatic mutation
-    count data
+Package: fishHook
+Title: R Package for performing Gamma-Poisson regression on somatic mutation count data
 Version: 0.1
 Authors@R: c(person(given = "Marcin",
     family = "Imielinski", role = c("aut", "cre"), email = "mai9037@med.cornell.edu"))
 Description: Package for performing Gamma-Poisson regression on somatic mutation
     count data with covariates to identify mutational enrichment or depletion in a
     statistically calibrated fashion.
+biocViews:
 Depends:
     R (>= 3.1.0),
     GenomicRanges (>= 1.18),
-    gUtils
+    gUtils, 
+    ffTrack, 
+    data.table (>= 1.9),
 Imports:
     MASS,
     rtracklayer (>= 1.26),
     zoo,
-    ffTrack,
-    data.table (>= 1.9),
     GenomeInfoDb,
     S4Vectors,
     BiocGenerics,
-    R6
+    R6, 
+    plotly
 Suggests:
     parallel,
-    testthat
+    testthat, 
+    BSgenome.Hsapiens.UCSC.hg19
 License: GPL-2
 LazyData: true
 RoxygenNote: 6.0.1.9000
