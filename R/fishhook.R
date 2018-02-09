@@ -879,16 +879,16 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
 #' @title title
 #' @description
 #'
-#'  Stores Covariate for passing to FishHook object. To be packaged in the Cov_Array Class by calling c(Cov1,Cov2,Cov3)
+#'  Stores Covariate for passing to FishHook object. It is a decrepit class but is included for legacy purposes. If you instantiate a Cov$new, it will return a length 1 Cov_Arr containg the covariate
 #' 
 #' @param Covariate, object of type, GRanges, ffTrack, RleList or character. Note that character objects must be paths to files containing one of the other types as a .rds file
-#' @param type, a string indicating the type of Covariate, valid options are: numeric, sequence, interval. See Annotate Targets for more information on Covariate types
-#' @param signature, In the case where a ffTrack object is of type sequence, a signature field is required, see fftab in ffTrack for more information.
-#' @param name, a character vector  indicating the name that this covariate will be refered to as
-#' @param pad, the number of nuleotides upstream and downstream to extend the covariate i.e. a covariate from position 10-20 with a pad of 5 will have a range from 5-25
-#' @param field, this is for numeric covariates and is the column name where the 'score' is held. Note that it is set to 'score' by default
-#' @param grep, Sequence covariates must be ffTrack objects, and can have optional logical argument $grep to specify inexact matches (see fftab)
-#' @param chr.sub, indicates if the seqlevels are in the format chrI, chrV, etc. if false, the chr will be added automatically during the analysis.
+#' @param type, a character indicating the type of Covariate, valid options are: numeric, sequence, interval. See Annotate Targets for more information on Covariate types
+#' @param signature, a chracter that In the case where a ffTrack object is of type sequence, a signature field is required, see fftab in ffTrack for more information.
+#' @param name, a character  indicating the name that this covariate will be refered to as
+#' @param pad, a numeric that indicates the number of nulceotides upstream and downstream to extend the covariate i.e. a covariate from position 10-20 with a pad of 5 will have a range from 5-25
+#' @param field, a character which is for numeric covariates and is the column name where the 'score' is held. Note that it is set to 'score' by default
+#' @param grep, a character. Sequence covariates must be ffTrack objects, and can have optional logical argument $grep to specify inexact matches (see fftab)
+#' @param chr.sub, a booleanindicates if the seqlevels are in the format chrI, chrV, etc. if false, we assume that the format is I, V, etc. in this case,  the chr will be added automatically during the analysis.
 #' @return Cov object that can be passed to FishHook object constructor
 #' @import R6
 #' @author Zoran Z. Gajic
@@ -897,6 +897,7 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
 Cov = R6::R6Class("Cov",
     public = list(
 
+        ##Initialization Function. See Class documentation for information.
     initialize = function(Covariate = NA, type = NA, signature = NA,
         name = '', pad = NA, na.rm = NA, field = NA,
         grep = NA, chr.sub = FALSE){
@@ -956,8 +957,17 @@ Cov = R6::R6Class("Cov",
         self$na.rm = na.rm
         self$field = field
         self$grep = grep
+        ##Converting the Cov class object to a Cov_Arr
+        return(c(self))
     },
 
+
+    ##Params:
+    ##No params required, included arguements will be ignored.
+    ##Return:
+    ##This will return the seq levels of the provided covariate, if the internal covariate is of type GRanges. Else will return NA.
+    ##UI:
+    ##None
     seqlevels = function(...){
         if(class(self$Covariate) == 'GRanges'){
             return(seqlevels(self$Covariate))
@@ -965,6 +975,12 @@ Cov = R6::R6Class("Cov",
         return (NA)                              
     },
 
+    ##Params:
+    ##No params required, included arguements will be ignored.
+    ##Return:
+    ##Returns a character that contains all of the internal variables stored in the obeject and thier values.
+    ##UI:
+    ##None
     toString = function(...){
         paste(c('Name: ', self$name,
         '\ntype: ',self$type, '\tsignature: ', self$signature,
@@ -973,28 +989,49 @@ Cov = R6::R6Class("Cov",
         '\nCovariate: ', class(self$Covariate), '\n'), collapse = '', sep = '')
     },
 
+    ##Params:
+    ##No params required, included arguements will be ignored.
+    ##Return:
+    ##Returns an object of type 'Cov_Arr' of length 1 that contains this covariate.
+    ##UI:
+    ##None
     convert2Arr = function(...){
         return(Cov_Arr$new(self))
     },
-                          
-    ## Prints covariate to output
+
+    ##Params:
+    ##No params required, included arguements will be ignored.
+    ##Return:
+    ##NULL
+    ##UI:
+    ##prints the output of self$toString() to the console.
     print = function(...){
-        cat(c('Name: ', self$name,
-        '\ntype: ', self$type, '\tsignature: ', self$signature,
-        '\nfield: ', self$field, '\tpad: ', self$pad,
-        '\na.rm: ', self$na.rm, '\tgrep: ', self$grep,
-        '\nCovariate Class: ', class(self$Covariate), '\n'), collapse = '')
+        cat(self$toString())
+        return(NULL)
     },
 
-    ## Checks to see if this covariate has seqlevels that begin with chr. must be a GRanges to do this
+    ##Params:
+    ##No params required, included arguements will be ignored.
+    ##Return:
+    ##If the internal covariate is of class 'GRanges', returns true if the seqlevels contain 'chr', and false otherwise. If not a 'GRanges' returns NA
+    ##UI:
+    ##None
     chr = function(...){
         if(class(self$Covariate) == 'GRanges'){
             return(any(grepl('chr', seqlevels(self$Covariate))))
         }
         return (NA)
     },
-
-    ## Converts a Cov object to a list that can be passed as input for annotate.targets
+    
+    ##Params:
+    ##No params required, included arguements will be ignored.
+    ##Return:
+    ##Converts the Covariate object to a list that is used internally in the annotate.targets function
+    ##The list is a list of covariates, where each covariate is itself a list, thus we get a lsit of lists.
+    ##The list representation of the covariate will contain the following variables: type, signature, pad, na.rm, field, grep
+    ##Each variable should be the same as in the Covariate
+    ##UI:
+    ##None
     toList = function(...){
         if(!(is.null(self$signature)) & class(self$Covariate) == 'ffTrack'){
             return (list(track = self$Covariate, 
@@ -1017,33 +1054,47 @@ Cov = R6::R6Class("Cov",
     },                          
                                                     
     ## Active Covariates
+    ##This can be of GRanges, RleList, character or ffTrack
     Covariate = NA,
 
     ## Active Track
+    ##This indicates the type of the covariate: numeric, sequence, interval
     type = NA,
 
     ## signature for use with ffTrack sequence covariates
     signature = NA,
 
     ## Pad for use with annotate targets
+    ##Pad should be numeric and is used in annotate.targets to indicate how far each covariate should influence the surrounding bases
+    ##i.e. if pad = 5 and a covariate spans the bases 5:10, the covariate will now span 0:15
     pad = NA,
 
-    ## na.rm for use with annotate targets
+    ## na.rm for use with annotate targets and is of class 'logical'
+    ##Will remove any NA values within your covariate if true, if false will leave those values, if NA will be treated as false
     na.rm = NA,
 
     ## field specifies the column of the covariate  to use for numeric covariates
+    ##For example, if the covariate is a numeric covariate of class GRanges and you have a column named 'Value' that contains the numeric information
+    ##You will want to set field to the chracter 'Value'
     field = NA,
 
-    ## grep for use with sequence covariates
+    ## grep for use with sequence covariates of class ffTrack
+    ## The function fftab is called during the processing of ffTrack sequence covariates
+    ## grep is used to specify inexact matches (see fftab)
     grep = NA,
                           
     ## Covariate name
+    ##This is a string that is the name that this covariate will be refered to as during the analysis
+    ##The final output will have a column for this covariate, and the column will be named using this value.
     name = NA,
-                          
+
     ## Valid Covariate Types
+    ## Internal varable that lists the valid covariate types
     COV.TYPES = c('numeric', 'sequence', 'interval'),
                           
     ## Valid Covariate Classes
+    ##Internal variable that lists the valid covariate clasdes
+    ##Note that character must refer to a system path to the object
     COV.CLASSES = c('GRanges', 'RleList', 'ffTrack', 'character')
 
     )         
@@ -1058,19 +1109,22 @@ Cov = R6::R6Class("Cov",
 #'
 #' Override the c operator for covariates so that when you type: c(Cov1,Cov2,Cov3) it returns a Cov_Arr object that support vector like operation.
 #' 
-#' @param ... A series of Covariates, note all objects must be of type Cov
+#' @param ... A series of Cov or Cov_Arr (Covariates), note all objects must be of type Cov or Cov_Arr
 #' @return Cov_Arr object that can be passed directly into the FishHook object constructor
 #' @author Zoran Z. Gajic
 #' @export
 'c.Cov' = function(...){
 
+    ##Ensuring that all of the arugments are of class Cov/Cov_Arr
     Covs = list(...)
     isc = sapply(Covs, function(x) (class(x)[1] == 'Cov' ||  class(x)[1] == 'Cov_Arr'))
 
+    ##If any other classes detected, stop.
     if(any(!isc)){
         stop('Error: All inputs must be of class Cov or Cov_Arr.')
     }
 
+    ##Converting each covariate into a Cov_Arr and each Cov_Arr is left as a Cov_Arr
     Cov_Arrs = lapply(Covs, function(x) {
         if(class(x)[1] == 'Cov'){
             return( x$convert2Arr())
@@ -1093,7 +1147,8 @@ Cov = R6::R6Class("Cov",
     ## Merging Covariates
     covs = lapply(Cov_Arrs, function(x) x$cvs)
     Covs = unlist(covs, recursive = F)
-    
+
+    ##Creating new Cov_Arr object containg all of the passed in arguement Covs
     ret = Cov_Arr$new()
     ret$cvs = Covs
     ret$names = names
@@ -1115,10 +1170,26 @@ Cov = R6::R6Class("Cov",
 #' @description 
 #'
 #' Stores Covariates for passing to FishHook object constructor. Standard initialization involves calling c(Cov1,Cov2,Cov3). 
+#'
+#' Can also be initiated by passing a vector of multiple vectors of equal length, each representing one of the internal variable names
+#' You must also include a list containg all of the covariates (Granges, chracters, RLELists, ffTracks)
+#' 
 #' Cov_Arr serves to mask the underlieing list implemenations of Covariates in the FishHook Object. 
 #' This class attempts to mimic a vector in terms of subsetting and in the future will add more vector like operations.
 #'
+#' 
 #' @param ... several Cov objects for packaging.
+#' @param name, a character vector containg the names of the covariates to be created, this should not include the names of any Cov objects passed 
+#' @param pad, a numeric vector indicating the width to extend each item in the covarite. e.g. if you have a GRanges covariate with two ranges (5:10) and (20:30) with a pad of 5,
+#' These ranges wil become (0:15) and (15:35)
+#' @param type, a character vector containing the types of each covariate (numeric, interval, sequencing)
+#' @param signature, see ffTrack, a vector of signatures for use with ffTrack sequence covariates
+#' @param field, a chracter vector for use with numeric covariates (NA otherwise) the indicates the column containing the values of that covarites.
+#' For example, if you have a covariate for replication timing and the timings are in the column 'value', the parameter field should be set to the character 'Value'
+#' @param na.rm, logical vector that indicates whether or not to remove nas in the covariates
+#' @param grep, a chracter vector of  grep for use with sequence covariates of class ffTrack
+#' The function fftab is called during the processing of ffTrack sequence covariates grep is used to specify inexact matches (see fftab)
+#' @param cvs, a list of covariates that can include any of the covariate classes (GRanges, ffTrack, RleList, character)
 #' @return Cov_Arr object that can be passed directly to the FishHook object constructor
 #' @author Zoran Z. Gajic
 #' @import R6 
@@ -1126,9 +1197,10 @@ Cov = R6::R6Class("Cov",
 Cov_Arr = R6::R6Class('Cov_Arr',
     public = list(
 
-    ## Creates a Cov_Arr object. This function is noramlly called from using the c operator on Cov objects
-    ## e.g. class(c(Cov_1,Cov_2,Cov_3))[1] == Cov_Arr
-    initialize = function(...){
+
+
+        ##See the class documentation
+    initialize = function(..., name = NULL, cvs = NULL, pad = NULL, type = NULL, signature = NULL, field = NULL, na.rm = NULL, grep = NULL){
         Covs = list(...)
         if(length(Covs) == 0){
             return()
@@ -1152,12 +1224,26 @@ Cov_Arr = R6::R6Class('Cov_Arr',
         private$pgrep = sapply(Covs, function(x) x$grep)
     },
 
+    ## Params:
+    ## ... Other Cov_Arrs to be merged into this array, note that it can be any number of Cov_Arrs
+    ## Return:
+    ## A single Cov_Arr object that contains the contents of self and all passed Cov_Arrs
+    ## UI:
+    ## None
+    ## Notes:
+    ## This is linked to the c.Cov_Arr override and the c.Cov_Arr override should be used preferentially over this
     merge = function(...){
         return (c(self,...))
     },
 
-    ## Returns a vector where TRUE indicates a chr based seqlevels e.g. chr14, False -> 14
-    ## Note that non-GRanges Covariates will not return anything
+    ## Params:
+    ## No params required, included arguements will be ignored.
+    ## Return:
+    ## a logical vector where each element corresponds to a covariate and where TRUE indicates a chr based seqlevels e.g. chr14, False -> 14
+    ## UI:
+    ## None
+    ## Note:
+    ## non-GRanges Covariates will not return NA
     chr = function(...){
         chrs = lapply(c(1:length(private$pCovs)), function(x){
             if(class(private$pCovs[[x]]) == 'GRanges'){
@@ -1170,6 +1256,14 @@ Cov_Arr = R6::R6Class('Cov_Arr',
         return(unlist(chrs))
     },
 
+
+    ## Params:
+    ## No params required, included arguements will be ignored.
+    ## Return:
+    ## returns a list of character vectors. If the respective covariate is of class GRanges, the vector will contain all of the chromosome names,
+    ## if it is not of class GRanges, will return NA
+    ## UI:
+    ## None
     seqlevels = function(...){
         seqs = lapply(c(1:length(private$pCovs)), function(x){
             cov = private$pCovs[[x]]
@@ -1183,7 +1277,15 @@ Cov_Arr = R6::R6Class('Cov_Arr',
         return(seqs)
     },
 
-    ## Returns a subset of the Covariates as a list
+    ## Params:
+    ## range, a numeric vector of the covariates to include. e.g. if the Cov_Arr contains the covariates (A,B,C) and the range is c(2:3),
+    ## this indicates you wish to get a Cov_Arr containing (B,C). NOTE THAT THIS DOES NOT RETURN A NEW COV_ARR, IT MODIFIES THE CURRENT.
+    ## Return:
+    ## None, this modifies the Cov_Arr on which it was called
+    ## UI:
+    ## None
+    ## Notes:
+    ## If you want to create a new Cov_Arr containing certain covariates, use the '[' operator, e.g. Cov_Arr[2:3]
     subset = function(range, ...){
         private$pCovs = private$pCovs[range]
         private$pnames = private$pnames[range]
@@ -1195,9 +1297,13 @@ Cov_Arr = R6::R6Class('Cov_Arr',
         private$pgrep = private$pgrep[range]
     },
 
-    ## Creates a list of lists for passing to annotate.targets.
-    ## The inner list constitutes a Cov$toList()
-    ## The outer list serves to hold all of the Cov lists
+    ## Params:
+    ## No params required, included arguements will be ignored.
+    ## Return:
+    ## A list of lists where each internal list corresponds to the covariate and is for use internally in the annotate.targets function
+    ## The list representation of the covariate will contain the following variables: type, signature, pad, na.rm, field, grep
+    ## UI:
+    ## None
     toList = function(...){
         if(length(private$pCovs) == 0){
             return(list())
@@ -1226,6 +1332,12 @@ Cov_Arr = R6::R6Class('Cov_Arr',
 
         },
 
+    ## Params:
+    ## No params required, included arguements will be ignored.
+    ## Return:
+    ## Nothing
+    ## UI:
+    ## Prints information about the Cov_Arr to the console with all of covariates printed in order with variables printed alongside each covariate
     print = function(...){
         out= sapply(c(1:length(private$pCovs)), 
             function(x){
@@ -1239,26 +1351,47 @@ Cov_Arr = R6::R6Class('Cov_Arr',
 
     ),
 
+    ## Private variables are internal variables that cannot be accessed by the user
+    ## These variables will have active representations that the user can interact with the update
+    ## and view these variables, all internal manipulations will be done with these private variables
         private = list(
+            ## The list of covariates, each element can be of class: 'GRanges', 'character', 'RleList', 'ffTrack'
             pCovs = list(),
+            ## A string vector containing the names of the covariates, the covariate will be refered to by its name in the final table
             pnames = c(),
+            ## Type is a string vector of types for each covariate, can be: 'numeric','sequence', or 'interval'
             ptype = c(),
+            ## A vector of signatures for use with ffTrack, se fftab
             psignature = c(),
+            ## A character vector of field names for use with numeric covariates, see the Cov_Arr class definition for more info
             pfield = c(),
+            ## A numeric vector of paddings for each covariate, see the 'pad' param in Cov_Arr class definition for more info
             ppad = c(),
+            ## A logical vector for each covariate, see the 'na.rm' param in Cov_Arr class definition for more info
             pna.rm = c(),
+            ##  A chracter vector for each covariate, see the 'grep' param in Cov_Arr class definition for more info
             pgrep = c(),
                                                  
-            ## Valid Covariate Types
+            ##  Valid Covariate Types
             COV.TYPES = c('numeric', 'sequence', 'interval'),
                        
-            ## Valid Covariate Classes
+            ##  Valid Covariate Classes
             COV.CLASSES = c('GRanges', 'RleList', 'ffTrack', 'character')                  
 
         ),
+
+    ## The active list contains a variable for each private variable.
+    ## Active variables are for user interaction,
+    ## Interactions can be as such
+    ## class$active will call the active variable function with the value missing
+    ## class$active = value will call the active variable function with the value = value
         active = list(
 
-            ##Covariate Names
+            ## Covariate Names
+            ## Here we check to make sure that all names are of class chracter and that they are the same length as pCovs -> the internal covariate list
+            ## If the names vector is equal in length to the pCovs list length we will allow the assignment
+            ## If the pCovs list length is a multiple of the names vector, will will replicate the names vector such that it matches in length
+            ## to the pCovs list.
             names = function(value) {
 
                 if(!missing(value)){
@@ -1285,7 +1418,12 @@ Cov_Arr = R6::R6Class('Cov_Arr',
                 }
             },
 
-            ##Covariate type
+            ## Covariate type
+            ## Here we check to make sure that all types are of class chracter and that they are the same length as pCovs -> the internal covariate list
+            ## We then check to make sure that each type is a valid type as defined by the COV.TYPES private parameter
+            ## If the types vector is equal in length to the pCovs list length we will allow the assignment
+            ## If the pCovs list length is a multiple of the types vector, will will replicate the types vector such that it matches in length
+            ## to the pCovs list.
             type = function(value) {
                 
                 if(!missing(value)){
@@ -1317,6 +1455,10 @@ Cov_Arr = R6::R6Class('Cov_Arr',
             },
 
             ##Covariate Signature
+            ## Here we check to make sure that all signatures are of class chracter and that they are the same length as pCovs -> the internal covariate list
+            ## If the signature vector is equal in length to the pCovs list length we will allow the assignment
+            ## If the pCovs list length is a multiple of the signature vector, will will replicate the signature vector such that it matches in length
+            ## to the pCovs list.
             signature = function(value) {               
                 if(!missing(value)){
                     if(!is.character(value) && !all(is.na(value))){
@@ -1340,6 +1482,10 @@ Cov_Arr = R6::R6Class('Cov_Arr',
             },
 
             ##Covariate Field
+            ## Here we check to make sure that all fields are of class chracter and that they are the same length as pCovs -> the internal covariate list
+            ## If the fields vector is equal in length to the pCovs list length we will allow the assignment
+            ## If the pCovs list length is a multiple of the fields vector, will will replicate the fields vector such that it matches in length
+            ## to the pCovs list.
             field = function(value) {
                 if(!missing(value)){
                     if(!is.character(value) && !all(is.na(value))){
@@ -1364,6 +1510,11 @@ Cov_Arr = R6::R6Class('Cov_Arr',
                 }
             },
 
+            ## Covariate Paddinig
+            ## Here we check to make sure that all pad are of class numeric and that they are the same length as pCovs -> the internal covariate list
+            ## If the pad vector is equal in length to the pCovs list length we will allow the assignment
+            ## If the pCovs list length is a multiple of the pad vector, will will replicate the pad vector such that it matches in length
+            ## to the pCovs list.
             pad = function(value) {
                 if(!missing(value)){
                     if(!is.numeric(value) && !all(is.na(value))){
@@ -1387,7 +1538,11 @@ Cov_Arr = R6::R6Class('Cov_Arr',
                 }
             },
 
-            ##Covariate Na.Rm
+            ##Covariate na.rm
+            ## Here we check to make sure that all na.rms are of class logical and that they are the same length as pCovs -> the internal covariate list
+            ## If the na.rms vector is equal in length to the pCovs list length we will allow the assignment
+            ## If the pCovs list length is a multiple of the na.rms vector, will will replicate the na.rms vector such that it matches in length
+            ## to the pCovs list.
             na.rm = function(value) {
                 if(!missing(value)){
                     if(!is.logical(value) && !all(is.na(value))){
@@ -1411,7 +1566,11 @@ Cov_Arr = R6::R6Class('Cov_Arr',
                 }
             }, 
 
-            ##Covariate Grep
+            ## Covariate Grep
+            ## Here we check to make sure that all greps are of class chracter and that they are the same length as pCovs -> the internal covariate list
+            ## If the greps vector is equal in length to the pCovs list length we will allow the assignment
+            ## If the pCovs list length is a multiple of the greps vector, will will replicate the greps vector such that it matches in length
+            ## to the pCovs list.
             grep = function(value) {
                 if(!missing(value)){
                     if(!is.character(value) && !all(is.na(value))){
@@ -1454,14 +1613,16 @@ Cov_Arr = R6::R6Class('Cov_Arr',
 #' @title title
 #' @description
 #'
-#' Override the c operator for covariates so that when you type: c(Cov1,Cov2,Cov3) it returns a Cov_Arr object that support vector like operation.
+#' Override the c operator for covariates so that when you type: c(Cov1,Cov2,Cov3) it returns a Cov_Arr object that supports vector like operation.
 #' 
-#' @param ... A series of Covariates, note all objects must be of type Cov_Arr
-#' @return Cov_Arr object that can be passed directly into the FishHook object constructor
+#' @param ... A series of Covariates, note all objects must be of type Cov_Arr or Cov
+#' @return Cov_Arr object that can be passed directly into the FishHook object constructor that contains all of the Covs & Cov_Arr covariates
+#' Passed in the ... param
 #' @author Zoran Z. Gajic
 #' @export
 'c.Cov_Arr' = function(...){
 
+    ##Ensure that all params are of type Cov or Cov_Arr
     Covs = list(...)
     isc = sapply(Covs, function(x) (class(x)[1] == 'Cov' ||  class(x)[1] == 'Cov_Arr'))
 
@@ -1469,6 +1630,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
         stop('Error: All inputs must be of class Cov or Cov_Arr.')
     }
 
+    ##Convert all Covs to Cov_Arrs and leave all Cov_Arrs as they are
     Cov_Arrs = lapply(Covs, function(x) {
         if(class(x)[1] == 'Cov'){
             return( x$convert2Arr())
@@ -1478,7 +1640,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
         }
     })
 
-    ## Merging vars
+    ## Merging vars of the covariates
     names  = unlist(sapply(Cov_Arrs, function(x) x$names))
     type  = unlist(sapply(Cov_Arrs, function(x) x$type))
     signature  = unlist(sapply(Cov_Arrs, function(x) x$signature))
@@ -1490,7 +1652,8 @@ Cov_Arr = R6::R6Class('Cov_Arr',
     ## Merging Covariates
     covs = lapply(Cov_Arrs, function(x) x$cvs)
     Covs = unlist(covs, recursive = F)
-    
+
+    ##Creating a new Cov_Arr and assigning all of the merged variables to it
     ret = Cov_Arr$new()
     ret$cvs = Covs
     ret$names = names
@@ -1519,7 +1682,9 @@ Cov_Arr = R6::R6Class('Cov_Arr',
 #' @author Zoran Z. Gajic
 #' @export
 '[.Cov_Arr' = function(obj, range){
+    ##Clone the object so we don't mess with the original
     ret = obj$clone()
+    ##Call the subset function of the Cov_Arr class that will modify the cloned Cov_Arr
     ret$subset(range)
     return (ret)
 }
@@ -1532,11 +1697,42 @@ Cov_Arr = R6::R6Class('Cov_Arr',
 #'
 #' Stores Events, Targets, Eligible, Covariates. 
 #'
-#' @param targets Examples of targets are genes, enhancers, 1kb tiles of the genome that we can then convert into a rolling window. This param must be of class "GRanges".
-#' @param events Events are the given mutational regions and must be of class "GRanges". Examples of events are mutational data (e.g. C->G) copy number variations and fusion events. Targets are the given regions of the genome to annotate and must be of class "GRanges". 
-#' @param eligible Eligible are the regions of the genome that we feel are fit to score. For example in the case of exome sequencing where not all regions are equally represented, eligible can be a set of regions that meet an arbitrary coverage threshold. Another example of when to use eligibility is in the case of whole genomes, where your targets are 1kb tiles. Regions of the genome you would want to exclude in this case are highly repetative regions such as centromeres, telomeres, and satelite repeates. This param must be of class "GRanges".
-#' @param covariates Covariates are genomic covariates that you belive will cause your given type of event (mutations, CNVs, fusions) that are not linked to the process you are investigating (e.g. cancer biology). In the case of cancer biology we are looking for regions that are mutated as part of cancer progression, and regions that are more suceptable to random mutagenesis such as late replicating or non-expressed region (transcription coupled repair) are potential false positives. Includinig covariates for these will reduce thier prominence in the final data. This param must be of type "Cov_Arr" which can be created by wrapping Cov objects in c(). e.g. c(Cov1,Cov2,Cov3).
-#' @return FishHook object that can be annotated.
+#' @param targets Examples of targets are genes, enhancers, or even 1kb tiles of the genome that we can then convert into a rolling/tiled window. This param must be of class "GRanges".
+#' @param events Events are the given mutational regions and must be of class "GRanges". Examples of events are SNVs (e.g. C->G) somatic copy number alterations (SCNAs), fusion events, etc.
+#' @param eligible Eligible regions are the regions of the genome that have enough statistical power to score. For example, in the case of exome sequencing where all regions are not equally
+#' represented, eligible can be a set of regions that meet an arbitrary exome coverage threshold. Another example of when to use eligibility is in the case of whole genomes,
+#' where your targets are 1kb tiles. Regions of the genome you would want to exclude in this case are highly repetative regions such as centromeres, telomeres, and satelite repeates.
+#' This param must be of class "GRanges".
+#' @param covariates Covariates are genomic covariates that you belive will cause your given type of event (mutations, CNVs, fusions, case control samples) that are not linked to the process you are
+#' investigating (e.g. cancer drivers). In the case of cancer drivers, we are looking for regions that are mutated as part of cancer progression. As such, regions that are more suceptable to
+#' random mutagenesis such as late replicating or non-expressed region (transcription coupled repair) could become false positives. Including covariates for these biological processes will
+#' reduce thier visible effect in the final data. This param must be of type "Cov_Arr".
+#' @param out.path A character that will indicate a system path in which to save the results of the analysis.
+#' @param use_local_mut_density A logical that when true, creates a covariate that will represent the mutational density in the genome, whose bin size will be determined by local_mut_density_bin.
+#' This covariate can be used when you have no other covariates as a way to correct for variations in mutational rates along the genome under the assumption that driving mutations
+#' will cluster in local regions as opposed to global regions. This is similar to saying, in the town of foo, there is a crime rate of X that we will assume to be the local crime rate
+#' If a region in foo have a crime rate Y such that Y >>>>> X, we can say that region Y has a higher crime rate than we would expect.
+#' @param local_mut_density_bin A numeric value that will indicate the size of the genomic bins to use if use_local_mut_density = TRUE. Note that this paramter should be a few orders of
+#' magnitude greater than the size of your targets. e.g. if your targets are 1e5 bps long, you may want a local_mut_density_bin of 1e7 or even 1e8
+#' @param gennome A character value indicating which build of the human genome to use, by default set to hg19
+#' @param mc.cores A numeric value that indicates the amount of computing cores to use when running fishHook. This will mainly be used during the annotation step of the analysis, or during
+#' initial instantiation of the object if use_local_mut_density = T
+#' @param na.rm A logical indicating how you handle NAs in your data, mainly used in fftab and gr.val, see these function documentations for more information
+#' @param pad A numeric indicating how far each covariate range should be extended, see Cov_Arr for more information, not that this will only be used if atleast on of the
+#' Covariates have pad = NA
+#' @param vebose A logical indicating whether or not to print information to the console when running FishHook
+#' @param max.slice integer Max slice of intervals to evaluate with  gr.val (default = 1e3)
+#' @param ff.chunk integer Max chunk to evaluate with fftab (default = 1e6)
+#' @param max.chunk integer gr.findoverlaps parameter (default = 1e11)
+#' @param ptidcol A character, that indicates the column name containing the patient ids, this is for use in conjunction with maxpatientpergene. If max patientpergene is specified and
+#' and the column referenced by ptidcol exists, we will limit the contributions of each patient to each target to maxpatientpergene. e.g. if Patient A has 3 events in target A and Patient B
+#' has 1 event in target A, and maxpatientpergene is set to 2, with thier ID column specified, target A will have a cournt of 3, 2 coming from patient A and 1 coming from patient B
+#' @param maxpatientpergene a numeric that indicates the max number of events any given patient can contribute to a given target. for use in conjction with ptidcol. see ptidcol for more info.
+#' @param weightEvents a logical that indicates if the events should be weighted by thier overlap with the targets. e.g. if we have a SCNA spanning 0:1000 and a target spanning 500:10000, the overlap
+#' of the SCNA and target is 500:1000 which is half of the original width of the SCNA event. thus if weightEvent = T, we will credit a count of 0.5 to the target for this SCNA. This deviates from
+#' the expected input for the gamma poisson as the gamma poisson measures whole event counts. 
+#' @param nb boolean negative binomial, if false then use poisson
+#' @return FishHook object ready for annotation/scoring.
 #' @author Zoran Z. Gajic
 #' @importFrom R6 R6Class
 #' @export
@@ -1544,6 +1740,7 @@ FishHook = R6::R6Class('FishHook',
 
     public = list(
 
+        ##See class documentation for params
         initialize = function(targets = NULL, out.path = NULL, eligible = NULL, ... ,events = NULL, covariates = NULL,
             use_local_mut_density = FALSE, local_mut_density_bin = 1e6, genome = 'BSgenome.Hsapiens.UCSC.hg19::Hsapiens',
             mc.cores = 1, na.rm = TRUE, pad = 0, verbose = TRUE, max.slice = 1e3, ff.chunk = 1e6, max.chunk = 1e11, ptidcol = NULL,
@@ -1620,6 +1817,7 @@ FishHook = R6::R6Class('FishHook',
                 self$eligible = eligible
             }
 
+            ##Creating the local mutational denisty track
             if(use_local_mut_density){
                 Sys.setenv(DEFAULT_BSGENOME = genome)
                 bins = gr.tile(hg_seqlengths(),   local_mut_density_bin)
