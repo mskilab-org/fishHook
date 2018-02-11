@@ -418,15 +418,13 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
 #' @importFrom S4Vectors values values<-
 #' @importFrom GenomeInfoDb seqnames
 #' @export
-aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, disjoint = TRUE,  na.rm = FALSE, 
-    FUN = list(), verbose = TRUE)
+aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, disjoint = TRUE,  na.rm = FALSE, FUN = list(), verbose = TRUE)
 {
 
     V1 = sn = st = en = keep = count = width = NULL ## NOTE fix
     if (is.null(by) & is.character(targets)){
         cat('Applying sample wise merging\n')
-    }        
-    else if (is.null(by) & is.null(rolling)){
+    }else if (is.null(by) & is.null(rolling)){
         stop('Error: argument "by" must be specified and same length as targets or "rolling" must be non NULL')
     }
 
@@ -490,8 +488,7 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
                 if (!is.null(out$count)){
                     if (!is.null(FUN[['count']])){
                         out$count = do.call(FUN[['count']], list(out$count, gr$count))
-                    }
-                    else{
+                    }else{
                         out$count = as.numeric(out$count) + gr$count
                     }
                 }
@@ -501,8 +498,7 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
 
                     if (cf %in% names(values(gr))){
                         val = as.numeric(values(gr)[, cf])
-                    }
-                    else{
+                    }else{
                         warning(paste(targets[i], 'missing column', cf))
                         val = NA
                     }
@@ -510,16 +506,13 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
                     if (na.rm){
                         if (!is.null(FUN[[cf]])){
                             values(out)[, cf] = ifelse(!is.na(val), do.call(FUN[[cf]], list(values(out)[, cf], out$coverage, + val, gr$coverage)), values(out)[, cf])
-                        }
-                        else{
+                        }else{
                             values(out)[, cf] = ifelse(!is.na(val), (values(out)[, cf]*out$coverage + val*gr$coverage)/(out$coverage + gr$coverage), values(out)[, cf])
                         }
-                    }
-                    else{
+                    }else{
                         if (!is.null(FUN[[cf]])){
                             values(out)[, cf] = do.call(FUN[[cf]], list(values(out)[, cf], out$coverage, val, gr$coverage))
-                        }
-                        else{
+                        }else{
                             values(out)[, cf] = (values(out)[, cf]*out$coverage + val*gr$coverage)/(out$coverage + gr$coverage)
                         }
                     }
@@ -531,16 +524,14 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
                         has.val = is.na(gr$p)
                         psum = ifelse(has.val, psum - 2*log(gr$p), psum)
                         psum.df = ifelse(has.val, psum.df + 1, psum.df)
-                    }                                            
-                    else{
+                    }else{
                         warning(paste(targets[i], 'missing p value column, ignoring for fisher combined computation'))  
                     }
                 }
 
                 if (is.null(FUN[['coverage']])){
                     out$coverage = as.numeric(out$coverage) + gr$coverage
-                }
-                else{
+                }else{
                     out$coverage = do.call(FUN[['coverage']], list(as.numeric(out$coverage), gr$coverage))  
                 }
 
@@ -557,8 +548,8 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
         }
         
         if (any(nnum <- !(sapply(setdiff(fields, 'query.id'), function(x) class(values(targets)[, x])) %in% 'numeric'))){
-                warning(sprintf('%s meta data fields (%s) fit were found to be non-numeric and not aggregated', sum(nnum), paste(fields[nnum], collapse = ',')))
-                fields = fields[!nnum]
+            warning(sprintf('%s meta data fields (%s) fit were found to be non-numeric and not aggregated', sum(nnum), paste(fields[nnum], collapse = ',')))
+            fields = fields[!nnum]
         }
         
         
@@ -602,10 +593,9 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
                 }
                 values(out)[, f] = tadt[, sum(eval(parse(text=f)), na.rm = TRUE), keyby = list(by = by)][names(out), V1]
             }
-        }
-        else{
-
-            if (is.na(rolling = as.integer(rolling))){   ## check not NA
+        }else{
+            ## check not NA
+            if (is.na(as.integer(rolling))){   
                 stop('Error: rolling must be a positive integer')
             }
 
@@ -631,8 +621,7 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
                     end = rollapply(end, rolling, max, fill = NA),
                     coverage = rollapply(coverage, rolling, sum, fill = NA)
                 ), by = seqnames]
-            } 
-            else {
+            }else {
                 out = tadt[, list(
                     start = rollapply(start, rolling, min, fill = NA),
                     end = rollapply(end, rolling, max, fill = NA),
@@ -642,7 +631,7 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
             nna.ix = !is.na(out$start)
                 
             if (!any(nna.ix)){
-                stop('Error: Malformed input, only NA ranges produced.  Reduce value of running')
+                stop('Error: Malformed input, only NA ranges produced. Reduce value of running')
             }
                 
              out = seg2gr(out[nna.ix])
@@ -664,9 +653,8 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
 
             if (is.null(rolling)){
                 values(out)[, f] = tadt[, sum(width*eval(parse(text=f)), na.rm = TRUE)/sum(width[!is.na(eval(parse(text=f)))]), keyby = list(by = by)][names(out), V1]
-            }
-            ## rolling weighted average
-            else{
+            }else{
+                ## rolling weighted average
                 values(out)[, f] = tadt[, .rwa(eval(parse(text=f)), width), by = seqnames][, V1][nna.ix]
             }
 
@@ -767,14 +755,11 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
 
         if (nb){
             g = glm.nb(formula, data = as.data.frame(tdt), maxit = iter)
-        }
-        else{
+        }else{
             g = glm(formula, data = as.data.frame(tdt), family = poisson)
             g$theta = 1
         }
-    }
-
-    else{
+    }else{
         g = model                            
     }
                 
@@ -786,8 +771,7 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
 
     if (is(targets, 'GRanges')){
         res = as.data.frame(targets)
-    }
-    else{
+    }else{
         res = as.data.frame(values(targets))
     }
 
@@ -844,8 +828,7 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
             pval = runif(nrow(res), min = pval.right, max = pval)
         }
         res$p = signif(pval, 2)
-    }           
-    else{
+    }else{
         pval = ppois(res$count-1, lambda = res$count.pred, lower.tail = F)                
         if (p.randomized){
             pval.right = ppois(res$count, lambda = res$count.pred, lower.tail = F)
@@ -859,8 +842,7 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
     res$q = signif(p.adjust(res$p, 'BH'), 2)
     if (nb){
         res$p.neg = signif(pnbinom(res$count, mu = res$count.pred, size = g$theta, lower.tail = T), 2)
-    }
-    else{
+    }else{
         res$p.neg = signif(ppois(res$count, lambda = res$count.pred, lower.tail = T), 2)
     }
     res$q.neg = signif(p.adjust(res$p.neg, 'BH'), 2)
@@ -873,6 +855,8 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
     return(list(as.data.table(res),g))
     
 }
+
+
 
 
 #' Cov
@@ -1041,8 +1025,7 @@ Cov = R6::R6Class("Cov",
                 na.rm = self$na.rm, 
                 field = self$field,
                 grep = self$grep))
-        }
-        else{
+        }else{
             return (list(track = self$Covariate, 
                 type = self$type,
                 signature = self$signature,
@@ -1128,8 +1111,7 @@ Cov = R6::R6Class("Cov",
     Cov_Arrs = lapply(Covs, function(x) {
         if(class(x)[1] == 'Cov'){
             return( x$convert2Arr())
-        }
-        else{
+        }else{
             return(x)
         }
     })
@@ -1316,8 +1298,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
                     na.rm = private$pna.rm[x],
                     field = private$pfield[x],
                     grep = private$pgrep[x]))
-            }
-            else{
+            }else{
                 return (list(track = private$pCovs[[x]], 
                     type = private$ptype[x],
                     signature = private$psignature[x],
@@ -1412,8 +1393,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
                     private$pnames = value
                     return(private$pnames)
                                                                   
-                }
-                else{
+                }else{
                     return(private$pnames)
                 }
             },
@@ -1447,9 +1427,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
                     private$ptype = value
                     return(private$ptype)
                                                                   
-                }
-
-                else{
+                }else{
                     return(private$ptype)
                 }
             },
@@ -1475,8 +1453,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
                     private$psignature = value
                     return(private$psignature)
                                                                   
-                }
-                else{
+                }else{
                     return(private$psignature)
                 }
             },
@@ -1503,9 +1480,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
                     private$pfield = value
                     return(private$pfield)
 
-                }
-
-                else{
+                }else{
                     return(private$pfield)
                 }
             },
@@ -1531,9 +1506,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
                     private$ppad = value
                     return(private$ppad)
                                                                   
-                }
-
-                else{
+                }else{
                     return(private$ppad)
                 }
             },
@@ -1560,8 +1533,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
                     private$pna.rm = value
                     return(private$pna.rm)
                                                                   
-                }
-                else{
+                }else{
                     return(private$pna.rm)
                 }
             }, 
@@ -1586,8 +1558,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
 
                     private$pgrep = value
                     return(private$pgrep)
-                }
-                else{
+                }else{
                     return(private$pgrep)
                 }
             },
@@ -1597,8 +1568,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
                 if(!missing(value)){
                     private$pCovs = value
                     return(private$pCovs)                                   
-                }
-                else{
+                }else{
                     return(private$pCovs)
                 }
             }
@@ -1634,8 +1604,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
     Cov_Arrs = lapply(Covs, function(x) {
         if(class(x)[1] == 'Cov'){
             return( x$convert2Arr())
-        }
-        else{
+        }else{
             return(x)
         }
     })
@@ -3104,8 +3073,7 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg
 
         if (is.na(subsample[1])){
             dat[, plot(x, y, xlab = expression(Expected -log[10](italic(P))), ylab = expression(Observed -log[10](italic(P))), xlim = c(0, max.x), col = colors, ylim = c(0, max.y), pch=pch, cex=cex, bg=col.bg, ...)]
-        }
-        else{
+        }else{
             subsample = pmin(pmax(0, subsample[1]), 1)
             dat[ifelse(x<=2, ifelse(runif(length(x))<subsample, TRUE, FALSE), TRUE), plot(x, y, xlab = expression(Expected -log[10](italic(P))), ylab = expression(Observed -log[10](italic(P))), xlim = c(0, max.y), col = colors, ylim = c(0, max.y), pch=pch, cex=cex, bg=col.bg, ...)]
         }
@@ -3114,8 +3082,7 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg
             if (length(label)>0){
                 if (is.null(key(dat))){
                     warning('Warning: Need to provide names to input vector to draw labels')
-                }
-                else{
+                }else{
                     dat[list(label), text(x, y, labels=label, pos=3)];
                 }
             }
@@ -3131,13 +3098,11 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg
 
         lines(x=c(0, max.x), y = c(0, lambda*max.y), col = 'red', lty = 2, lwd = lwd);
         legend('bottomright', sprintf('lambda=\n %.2f', lambda), text.col = 'red', bty = 'n')
-    }
-    else{
+    }else{
 
         if(length(annotations) < 1){
             hover = do.call(cbind.data.frame, list(p = obs))
-        }
-        else{
+        }else{
             hover = do.call(cbind.data.frame, list(annotations, p = obs))
         }    
 
@@ -3153,20 +3118,19 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg
         if (!is.null(exp)){
             if (length(exp) != length(hover$p)){
                 stop('Error: length of exp must be = length(hover$obs)')
-            }
-            else{
+            }else{
                 ix1 = ix1 & !is.na(exp)
             }
         } 
         if (is.null(highlight)){
             highlight = rep(FALSE, length(hover$p))
-        } 
-        else if (is.logical(highlight)) {
+        } else if (is.logical(highlight)) {
             if (length(highlight) != length(hover$p)){
                 stop('Error: argument "highlight" must be either logical vector of same length as obs or a vector of indices')
             }
+        }else{
+            highlight = 1:length(hover$p) %in% highlight
         }
-        else highlight = 1:length(hover$p) %in% highlight
         hover$obs = -log10(hover$p[ix1])
         hover = hover[ix1]
         highlight = highlight[ix1]
@@ -3174,22 +3138,23 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg
             exp = -log10(exp[ix1])
         } 
         ix2 = !is.infinite(hover$obs)
-        if (!is.null(exp)) 
+        if (!is.null(exp)){
             ix2 = ix2 & !is.infinite(exp)
+        }
         hover = hover[ix2]
         highlight = highlight[ix2]
-        if (!is.null(exp)) 
+        if (!is.null(exp)){
             exp = exp[ix2]
+        } 
         N <- length(hover$obs)
-        if (is.null(exp)) 
+        if (is.null(exp)){
             exp = -log(1:N/N, 10)
-        else{
+        }else{
             exp = sort(exp)
         }
         if (is.null(max)){
             max = max(hover$obs, exp) + 0.5
-        } 
-        else{
+        } else{
             max = max
         }
         if (is.exp.null) {
@@ -3229,8 +3194,7 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg
             annotation_names_wLineBreak  = paste('<br>', annotation_names[2:length(annotation_names)],
             sep = '')
             annotation_names = c(annotation_names[1], annotation_names_wLineBreak)
-        }
-        else{
+        }else{
             annotation_names  = sapply(colnames(hover), paste0, ' : ')
         }
 
@@ -3239,8 +3203,7 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg
         if(length(gradient )!= 0){    
             dat$grad = gradient[[1]][ord]
             gradient_control = TRUE
-        }
-        else {   
+        }else {   
             dat$grad = c()
         }
         
@@ -3275,15 +3238,13 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg
                                    mode = 'markers', type = 'scatter')
                     %>% layout(xaxis = list(title = '<i>Expected -log<sub>10</sub>(P)</i>'),
                                yaxis = list(title = '<i>Observed -log<sub>10</sub>(P)</i>')) ]
-            }
-            else{
+            }else{
                 p = dat[, plot_ly(data = dat, x=x, y=y, key = dat$key, hoverinfo = 'text', text = hover_text,
                                    mode = 'markers', type = 'scatter')
                     %>% layout(xaxis = list(title = '<i>Expected -log<sub>10</sub>(P)</i>'),
                                yaxis = list(title = '<i>Observed -log<sub>10</sub>(P)</i>')) ]
             }
-        }
-        else{
+        }else{
         
             dat$ID = c(1:nrow(dat))
             dat2 = dat[ y < 2.6,]
@@ -3318,8 +3279,7 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg
                                     mode = 'markers', type = 'scatter')
                      %>% layout(xaxis = list(title = '<i>Expected -log<sub>10</sub>(P)</i>'),
                                 yaxis = list(title = '<i>Observed -log<sub>10</sub>(P)</i>')) ]
-            }
-            else{
+            }else{
                 p = dat2[,  plot_ly(data = dat2, x=x, y=y,hoverinfo = "text", text = hover_text, mode = 'markers', type = 'scatter')
                      %>% layout(xaxis = list(title = '<i>Expected -log<sub>10</sub>(P)</i>'),
                                 yaxis = list(title = '<i>Observed -log<sub>10</sub>(P)</i>')) ]

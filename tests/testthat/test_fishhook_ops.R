@@ -101,9 +101,47 @@ test_that('aggregate.targets', {
     expect_equal(length(foo$gene_name), 16352)
     ##  if (is.null(by) & is.character(targets)){
     expect_error(aggregate.targets('/home/travis/build/mskilab/fishHook/data/targets.rds'))
+    ## annotate targets
+    annotated = annotate.targets(targets, events=events)
+    ## by
+    expect_equal(length(aggregate.targets(annotated, by = 'gene_name')[[1]]), 16352)
+    ## fields
+    ## rolling
+    ## disjoint
+    ## na.rm
+    ## FUN
+    ## verbose
 
 })
 
+
+
+
+
+
+
+
+
+test_that('aggregate.targets', {
+
+    expect_error(aggregate.targets(targets))  ## Error: argument "by" must be specified and same length as targets or "rolling" must be non NULL
+    foo = aggregate.targets(targets, by='gene_name')
+    expect_equal(length(foo$gene_name), 16352)
+    ##  if (is.null(by) & is.character(targets)){
+    expect_error(aggregate.targets('/home/travis/build/mskilab/fishHook/data/targets.rds'))
+    ## annotate targets
+    annotated = annotate.targets(targets, events=events)
+    ## by
+    expect_equal(length(aggregate.targets(annotated, by = 'gene_name')[[1]]), 16352)
+    ## fields
+    
+    ## rolling
+    ## disjoint
+    ## na.rm
+    ## FUN
+    ## verbose
+
+})
 
 
 
