@@ -31,7 +31,7 @@ annotate.targets(targets, covered = NULL, events = NULL, mc.cores = 1,
 
 \item{max.chunk}{integer gr.findoverlaps parameter (default = 1e11)}
 
-\item{out.path}{out.path to save variable to (default = NULL)}
+\item{out.path}{string Pathname to output file (default = NULL)}
 
 \item{covariates}{list}
 
@@ -39,7 +39,7 @@ annotate.targets(targets, covered = NULL, events = NULL, mc.cores = 1,
 
 \item{ptidcol}{string Column where patient ID is stored}
 
-\item{...}{paths to sequence covariates whose output names will be their argument names, and each consists of a list with
+\item{...}{paths to sequence covariates whose output names will be their argument names, and each consists of a list with (default = FALSE)
 $track field corresponding to a GRanges, RleList, ffTrack object (or path to rds containing that object), $type which can
 have one of three values "numeric", "sequence", "interval".
 Numeric tracks must have $score field if they are GRanges), and can have a $na.rm logical field describing how to treat NA values
@@ -48,8 +48,8 @@ Sequence covariates must be ffTrack objects (or paths to ffTrack rds) and requir
 will be used as input to fftab, and can have optional logical argument $grep to specify inexact matches (see fftab)
 Interval covariates must be Granges (or paths to GRanges rds) or paths to bed files}
 
-\item{weightEvetns}{boolean If true, will weight events by their overlap with targets. e.g. if 10% of an event overlaps with a target 
-region, that target region will get assigned a score of 0.1 for that event. If false, any overlap will be given a weight of 1. (default = FALSE)}
+\item{weightEvetns}{boolean If TRUE, will weight events by their overlap with targets. e.g. if 10% of an event overlaps with a target 
+region, that target region will get assigned a score of 0.1 for that event. If false, any overlap will be given a weight of 1.}
 }
 \value{
 GRanges of input targets annotated with covariate statistics (+/- constrained to the subranges in optional argument covered)
