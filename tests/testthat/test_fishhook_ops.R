@@ -33,6 +33,7 @@ segs = readRDS('/home/travis/build/mskilab/fishHook/data/jabba_segs_11517.rds')
 
 
 
+
 context('unit testing fishhook operations')
 
 
@@ -80,7 +81,7 @@ test_that('annotate.targets', {
     ## if (length(targets)==0){
     expect_error(annotate.targets(GRanges()))
     ## if (!is.null(out.path)){
-    expect_equal(length(annotate.targets('/home/travis/build/mskilab/fishHook/data/targets.rds', out.path = '/home/travis/build/mskilab/fishHook/')), 19688)
+    expect_equal(length(annotate.targets('/home/travis/build/mskilab/fishHook/data/targets.rds', out.path = '/home/travis/build/mskilab/fishHook/data/output.RDS')), 19688)
     ## if (!all(cov.types %in% COV.TYPES) & !(all(cov.classes %in% COV.CLASSES))){
     expect_error(annotate.targets(targets, covariates = grl2))
     ## if events != NULL
@@ -99,7 +100,7 @@ test_that('aggregate.targets', {
     foo = aggregate.targets(targets, by='gene_name')
     expect_equal(length(foo$gene_name), 16352)
     ##  if (is.null(by) & is.character(targets)){
-    aggregate.targets('/home/travis/build/mskilab/fishHook/data/targets.rds')
+    expect_error(aggregate.targets('/home/travis/build/mskilab/fishHook/data/targets.rds'))
 
 })
 
