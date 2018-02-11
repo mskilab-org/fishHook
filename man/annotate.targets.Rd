@@ -48,8 +48,8 @@ Sequence covariates must be ffTrack objects (or paths to ffTrack rds) and requir
 will be used as input to fftab, and can have optional logical argument $grep to specify inexact matches (see fftab)
 Interval covariates must be Granges (or paths to GRanges rds) or paths to bed files}
 
-\item{weightEvetns}{boolean If true, will weight events by their overlap with targets. e.g. if 10% of an event overlaps with a target (default = FALSE)
-region, that target region will get assigned a score of 0.1 for that event. If false, any overlap will be given a weight of 1.}
+\item{weightEvetns}{boolean If true, will weight events by their overlap with targets. e.g. if 10% of an event overlaps with a target 
+region, that target region will get assigned a score of 0.1 for that event. If false, any overlap will be given a weight of 1. (default = FALSE)}
 }
 \value{
 GRanges of input targets annotated with covariate statistics (+/- constrained to the subranges in optional argument covered)

@@ -46,8 +46,8 @@
 #' @param covariates list 
 #' @param maxpatientpergene Sets the maximum number of events a patient can contribute per target (default = Inf)
 #' @param ptidcol string Column where patient ID is stored
-#' @param weightEvetns boolean If true, will weight events by their overlap with targets. e.g. if 10% of an event overlaps with a target (default = FALSE)
-#' region, that target region will get assigned a score of 0.1 for that event. If false, any overlap will be given a weight of 1.
+#' @param weightEvetns boolean If true, will weight events by their overlap with targets. e.g. if 10% of an event overlaps with a target 
+#' region, that target region will get assigned a score of 0.1 for that event. If false, any overlap will be given a weight of 1. (default = FALSE)
 #' @param ... paths to sequence covariates whose output names will be their argument names, and each consists of a list with
 #' $track field corresponding to a GRanges, RleList, ffTrack object (or path to rds containing that object), $type which can
 #' have one of three values "numeric", "sequence", "interval".

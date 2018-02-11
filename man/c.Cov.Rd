@@ -7,7 +7,7 @@
 \method{c}{Cov}(...)
 }
 \arguments{
-\item{...}{A series of Covariates, note all objects must be of type Cov}
+\item{...}{A series of Cov or Cov_Arr (Covariates), note all objects must be of type Cov or Cov_Arr}
 }
 \value{
 Cov_Arr object that can be passed directly into the FishHook object constructor

@@ -1,5 +1,5 @@
-library(fishHook)
 
+library(fishHook)
 library(testthat)
 
 Sys.setenv(DEFAULT_BSGENOME = 'BSgenome.Hsapiens.UCSC.hg19::Hsapiens')
@@ -42,7 +42,7 @@ context('unit testing fishhook operations')
 
 test_that('annotate.targets', {
 	## default args
-	expect_true(is(annotate.targets(targets), 'GRanges'))
+	expect_true(is(annotate.targets(targets), 'GRanges'))   ## annotate.targets(targets, weightEvents=TRUE)
     expect_equal(length(annotate.targets(targets)), 19688)
     foo = annotate.targets(targets)
     expect_equal(max(foo$query.id), 19688)
@@ -74,6 +74,18 @@ test_that('annotate.targets', {
     ## maxpatientpergene
     ## ptidcol
     ## weightEvents
+    expect_equal(is.na(all(annotate.targets(targets, weightEvents=TRUE)$count)), TRUE)
+    ## if (is.character(targets)){
+    expect_equal(length(annotate.targets('/home/travis/build/mskilab/fishHook/data/targets.rds')), 19688)
+    ## if (length(targets)==0){
+    expect_error(annotate.targets(GRanges()))
+    ## if (!is.null(out.path)){
+    expect_equal(length(annotate.targets('/home/travis/build/mskilab/fishHook/data/targets.rds', out.path = '/home/travis/build/mskilab/fishHook/')), 19688)
+    ## if (!all(cov.types %in% COV.TYPES) & !(all(cov.classes %in% COV.CLASSES))){
+    expect_error(annotate.targets(targets, covariates = grl2))
+    ## if events != NULL
+    expect_equal(max(annotate.targets(targets, events=events)$count), 9750)
+
 
 })
 
@@ -86,6 +98,8 @@ test_that('aggregate.targets', {
     expect_error(aggregate.targets(targets))  ## Error: argument "by" must be specified and same length as targets or "rolling" must be non NULL
     foo = aggregate.targets(targets, by='gene_name')
     expect_equal(length(foo$gene_name), 16352)
+    ##  if (is.null(by) & is.character(targets)){
+    aggregate.targets('/home/travis/build/mskilab/fishHook/data/targets.rds')
 
 })
 

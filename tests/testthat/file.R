@@ -40,20 +40,6 @@ context('unit testing fishhook operations')
 
 
 
-covered = NULL  
-mc.cores = 1 
-na.rm = TRUE
-pad = 0
-verbose = TRUE
-max.slice = 1e3
-ff.chunk = 1e6
-max.chunk = 1e11
-out.path = NULL
-covariates = list()
-maxpatientpergene = Inf
-ptidcol = NULL
-weightEvents = FALSE
-
 
 foofoo = function(targets, covered = NULL, events = NULL,  mc.cores = 1, na.rm = TRUE, pad = 0, verbose = TRUE, max.slice = 1e3, 
     ff.chunk = 1e6, max.chunk = 1e11, out.path = NULL, covariates = list(), maxpatientpergene = Inf, ptidcol = NULL, weightEvents = FALSE, ...)
