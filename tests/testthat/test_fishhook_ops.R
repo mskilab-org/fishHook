@@ -121,11 +121,43 @@ test_that('aggregate.targets', {
     ## FUN 
     ## verbose
     expect_equal(length(aggregate.targets(annotated, by = 'gene_name', verbose = FALSE)[[1]]), 16352)
-    
+
 })
 
 
 
+
+
+
+## score.targets
+
+test_that('score.targets', {
+
+    annotated = annotate.targets(targets, events=events)
+    ## targets
+    ## covariates = names(values(targets))
+    ## model = NULL
+    ## return.model = FALSE
+    expect_equal(as.integer(round(score.targets(annotated, return.model = TRUE)$coefficients)), as.integer(-5))
+    ## nb = TRUE
+    expect_equal(round(max(score.targets(annotated, nb=TRUE)$effectsize)), 5)
+    expect_equal(round(max(score.targets(annotated, nb=FALSE)$effectsize)), 7)
+    ## verbose = TRUE
+    expect_equal(dim(as.data.table(score.targets(annotated, verbose=FALSE)))[1], 19688)
+    expect_equal(dim(as.data.table(score.targets(annotated, verbose=FALSE)))[2], 16)
+    ## iter = 200
+    expect_equal(dim(as.data.table(score.targets(annotated, iter=4000)))[1], 19688)
+    expect_equal(dim(as.data.table(score.targets(annotated, iter=4000)))[2], 16)
+    ## subsample = 1e5
+    expect_equal(dim(as.data.table(score.targets(annotated, subsample = 5)))[1], 19688)
+    expect_equal(dim(as.data.table(score.targets(annotated, subsample = 5)))[2], 16)
+    ## seed = 42
+    ## p.randomized = TRUE
+    expect_equal(dim(as.data.table(score.targets(annotated, p.randomized = FALSE)))[1], 19688)
+    ## classReturn = FALSE
+    expect_equal(dim(as.data.table(score.targets(annotated, classReturn = TRUE)))[1], 19688)
+
+})
 
 
 

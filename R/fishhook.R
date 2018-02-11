@@ -418,7 +418,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
 #' @importFrom S4Vectors values values<-
 #' @importFrom GenomeInfoDb seqnames
 #' @export
-aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, disjoint = TRUE,  na.rm = FALSE, FUN = list(), verbose = TRUE)
+aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, disjoint = TRUE, na.rm = FALSE, FUN = list(), verbose = TRUE)
 {
 
     V1 = sn = st = en = keep = count = width = NULL ## NOTE fix
@@ -677,7 +677,7 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
 #' @param covariates info
 #' @param model fit existing model --> covariates must be present (default = NULL)
 #' @param return.model boolean info (default = FALSE)
-#' @param nb boolean negative binomial, if false then use poisson
+#' @param nb boolean If TRUE, uses negative binomial; if FALSE then use Poisson
 #' @param verbose boolean verbose flag (default = TRUE)
 #' @param iter integer info (default = 200)
 #' @param subsample interger info (default = 1e5)

@@ -18,7 +18,7 @@ score.targets(targets, covariates = names(values(targets)), model = NULL,
 
 \item{return.model}{boolean info (default = FALSE)}
 
-\item{nb}{boolean negative binomial, if false then use poisson}
+\item{nb}{boolean If TRUE, uses negative binomial; if FALSE then use Poisson}
 
 \item{verbose}{boolean verbose flag (default = TRUE)}
 
