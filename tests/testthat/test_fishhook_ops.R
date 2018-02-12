@@ -1,3 +1,4 @@
+
 library(fishHook)
 library(testthat)
 
@@ -22,6 +23,7 @@ eligible = readRDS('/home/travis/build/mskilab/fishHook/data/eligible.rds')
 ## eligible  = readRDS('eligible.rds')
 
 
+
 # indexed pathways
 indexed_pathways = readRDS('/home/travis/build/mskilab/fishHook/data/indexed_pathways.rds')
 ## indexed_pathways = readRDS('indexed_pathways.rds')
@@ -31,6 +33,9 @@ segs = readRDS('/home/travis/build/mskilab/fishHook/data/jabba_segs_11517.rds')
 ## segs = readRDS('jabba_segs_11517.rds')
 
 eligible = readRDS('/home/travis/build/mskilab/fishHook/data/eligible.rds')
+
+annocov = readRDS('/home/travis/build/mskilab/fishHook/data/anno_covs.rds')
+
 
 
 context('unit testing fishhook operations')
@@ -122,6 +127,12 @@ test_that('aggregate.targets', {
     ## FUN 
     ## verbose
     expect_equal(length(aggregate.targets(annotated, by = 'gene_name', verbose = FALSE)[[1]]), 16352)
+    ## 
+    ##  if (is.null(by) & is.character(targets)){
+    expect_error(aggregate.targets('/home/travis/build/mskilab/fishHook/data/targets.rds'))  ## Coverage missing for input targets
+    ##  if (is.null(by) & is.character(targets)){ (continued)
+    expect_error(aggregate.targets('/home/travis/build/mskilab/fishHook/data/annotated_cov.rds'))
+
 
 })
 
@@ -267,6 +278,9 @@ test_that('FishHook', {
     expect_error(fish1$qq_plot())
     ## clear
     expect_equal(print(fish1$clear()), "Clear Completed")
+    ## with eligible
+    fish2 = FishHook$new(targets = targets, events = events, eligible = eligible)
+    expect_true(fish2$nb)
 
 })
 
