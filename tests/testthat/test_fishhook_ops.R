@@ -279,7 +279,7 @@ test_that('FishHook', {
     ## clear
     expect_equal(print(fish1$clear()), "Clear Completed")
     ## with eligible
-    expect_error(FishHook$new(targets = targets, events = events, eligible = eligible))
+    foobar = FishHook$new(targets = targets, events = events, eligible = eligible)
 
 })
 
