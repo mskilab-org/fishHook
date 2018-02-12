@@ -11,12 +11,12 @@ Cov_Arr
 \arguments{
 \item{...}{several Cov objects for packaging.}
 
-\item{name, }{a character vector containg the names of the covariates to be created, this should not include the names of any Cov objects passed}
+\item{name}{character vector Contains names of the covariates to be created, this should not include the names of any Cov objects passed}
 
-\item{pad, }{a numeric vector indicating the width to extend each item in the covarite. e.g. if you have a GRanges covariate with two ranges (5:10) and (20:30) with a pad of 5,
+\item{pad}{numeric vector Indicates the width to extend each item in the covarite. e.g. if you have a GRanges covariate with two ranges (5:10) and (20:30) with a pad of 5,
 These ranges wil become (0:15) and (15:35)}
 
-\item{type, }{a character vector containing the types of each covariate (numeric, interval, sequencing)}
+\item{type}{character vector Contains the types of each covariate (numeric, interval, sequencing)}
 
 \item{signature, }{see ffTrack, a vector of signatures for use with ffTrack sequence covariates}
 

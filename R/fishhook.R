@@ -69,7 +69,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
     if (is.character(targets)){
         if (grepl('\\.rds$', targets[1])){
             targets = readRDS(targets[1])
-        }else if (grepl('(\\.bed$)', targets[1])){
+        } else if (grepl('(\\.bed$)', targets[1])){
             targets = import.ucsc(targets[1])
         }
     }
@@ -126,7 +126,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
 
     if (!is.null(covered)){
         ov = gr.findoverlaps(targets, covered, verbose = verbose, max.chunk = max.chunk, mc.cores = mc.cores)
-    }else {
+    } else {
         ov = targets[, c()]
         ov$query.id = ov$subject.id = 1:length(targets)
     }
@@ -265,7 +265,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
                 if (is(cov$track, 'ffTrack') | is(cov$track, 'RleList')){
                     val = fftab(cov$track, ov + cov$pad, signature = cov$signature, FUN = sum, verbose = verbose, chunksize = ff.chunk, grep = cov$grep, mc.cores = mc.cores)
                     values(ov) = values(val)
-                }else{
+                } else{
                     if (is.na(cov$field)){
                         ## then must be GRanges
                     }
@@ -852,9 +852,9 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
 #' @title title
 #' @description
 #'
-#'  Stores Covariate for passing to FishHook object. It is a decrepit class but is included for legacy purposes. If you instantiate a Cov$new, it will return a length 1 Cov_Arr containg the covariate
+#' Stores Covariate for passing to FishHook object. It is a decrepit class but is included for legacy purposes. If you instantiate a Cov$new, it will return a length 1 Cov_Arr containg the covariate
 #' 
-#' @param Covariate object of type, GRanges, ffTrack, RleList or character. Note that character objects must be paths to files containing one of the other types as a .rds file
+#' @param Covariate GRanges, ffTrack, RleList or character string. Note that character objects must be paths to files containing one of the other types as a .rds file
 #' @param type character indicating the type of Covariate, valid options are: numeric, sequence, interval. See Annotate Targets for more information on Covariate types
 #' @param signature chracter that In the case where a ffTrack object is of type sequence, a signature field is required, see fftab in ffTrack for more information.
 #' @param name character indicating the name that this covariate will be refered to as
@@ -903,7 +903,7 @@ Cov = R6::R6Class("Cov",
                 cov$track = tryCatch(readRDS(cov$track), error = function(e) 'not ffTrack')
             }
 
-            ## Requires the covariate that was read above or provided in the initial arguements to be  an ffTrack.
+            ## Requires the covariate that was read above or provided in the initial arguments to be  an ffTrack.
             if (class(Covariate) != 'ffTrack'){
                 stop('Error: sequence tracks must have ffTrack object as $track field or $track must be a path to an ffTrack object rds file')
             }                                  
@@ -935,25 +935,25 @@ Cov = R6::R6Class("Cov",
     },
 
 
-    ##Params:
-    ##No params required, included arguements will be ignored.
-    ##Return:
-    ##This will return the seq levels of the provided covariate, if the internal covariate is of type GRanges. Else will return NA.
-    ##UI:
-    ##None
+    ## Params:
+    ## No params required, included arguments will be ignored.
+    ## Return:
+    ## This will return the seq levels of the provided covariate, if the internal covariate is of type GRanges. Else will return NA.
+    ## UI:
+    ## None
     seqlevels = function(...){
         if(class(self$Covariate) == 'GRanges'){
-            return(seqlevels(self$Covariate))
+            return(GenomeInfoDb::seqlevels(self$Covariate))
         }
-        return (NA)                              
+        return(NA)                              
     },
 
-    ##Params:
-    ##No params required, included arguements will be ignored.
-    ##Return:
-    ##Returns a character that contains all of the internal variables stored in the obeject and thier values.
-    ##UI:
-    ##None
+    ## Params:
+    ## No params required, included arguments will be ignored.
+    ## Return:
+    ## Returns a character that contains all of the internal variables stored in the object and thier values.
+    ## UI:
+    ## None
     toString = function(...){
         paste(c('Name: ', self$name,
         '\ntype: ',self$type, '\tsignature: ', self$signature,
@@ -962,49 +962,49 @@ Cov = R6::R6Class("Cov",
         '\nCovariate: ', class(self$Covariate), '\n'), collapse = '', sep = '')
     },
 
-    ##Params:
-    ##No params required, included arguements will be ignored.
-    ##Return:
-    ##Returns an object of type 'Cov_Arr' of length 1 that contains this covariate.
-    ##UI:
-    ##None
+    ## Params:
+    ## No params required, included arguments will be ignored.
+    ## Return:
+    ## Returns an object of type 'Cov_Arr' of length 1 that contains this covariate.
+    ## UI:
+    ## None
     convert2Arr = function(...){
         return(Cov_Arr$new(self))
     },
 
-    ##Params:
-    ##No params required, included arguements will be ignored.
-    ##Return:
-    ##NULL
-    ##UI:
-    ##prints the output of self$toString() to the console.
+    ## Params:
+    ## No params required, included arguments will be ignored.
+    ## Return:
+    ## NULL
+    ## UI:
+    ## prints the output of self$toString() to the console.
     print = function(...){
         cat(self$toString())
         return(NULL)
     },
 
-    ##Params:
-    ##No params required, included arguements will be ignored.
-    ##Return:
-    ##If the internal covariate is of class 'GRanges', returns true if the seqlevels contain 'chr', and false otherwise. If not a 'GRanges' returns NA
-    ##UI:
-    ##None
+    ## Params:
+    ## No params required, included arguments will be ignored.
+    ## Return:
+    ## If the internal covariate is of class 'GRanges', returns true if the seqlevels contain 'chr', and false otherwise. If not a 'GRanges' returns NA
+    ## UI:
+    ## None
     chr = function(...){
         if(class(self$Covariate) == 'GRanges'){
-            return(any(grepl('chr', seqlevels(self$Covariate))))
+            return(any(grepl('chr',  GenomeInfoDb::seqlevels(self$Covariate))))
         }
         return (NA)
     },
     
-    ##Params:
-    ##No params required, included arguements will be ignored.
-    ##Return:
-    ##Converts the Covariate object to a list that is used internally in the annotate.targets function
-    ##The list is a list of covariates, where each covariate is itself a list, thus we get a lsit of lists.
-    ##The list representation of the covariate will contain the following variables: type, signature, pad, na.rm, field, grep
-    ##Each variable should be the same as in the Covariate
-    ##UI:
-    ##None
+    ## Params:
+    ## No params required, included arguments will be ignored.
+    ## Return:
+    ## Converts the Covariate object to a list that is used internally in the annotate.targets function
+    ## The list is a list of covariates, where each covariate is itself a list, thus we get a lsit of lists.
+    ## The list representation of the covariate will contain the following variables: type, signature, pad, na.rm, field, grep
+    ## Each variable should be the same as in the Covariate
+    ## UI:
+    ## None
     toList = function(...){
         if(!(is.null(self$signature)) & class(self$Covariate) == 'ffTrack'){
             return (list(track = self$Covariate, 
@@ -1026,28 +1026,28 @@ Cov = R6::R6Class("Cov",
     },                          
                                                     
     ## Active Covariates
-    ##This can be of GRanges, RleList, character or ffTrack
+    ## This can be of GRanges, RleList, character or ffTrack
     Covariate = NA,
 
     ## Active Track
-    ##This indicates the type of the covariate: numeric, sequence, interval
+    ## This indicates the type of the covariate: numeric, sequence, interval
     type = NA,
 
     ## signature for use with ffTrack sequence covariates
     signature = NA,
 
     ## Pad for use with annotate targets
-    ##Pad should be numeric and is used in annotate.targets to indicate how far each covariate should influence the surrounding bases
-    ##i.e. if pad = 5 and a covariate spans the bases 5:10, the covariate will now span 0:15
+    ## Pad should be numeric and is used in annotate.targets to indicate how far each covariate should influence the surrounding bases
+    ## i.e. if pad = 5 and a covariate spans the bases 5:10, the covariate will now span 0:15
     pad = NA,
 
     ## na.rm for use with annotate targets and is of class 'logical'
-    ##Will remove any NA values within your covariate if true, if false will leave those values, if NA will be treated as false
+    ## Will remove any NA values within your covariate if true, if false will leave those values, if NA will be treated as false
     na.rm = NA,
 
     ## field specifies the column of the covariate  to use for numeric covariates
-    ##For example, if the covariate is a numeric covariate of class GRanges and you have a column named 'Value' that contains the numeric information
-    ##You will want to set field to the chracter 'Value'
+    ## For example, if the covariate is a numeric covariate of class GRanges and you have a column named 'Value' that contains the numeric information
+    ## You will want to set field to the chracter 'Value'
     field = NA,
 
     ## grep for use with sequence covariates of class ffTrack
@@ -1056,8 +1056,8 @@ Cov = R6::R6Class("Cov",
     grep = NA,
                           
     ## Covariate name
-    ##This is a string that is the name that this covariate will be refered to as during the analysis
-    ##The final output will have a column for this covariate, and the column will be named using this value.
+    ## This is a string that is the name that this covariate will be refered to as during the analysis
+    ## The final output will have a column for this covariate, and the column will be named using this value.
     name = NA,
 
     ## Valid Covariate Types
@@ -1065,8 +1065,8 @@ Cov = R6::R6Class("Cov",
     COV.TYPES = c('numeric', 'sequence', 'interval'),
                           
     ## Valid Covariate Classes
-    ##Internal variable that lists the valid covariate clasdes
-    ##Note that character must refer to a system path to the object
+    ## Internal variable that lists the valid covariate clasdes
+    ## Note that character must refer to a system path to the object
     COV.CLASSES = c('GRanges', 'RleList', 'ffTrack', 'character')
 
     )         
@@ -1085,7 +1085,7 @@ Cov = R6::R6Class("Cov",
 #' @return Cov_Arr object that can be passed directly into the FishHook object constructor
 #' @author Zoran Z. Gajic
 #' @export
-'c.Cov' = function(...){
+c.Cov = function(...){
 
     ##Ensuring that all of the arugments are of class Cov/Cov_Arr
     Covs = list(...)
@@ -1119,7 +1119,7 @@ Cov = R6::R6Class("Cov",
     covs = lapply(Cov_Arrs, function(x) x$cvs)
     Covs = unlist(covs, recursive = F)
 
-    ##Creating new Cov_Arr object containg all of the passed in arguement Covs
+    ##Creating new Cov_Arr object containg all of the passed in argument Covs
     ret = Cov_Arr$new()
     ret$cvs = Covs
     ret$names = names
@@ -1150,10 +1150,10 @@ Cov = R6::R6Class("Cov",
 #'
 #' 
 #' @param ... several Cov objects for packaging.
-#' @param name, a character vector containg the names of the covariates to be created, this should not include the names of any Cov objects passed 
-#' @param pad, a numeric vector indicating the width to extend each item in the covarite. e.g. if you have a GRanges covariate with two ranges (5:10) and (20:30) with a pad of 5,
+#' @param name character vector Contains names of the covariates to be created, this should not include the names of any Cov objects passed 
+#' @param pad numeric vector Indicates the width to extend each item in the covarite. e.g. if you have a GRanges covariate with two ranges (5:10) and (20:30) with a pad of 5,
 #' These ranges wil become (0:15) and (15:35)
-#' @param type, a character vector containing the types of each covariate (numeric, interval, sequencing)
+#' @param type character vector Contains the types of each covariate (numeric, interval, sequencing)
 #' @param signature, see ffTrack, a vector of signatures for use with ffTrack sequence covariates
 #' @param field, a chracter vector for use with numeric covariates (NA otherwise) the indicates the column containing the values of that covarites.
 #' For example, if you have a covariate for replication timing and the timings are in the column 'value', the parameter field should be set to the character 'Value'
@@ -1206,7 +1206,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
     },
 
     ## Params:
-    ## No params required, included arguements will be ignored.
+    ## No params required, included arguments will be ignored.
     ## Return:
     ## a logical vector where each element corresponds to a covariate and where TRUE indicates a chr based seqlevels e.g. chr14, False -> 14
     ## UI:
@@ -1216,7 +1216,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
     chr = function(...){
         chrs = lapply(c(1:length(private$pCovs)), function(x){
             if(class(private$pCovs[[x]]) == 'GRanges'){
-                return(any(grepl('chr', seqlevels(private$pCovs[[x]]))))
+                return(any(grepl('chr',  GenomeInfoDb::seqlevels(private$pCovs[[x]]))))
             } else{
                 return(NA)
             }
@@ -1226,7 +1226,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
 
 
     ## Params:
-    ## No params required, included arguements will be ignored.
+    ## No params required, included arguments will be ignored.
     ## Return:
     ## returns a list of character vectors. If the respective covariate is of class GRanges, the vector will contain all of the chromosome names,
     ## if it is not of class GRanges, will return NA
@@ -1236,7 +1236,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
         seqs = lapply(c(1:length(private$pCovs)), function(x){
             cov = private$pCovs[[x]]
             if(class(cov) == 'GRanges'){
-                return(seqlevels(cov))
+                return(GenomeInfoDb::seqlevels(cov))
             } else{
                 return(NA)
             }
@@ -1265,7 +1265,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
     },
 
     ## Params:
-    ## No params required, included arguements will be ignored.
+    ## No params required, included arguments will be ignored.
     ## Return:
     ## A list of lists where each internal list corresponds to the covariate and is for use internally in the annotate.targets function
     ## The list representation of the covariate will contain the following variables: type, signature, pad, na.rm, field, grep
@@ -1299,7 +1299,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
         },
 
     ## Params:
-    ## No params required, included arguements will be ignored.
+    ## No params required, included arguments will be ignored.
     ## Return:
     ## Nothing
     ## UI:
@@ -1985,7 +1985,7 @@ FishHook = R6::R6Class('FishHook',
         ## Events to Count
         pevents = NULL,
 
-        ## Covariates list for passing to fish.hook
+        ## Covariates list for passing to fishHook
         pcovariates = NULL,
 
         ## Potentially allow access to covariates via indexing
@@ -2180,7 +2180,7 @@ FishHook = R6::R6Class('FishHook',
                 if(!(class(value) == 'GRanges')  && !is.null(value)){
                     stop('Error: anno must be of class GRanges')
                 } else{
-                    warning('Warning: You are editing the annotated dataset generated by fish.hook, if you are trying to change targets use fish$targets.')
+                    warning('Warning: You are editing the annotated dataset generated by fishHook, if you are trying to change targets use fish$targets.')
                 }
                                
                 private$panno = value
@@ -2196,15 +2196,15 @@ FishHook = R6::R6Class('FishHook',
             if(!missing(value)){
                 if(!(class(value) == 'data.table')  && !is.null(value)){
                     stop('Error: score must be of class data.table')
-                }else{
-                    warning('Warning: You are editing the annotated dataset generated by fish.hook, if you are trying to change targets use fish$targets.')
+                } else{
+                    warning('Warning: You are editing the annotated dataset generated by fishHook, if you are trying to change targets use fish$targets.')
                 }
                                                               
                 private$pscore = value
                                
                 return(private$pscore)
                                                                   
-            }else{
+            } else{
                 return(private$pscore)
             }
         },
@@ -2212,7 +2212,7 @@ FishHook = R6::R6Class('FishHook',
         model = function(value) {
             if(!missing(value)){
                 
-                warning('Warning: You are editing the regression model generated by fish.hook. Unless you know what you arere doing I would reccomend reverting to a safe state using fish$clear()')                               
+                warning('Warning: You are editing the regression model generated by fishHook. Unless you know what you arere doing I would reccomend reverting to a safe state using fish$clear()')                               
                                                               
                 private$pmodel = value
                                
@@ -2411,7 +2411,7 @@ FishHook = R6::R6Class('FishHook',
                 if(!(class(value) == "GRangesList")  && !is.null(value) && !(class(value) == "GRanges")){
                     stop('Error: aggregated must be of class GRangesList')
                 } else{
-                    warning('Warning: You are editing the aggregated dataset generated by fish.hook, goodluck!')
+                    warning('Warning: You are editing the aggregated dataset generated by fishHook, goodluck!')
                 }
                                
                 private$paggregated = value
@@ -2549,7 +2549,7 @@ Annotated = R6::R6Class('Annotate',
                 return (tmp)
             },
 
-            ## Takes in a series of run parameters for the fish.hook function
+            ## Takes in a series of run parameters for the fishHook function
             ## score.targets and allows the user to change the meta data at
             ## this point if they so desire, however this is not reccomended for
             ## standard users.
@@ -2592,10 +2592,10 @@ Annotated = R6::R6Class('Annotate',
 
             },
 
-            ## Passes a series of parameteres to the fish.hook function "aggregate.targets"
+            ## Passes a series of parameteres to the fishHook function "aggregate.targets"
             ## The only required param here is by, which is a vector upon which to
             ## group the targets in the GRanges object
-            ## See fish.hook documentation for more info on rolling and disjoint
+            ## See fishHook documentation for more info on rolling and disjoint
 
             aggregateTargets = function(by = NULL, fields = NULL, rolling = NULL, disjoint = TRUE, 
                 na.rm = FALSE, FUN = list(), verbose = TRUE){
@@ -2695,13 +2695,13 @@ Annotated = R6::R6Class('Annotate',
 Score = R6::R6Class('Score',
 
     public = list(
-        ## Initialize takes in all of the params for the fish.hook function
+        ## Initialize takes in all of the params for the fishHook function
         ## "score.targets" and an optional meta param that will be used to remember
         ## meta data.
         ## meta data is automatically initialized to the grl "numinterval" and "name"
         ## if the passed annotated var is a grl.
         ## This will generally be called by the Annotated object method "score()"
-        ## Passes all params except meta to score.targets from the fish.hook package
+        ## Passes all params except meta to score.targets from the fishHook package
         ## the meta param is stored internally to be accessed later
         ## grl is a control variable that indicates if the passed "annotated" object is a grl
         ## if true -> assume it is a grl, if false -> assume it is a GRanges

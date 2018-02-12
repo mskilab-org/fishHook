@@ -9,21 +9,21 @@
 Cov
 }
 \arguments{
-\item{Covariate, }{object of type, GRanges, ffTrack, RleList or character. Note that character objects must be paths to files containing one of the other types as a .rds file}
+\item{Covariate}{GRanges, ffTrack, RleList or character string. Note that character objects must be paths to files containing one of the other types as a .rds file}
 
-\item{type, }{a character indicating the type of Covariate, valid options are: numeric, sequence, interval. See Annotate Targets for more information on Covariate types}
+\item{type}{character indicating the type of Covariate, valid options are: numeric, sequence, interval. See Annotate Targets for more information on Covariate types}
 
-\item{signature, }{a chracter that In the case where a ffTrack object is of type sequence, a signature field is required, see fftab in ffTrack for more information.}
+\item{signature}{chracter that In the case where a ffTrack object is of type sequence, a signature field is required, see fftab in ffTrack for more information.}
 
-\item{name, }{a character  indicating the name that this covariate will be refered to as}
+\item{name}{character indicating the name that this covariate will be refered to as}
 
-\item{pad, }{a numeric that indicates the number of nulceotides upstream and downstream to extend the covariate i.e. a covariate from position 10-20 with a pad of 5 will have a range from 5-25}
+\item{pad}{numeric that indicates the number of nulceotides upstream and downstream to extend the covariate i.e. a covariate from position 10-20 with a pad of 5 will have a range from 5-25}
 
-\item{field, }{a character which is for numeric covariates and is the column name where the 'score' is held. Note that it is set to 'score' by default}
+\item{field}{character which is for numeric covariates and is the column name where the 'score' is held. Note that it is set to 'score' by default}
 
-\item{grep, }{a character. Sequence covariates must be ffTrack objects, and can have optional logical argument $grep to specify inexact matches (see fftab)}
+\item{grep}{character Sequence covariates must be ffTrack objects, and can have optional logical argument $grep to specify inexact matches (see fftab)}
 
-\item{chr.sub, }{a booleanindicates if the seqlevels are in the format chrI, chrV, etc. if false, we assume that the format is I, V, etc. in this case,  the chr will be added automatically during the analysis.}
+\item{chr.sub}{boolean Indicates if the seqlevels are in the format chrI, chrV, etc. if false, we assume that the format is I, V, etc. in this case,  the chr will be added automatically during the analysis.}
 }
 \value{
 Cov object that can be passed to FishHook object constructor
