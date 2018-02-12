@@ -2550,6 +2550,7 @@ FishHook = R6::R6Class('FishHook',
 #' @param titleText title for plotly (html) graph only
 #' @param subsample
 #' @param key
+#' @import plotly
 #' @author Marcin Imielinski, Eran Hodis, Zoran Z. Gajic
 #' @export
 qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg = 'black', pch = 18, cex = 1, conf.lines = TRUE, max = NULL, max.x = NULL, 
@@ -2851,7 +2852,6 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg
             }
         } else{
             
-            require(plotly)
             dat$ID = c(1:nrow(dat))
             dat2 = dat[ y < 2.6,]
             dat3 = as.data.frame(dat2)
