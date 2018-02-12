@@ -12,7 +12,7 @@ score.targets(targets, covariates = names(values(targets)), model = NULL,
 \arguments{
 \item{targets}{annotated targets with fields $coverage, optional field, $count and additional numeric covariates}
 
-\item{covariates}{info}
+\item{covariates}{chracter vector, indicates which columns of targets contain the covariates}
 
 \item{model}{fit existing model --> covariates must be present (default = NULL)}
 

@@ -18,7 +18,13 @@ These ranges wil become (0:15) and (15:35)}
 
 \item{type}{character vector Contains the types of each covariate (numeric, interval, sequencing)}
 
-\item{signature, }{see ffTrack, a vector of signatures for use with ffTrack sequence covariates}
+\item{signature, }{see ffTrack, a vector of signatures for use with ffTrack sequence covariates
+fftab signature: signatures is a named list that specify what is to be tallied.  Each signature (ie list element)
+consist of an arbitrary length character vector specifying strings to %in% (grep = FALSE)
+or length 1 character vector to grepl (if grep = TRUE)
+or a length 1 or 2 numeric vector specifying exact value or interval to match (for numeric data)
+Every list element of signature will become a metadata column in the output GRanges
+specifying how many positions in the given interval match the given query}
 
 \item{field, }{a chracter vector for use with numeric covariates (NA otherwise) the indicates the column containing the values of that covarites.
 For example, if you have a covariate for replication timing and the timings are in the column 'value', the parameter field should be set to the character 'Value'}
