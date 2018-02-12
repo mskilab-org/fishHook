@@ -3,23 +3,36 @@
 \docType{data}
 \name{Cov}
 \alias{Cov}
-\title{Cov}
+\title{title}
 \format{An object of class \code{R6ClassGenerator} of length 24.}
 \usage{
 Cov
 }
 \arguments{
-\item{Covariate}{object of type, GRanges, ffTrack, RleList or character. Note that character objects must be paths to files containing one of the other types as a .rds file}
+\item{Covariate}{GRanges, ffTrack, RleList or character string. Note that character objects must be paths to files containing one of the other types as a .rds file}
 
-\item{type}{a string indicating the type of Covariate, valid options are: numeric, sequence, interval. See Annotate Targets for more information on Covariate types}
+\item{type}{character indicating the type of Covariate, valid options are: numeric, sequence, interval. See Annotate Targets for more information on Covariate types}
 
-\item{signature}{In the case where a ffTrack object is of type sequence, a signature field is required, see fftab in ffTrack for more information.}
+\item{signature}{chracter that In the case where a ffTrack object is of type sequence, a signature field is required, see fftab in ffTrack for more information.}
+
+\item{name}{character indicating the name that this covariate will be refered to as}
+
+\item{pad}{numeric that indicates the number of nulceotides upstream and downstream to extend the covariate i.e. a covariate from position 10-20 with a pad of 5 will have a range from 5-25}
+
+\item{field}{character which is for numeric covariates and is the column name where the 'score' is held. Note that it is set to 'score' by default}
+
+\item{grep}{character Sequence covariates must be ffTrack objects, and can have optional logical argument $grep to specify inexact matches (see fftab)}
+
+\item{chr.sub}{boolean Indicates if the seqlevels are in the format chrI, chrV, etc. if false, we assume that the format is I, V, etc. in this case,  the chr will be added automatically during the analysis.}
 }
 \value{
 Cov object that can be passed to FishHook object constructor
 }
 \description{
-Stores Covariate for passing to FishHook object. To be packaged in the Cov_Array Class by calling c(Cov1,Cov2,Cov3)
+Stores Covariate for passing to FishHook object. It is a decrepit class but is included for legacy purposes. If you instantiate a Cov$new, it will return a length 1 Cov_Arr containg the covariate
+}
+\details{
+Cov
 }
 \author{
 Zoran Z. Gajic

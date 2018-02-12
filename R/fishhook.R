@@ -47,9 +47,9 @@
 #' each of these elements do. Note that track is equivalent to the 'Covariate' parameter in Cov / Cov_Arr
 #' @param maxpatientpergene Sets the maximum number of events a patient can contribute per target (default = Inf)
 #' @param ptidcol string Column where patient ID is stored
-#' @param weightEvetns boolean If true, will weight events by their overlap with targets. e.g. if 10% of an event overlaps with a target (default = FALSE)
-#' region, that target region will get assigned a score of 0.1 for that event. If false, any overlap will be given a weight of 1.
-#' @param ... paths to sequence covariates whose output names will be their argument names, and each consists of a list with
+#' @param weightEvetns boolean If TRUE, will weight events by their overlap with targets. e.g. if 10% of an event overlaps with a target 
+#' region, that target region will get assigned a score of 0.1 for that event. If false, any overlap will be given a weight of 1. 
+#' @param ... paths to sequence covariates whose output names will be their argument names, and each consists of a list with (default = FALSE)
 #' $track field corresponding to a GRanges, RleList, ffTrack object (or path to rds containing that object), $type which can
 #' have one of three values "numeric", "sequence", "interval".
 #' Numeric tracks must have $score field if they are GRanges), and can have a $na.rm logical field describing how to treat NA values
@@ -70,8 +70,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
     if (is.character(targets)){
         if (grepl('\\.rds$', targets[1])){
             targets = readRDS(targets[1])
-        }
-        else if (grepl('(\\.bed$)', targets[1])){
+        } else if (grepl('(\\.bed$)', targets[1])){
             targets = import.ucsc(targets[1])
         }
     }
@@ -128,7 +127,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
 
     if (!is.null(covered)){
         ov = gr.findoverlaps(targets, covered, verbose = verbose, max.chunk = max.chunk, mc.cores = mc.cores)
-    }else {
+    } else {
         ov = targets[, c()]
         ov$query.id = ov$subject.id = 1:length(targets)
     }
@@ -168,8 +167,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
 
                     if(is.null(ptidcol)){
                         ev2$ID = events$ID[ev2$query.id]
-                    }
-                    else{
+                    } else{
                         ev2$ID = mcols(events)[,ptidcol][ev2$query.id]
                     }
                             
@@ -178,9 +176,8 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
                     counts.unique = tab[, dummy :=1][, .(count = sum(dummy)), keyby =.(V1, V2)][, count := pmin(maxpatientpergene, count)][, .(final_count = sum(count)), keyby = V2]                          
                 }
                         
-            }
-            ## assume it is an Rle of event counts along the genome  
-            else{
+            } else{
+                ## assume it is an Rle of event counts along the genome
                 counts = events
                 oix = 1:length(ov)
             }
@@ -234,9 +231,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
 
                 if (!is.na(names(cov$signature))){
                     names(cov$signature) = paste(nm, names(cov$signature), sep = '.')
-                }
-                
-                else{
+                } else{
                     names(cov$signature) = nm
                 }
 
@@ -254,14 +249,12 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
                 if (!is.null(out.path)){
                      tryCatch(saveRDS(ov, paste(out.path, '.intermediate.rds', sep = '')), error = function(e) warning(sprintf('Error writing to file %s', out.file)))
                 }
-            }
-            else if (cov$type == 'numeric'){
+            } else if (cov$type == 'numeric'){
                 if (is.character(cov$track)){
                     if (grepl('.rds$', cov$track)){
                         cov$track = readRDS(cov$track)
-                    }
-                    ## assume it is a UCSC format
-                    else{
+                    } else{
+                        ## assume it is a UCSC format
                         require(rtracklayer)
                         cov$track = import(cov$track)
                     }
@@ -273,11 +266,9 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
                 if (is(cov$track, 'ffTrack') | is(cov$track, 'RleList')){
                     val = fftab(cov$track, ov + cov$pad, signature = cov$signature, FUN = sum, verbose = verbose, chunksize = ff.chunk, grep = cov$grep, mc.cores = mc.cores)
                     values(ov) = values(val)
-                }
-                ## then must be GRanges
-                else{
+                } else{
                     if (is.na(cov$field)){
-
+                        ## then must be GRanges
                     }
                     if (is.na(cov$na.rm)){
 
@@ -290,16 +281,14 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
                 if (!is.null(out.path)){
                     tryCatch(saveRDS(ov, paste(out.path, '.intermediate.rds', sep = '')), error = function(e) warning(sprintf('Error writing to file %s', out.file)))
                 }    
-            }
-            else if (cov$type == 'interval'){
+            } else if (cov$type == 'interval'){
 
                 if (is.character(cov$track)){
 
                     if (grepl('.rds$', cov$track)){
                         cov$track = readRDS(cov$track)
-                    }
-                    ## assume it is a UCSC format
-                    else{
+                    } else{
+                        ## assume it is a UCSC format
                         require(rtracklayer)
                         cov$track = import(cov$track)
                     }
@@ -339,7 +328,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
 
     if (!is.null(events)){
         cmd = paste(cmd, 'count = sum(count)', sep = '')
-    }else{
+    } else{
         cmd = paste(cmd, 'count = NA', sep = '')  
     }
     
@@ -350,7 +339,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
 
         if (length(cov.nm) > 0){
             cmd = paste(cmd,  ',', paste(cov.nm, '= mean(', cov.nm, ')', sep = '', collapse = ', '), ')',  sep = '')
-        }else{
+        } else{
             cmd = paste(cmd, ')',  sep = '')
         }
 
@@ -362,7 +351,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
             targets$count[as.numeric(counts.unique$V2)] = counts.unique$final_count
         }
                 
-    }else{
+    } else{
         targets$coverage = 0 
     }          
         
@@ -405,7 +394,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
 #' of $p values.  Covariates are inferred from the first file in the list.  
 #' 
 #' @param targets annotated GRanges of targets with fields $coverage, optional field, $count and additional numeric covariates, or path to .rds file of the same; path to bed or rds containing genomic target regions with optional target name 
-#' @param by  character vector with which to split into meta-territories (default = NULL)
+#' @param by character vector with which to split into meta-territories (default = NULL)
 #' @param fields by default all meta data fields of targets EXCEPT reserved field names $coverage, $counts, $query.id (default = NULL)
 #' @param rolling if specified, positive integer specifying how many (genome coordinate) adjacent to aggregate in a rolling fashion; positive integer with which to performa rolling sum / weighted average WITHIN chromosomes of "rolling" ranges" --> return a granges (default = NULL)
 #' @param disjoint boolean only take disjoint bins of input (default = TRUE)
@@ -419,15 +408,13 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
 #' @importFrom S4Vectors values values<-
 #' @importFrom GenomeInfoDb seqnames
 #' @export
-aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, disjoint = TRUE,  na.rm = FALSE, 
-    FUN = list(), verbose = TRUE)
+aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, disjoint = TRUE, na.rm = FALSE, FUN = list(), verbose = TRUE)
 {
 
     V1 = sn = st = en = keep = count = width = NULL ## NOTE fix
     if (is.null(by) & is.character(targets)){
         cat('Applying sample wise merging\n')
-    }        
-    else if (is.null(by) & is.null(rolling)){
+    } else if (is.null(by) & is.null(rolling)){
         stop('Error: argument "by" must be specified and same length as targets or "rolling" must be non NULL')
     }
 
@@ -491,8 +478,7 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
                 if (!is.null(out$count)){
                     if (!is.null(FUN[['count']])){
                         out$count = do.call(FUN[['count']], list(out$count, gr$count))
-                    }
-                    else{
+                    } else{
                         out$count = as.numeric(out$count) + gr$count
                     }
                 }
@@ -502,8 +488,7 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
 
                     if (cf %in% names(values(gr))){
                         val = as.numeric(values(gr)[, cf])
-                    }
-                    else{
+                    } else{
                         warning(paste(targets[i], 'missing column', cf))
                         val = NA
                     }
@@ -511,16 +496,13 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
                     if (na.rm){
                         if (!is.null(FUN[[cf]])){
                             values(out)[, cf] = ifelse(!is.na(val), do.call(FUN[[cf]], list(values(out)[, cf], out$coverage, + val, gr$coverage)), values(out)[, cf])
-                        }
-                        else{
+                        } else{
                             values(out)[, cf] = ifelse(!is.na(val), (values(out)[, cf]*out$coverage + val*gr$coverage)/(out$coverage + gr$coverage), values(out)[, cf])
                         }
-                    }
-                    else{
+                    } else{
                         if (!is.null(FUN[[cf]])){
                             values(out)[, cf] = do.call(FUN[[cf]], list(values(out)[, cf], out$coverage, val, gr$coverage))
-                        }
-                        else{
+                        } else{
                             values(out)[, cf] = (values(out)[, cf]*out$coverage + val*gr$coverage)/(out$coverage + gr$coverage)
                         }
                     }
@@ -532,16 +514,14 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
                         has.val = is.na(gr$p)
                         psum = ifelse(has.val, psum - 2*log(gr$p), psum)
                         psum.df = ifelse(has.val, psum.df + 1, psum.df)
-                    }                                            
-                    else{
+                    } else{
                         warning(paste(targets[i], 'missing p value column, ignoring for fisher combined computation'))  
                     }
                 }
 
                 if (is.null(FUN[['coverage']])){
                     out$coverage = as.numeric(out$coverage) + gr$coverage
-                }
-                else{
+                } else{
                     out$coverage = do.call(FUN[['coverage']], list(as.numeric(out$coverage), gr$coverage))  
                 }
 
@@ -558,8 +538,8 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
         }
         
         if (any(nnum <- !(sapply(setdiff(fields, 'query.id'), function(x) class(values(targets)[, x])) %in% 'numeric'))){
-                warning(sprintf('%s meta data fields (%s) fit were found to be non-numeric and not aggregated', sum(nnum), paste(fields[nnum], collapse = ',')))
-                fields = fields[!nnum]
+            warning(sprintf('%s meta data fields (%s) fit were found to be non-numeric and not aggregated', sum(nnum), paste(fields[nnum], collapse = ',')))
+            fields = fields[!nnum]
         }
         
         
@@ -603,10 +583,9 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
                 }
                 values(out)[, f] = tadt[, sum(eval(parse(text=f)), na.rm = TRUE), keyby = list(by = by)][names(out), V1]
             }
-        }
-        else{
-
-            if (is.na(rolling = as.integer(rolling))){   ## check not NA
+        } else{
+            ## check not NA
+            if (is.na(as.integer(rolling))){   
                 stop('Error: rolling must be a positive integer')
             }
 
@@ -632,8 +611,7 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
                     end = rollapply(end, rolling, max, fill = NA),
                     coverage = rollapply(coverage, rolling, sum, fill = NA)
                 ), by = seqnames]
-            } 
-            else {
+            } else {
                 out = tadt[, list(
                     start = rollapply(start, rolling, min, fill = NA),
                     end = rollapply(end, rolling, max, fill = NA),
@@ -643,7 +621,7 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
             nna.ix = !is.na(out$start)
                 
             if (!any(nna.ix)){
-                stop('Error: Malformed input, only NA ranges produced.  Reduce value of running')
+                stop('Error: Malformed input, only NA ranges produced. Reduce value of running')
             }
                 
              out = seg2gr(out[nna.ix])
@@ -665,9 +643,8 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
 
             if (is.null(rolling)){
                 values(out)[, f] = tadt[, sum(width*eval(parse(text=f)), na.rm = TRUE)/sum(width[!is.na(eval(parse(text=f)))]), keyby = list(by = by)][names(out), V1]
-            }
-            ## rolling weighted average
-            else{
+            } else{
+                ## rolling weighted average
                 values(out)[, f] = tadt[, .rwa(eval(parse(text=f)), width), by = seqnames][, V1][nna.ix]
             }
 
@@ -690,7 +667,7 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
 #' @param covariates chracter vector, indicates which columns of targets contain the covariates
 #' @param model fit existing model --> covariates must be present (default = NULL)
 #' @param return.model boolean info (default = FALSE)
-#' @param nb boolean negative binomial, if false then use poisson
+#' @param nb boolean If TRUE, uses negative binomial; if FALSE then use Poisson
 #' @param verbose boolean verbose flag (default = TRUE)
 #' @param iter integer info (default = 200)
 #' @param subsample interger info (default = 1e5)
@@ -726,7 +703,7 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
 
     values(targets)$count = round(values(targets)$count)
 
-    if (length(unique(values(targets)$count))<=1){
+    if (length(unique(values(targets)$count)) <= 1){
         stop('Error: "score.targets" input malformed --> count does not vary!')
     }
 
@@ -749,7 +726,7 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
 
         if (!is.null(subsample)){
 
-            if (subsample<1){
+            if (subsample < 1){
                 subsample = ceiling(pmax(0, subsample)*nrow(tdt))
             }
 
@@ -768,14 +745,11 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
 
         if (nb){
             g = glm.nb(formula, data = as.data.frame(tdt), maxit = iter)
-        }
-        else{
+        } else{
             g = glm(formula, data = as.data.frame(tdt), family = poisson)
             g$theta = 1
         }
-    }
-
-    else{
+    } else{
         g = model                            
     }
                 
@@ -787,8 +761,7 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
 
     if (is(targets, 'GRanges')){
         res = as.data.frame(targets)
-    }
-    else{
+    } else{
         res = as.data.frame(values(targets))
     }
 
@@ -845,8 +818,7 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
             pval = runif(nrow(res), min = pval.right, max = pval)
         }
         res$p = signif(pval, 2)
-    }           
-    else{
+    } else{
         pval = ppois(res$count-1, lambda = res$count.pred, lower.tail = F)                
         if (p.randomized){
             pval.right = ppois(res$count, lambda = res$count.pred, lower.tail = F)
@@ -859,9 +831,8 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
         
     res$q = signif(p.adjust(res$p, 'BH'), 2)
     if (nb){
-        res$p.neg = signif(pnbinom(res$count, mu = res$count.pred, size = g$theta, lower.tail = T), 2)
-    }
-    else{
+       res$p.neg = signif(pnbinom(res$count, mu = res$count.pred, size = g$theta, lower.tail = T), 2)
+    } else{
         res$p.neg = signif(ppois(res$count, lambda = res$count.pred, lower.tail = T), 2)
     }
     res$q.neg = signif(p.adjust(res$p.neg, 'BH'), 2)
@@ -876,20 +847,22 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
 }
 
 
+
+
 #' Cov
 #' @title title
 #' @description
 #'
-#'  Stores Covariate for passing to FishHook object. It is a decrepit class but is included for legacy purposes. If you instantiate a Cov$new, it will return a length 1 Cov_Arr containg the covariate
+#' Stores Covariate for passing to FishHook object. It is a decrepit class but is included for legacy purposes. If you instantiate a Cov$new, it will return a length 1 Cov_Arr containg the covariate
 #' 
-#' @param Covariate, object of type, GRanges, ffTrack, RleList or character. Note that character objects must be paths to files containing one of the other types as a .rds file
-#' @param type, a character indicating the type of Covariate, valid options are: numeric, sequence, interval. See Annotate Targets for more information on Covariate types
-#' @param signature, a chracter that In the case where a ffTrack object is of type sequence, a signature field is required, see fftab in ffTrack for more information.
-#' @param name, a character  indicating the name that this covariate will be refered to as
-#' @param pad, a numeric that indicates the number of nulceotides upstream and downstream to extend the covariate i.e. a covariate from position 10-20 with a pad of 5 will have a range from 5-25
-#' @param field, a character which is for numeric covariates and is the column name where the 'score' is held. Note that it is set to 'score' by default
-#' @param grep, a character. Sequence covariates must be ffTrack objects, and can have optional logical argument $grep to specify inexact matches (see fftab)
-#' @param chr.sub, a booleanindicates if the seqlevels are in the format chrI, chrV, etc. if false, we assume that the format is I, V, etc. in this case,  the chr will be added automatically during the analysis.
+#' @param Covariate GRanges, ffTrack, RleList or character string. Note that character objects must be paths to files containing one of the other types as a .rds file
+#' @param type character indicating the type of Covariate, valid options are: numeric, sequence, interval. See Annotate Targets for more information on Covariate types
+#' @param signature chracter that In the case where a ffTrack object is of type sequence, a signature field is required, see fftab in ffTrack for more information.
+#' @param name character indicating the name that this covariate will be refered to as
+#' @param pad numeric that indicates the number of nulceotides upstream and downstream to extend the covariate i.e. a covariate from position 10-20 with a pad of 5 will have a range from 5-25
+#' @param field character which is for numeric covariates and is the column name where the 'score' is held. Note that it is set to 'score' by default
+#' @param grep character Sequence covariates must be ffTrack objects, and can have optional logical argument $grep to specify inexact matches (see fftab)
+#' @param chr.sub boolean Indicates if the seqlevels are in the format chrI, chrV, etc. if false, we assume that the format is I, V, etc. in this case,  the chr will be added automatically during the analysis.
 #' @return Cov object that can be passed to FishHook object constructor
 #' @import R6
 #' @author Zoran Z. Gajic
@@ -898,7 +871,7 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
 Cov = R6::R6Class("Cov",
     public = list(
 
-        ##Initialization Function. See Class documentation for information.
+    ## Initialization Function. See Class documentation for information.
     initialize = function(Covariate = NA, type = NA, signature = NA,
         name = '', pad = NA, na.rm = NA, field = NA,
         grep = NA, chr.sub = FALSE){
@@ -931,7 +904,7 @@ Cov = R6::R6Class("Cov",
                 cov$track = tryCatch(readRDS(cov$track), error = function(e) 'not ffTrack')
             }
 
-            ## Requires the covariate that was read above or provided in the initial arguements to be  an ffTrack.
+            ## Requires the covariate that was read above or provided in the initial arguments to be  an ffTrack.
             if (class(Covariate) != 'ffTrack'){
                 stop('Error: sequence tracks must have ffTrack object as $track field or $track must be a path to an ffTrack object rds file')
             }                                  
@@ -963,25 +936,25 @@ Cov = R6::R6Class("Cov",
     },
 
 
-    ##Params:
-    ##No params required, included arguements will be ignored.
-    ##Return:
-    ##This will return the seq levels of the provided covariate, if the internal covariate is of type GRanges. Else will return NA.
-    ##UI:
-    ##None
+    ## Params:
+    ## No params required, included arguments will be ignored.
+    ## Return:
+    ## This will return the seq levels of the provided covariate, if the internal covariate is of type GRanges. Else will return NA.
+    ## UI:
+    ## None
     seqlevels = function(...){
         if(class(self$Covariate) == 'GRanges'){
-            return(seqlevels(self$Covariate))
+            return(GenomeInfoDb::seqlevels(self$Covariate))
         }
-        return (NA)                              
+        return(NA)                              
     },
 
-    ##Params:
-    ##No params required, included arguements will be ignored.
-    ##Return:
-    ##Returns a character that contains all of the internal variables stored in the obeject and thier values.
-    ##UI:
-    ##None
+    ## Params:
+    ## No params required, included arguments will be ignored.
+    ## Return:
+    ## Returns a character that contains all of the internal variables stored in the object and thier values.
+    ## UI:
+    ## None
     toString = function(...){
         paste(c('Name: ', self$name,
         '\ntype: ',self$type, '\tsignature: ', self$signature,
@@ -990,49 +963,49 @@ Cov = R6::R6Class("Cov",
         '\nCovariate: ', class(self$Covariate), '\n'), collapse = '', sep = '')
     },
 
-    ##Params:
-    ##No params required, included arguements will be ignored.
-    ##Return:
-    ##Returns an object of type 'Cov_Arr' of length 1 that contains this covariate.
-    ##UI:
-    ##None
+    ## Params:
+    ## No params required, included arguments will be ignored.
+    ## Return:
+    ## Returns an object of type 'Cov_Arr' of length 1 that contains this covariate.
+    ## UI:
+    ## None
     convert2Arr = function(...){
         return(Cov_Arr$new(self))
     },
 
-    ##Params:
-    ##No params required, included arguements will be ignored.
-    ##Return:
-    ##NULL
-    ##UI:
-    ##prints the output of self$toString() to the console.
+    ## Params:
+    ## No params required, included arguments will be ignored.
+    ## Return:
+    ## NULL
+    ## UI:
+    ## prints the output of self$toString() to the console.
     print = function(...){
         cat(self$toString())
         return(NULL)
     },
 
-    ##Params:
-    ##No params required, included arguements will be ignored.
-    ##Return:
-    ##If the internal covariate is of class 'GRanges', returns true if the seqlevels contain 'chr', and false otherwise. If not a 'GRanges' returns NA
-    ##UI:
-    ##None
+    ## Params:
+    ## No params required, included arguments will be ignored.
+    ## Return:
+    ## If the internal covariate is of class 'GRanges', returns true if the seqlevels contain 'chr', and false otherwise. If not a 'GRanges' returns NA
+    ## UI:
+    ## None
     chr = function(...){
         if(class(self$Covariate) == 'GRanges'){
-            return(any(grepl('chr', seqlevels(self$Covariate))))
+            return(any(grepl('chr',  GenomeInfoDb::seqlevels(self$Covariate))))
         }
         return (NA)
     },
     
-    ##Params:
-    ##No params required, included arguements will be ignored.
-    ##Return:
-    ##Converts the Covariate object to a list that is used internally in the annotate.targets function
-    ##The list is a list of covariates, where each covariate is itself a list, thus we get a lsit of lists.
-    ##The list representation of the covariate will contain the following variables: type, signature, pad, na.rm, field, grep
-    ##Each variable should be the same as in the Covariate
-    ##UI:
-    ##None
+    ## Params:
+    ## No params required, included arguments will be ignored.
+    ## Return:
+    ## Converts the Covariate object to a list that is used internally in the annotate.targets function
+    ## The list is a list of covariates, where each covariate is itself a list, thus we get a lsit of lists.
+    ## The list representation of the covariate will contain the following variables: type, signature, pad, na.rm, field, grep
+    ## Each variable should be the same as in the Covariate
+    ## UI:
+    ## None
     toList = function(...){
         if(!(is.null(self$signature)) & class(self$Covariate) == 'ffTrack'){
             return (list(track = self$Covariate, 
@@ -1042,8 +1015,7 @@ Cov = R6::R6Class("Cov",
                 na.rm = self$na.rm, 
                 field = self$field,
                 grep = self$grep))
-        }
-        else{
+        } else{
             return (list(track = self$Covariate, 
                 type = self$type,
                 signature = self$signature,
@@ -1055,28 +1027,28 @@ Cov = R6::R6Class("Cov",
     },                          
                                                     
     ## Active Covariates
-    ##This can be of GRanges, RleList, character or ffTrack
+    ## This can be of GRanges, RleList, character or ffTrack
     Covariate = NA,
 
     ## Active Track
-    ##This indicates the type of the covariate: numeric, sequence, interval
+    ## This indicates the type of the covariate: numeric, sequence, interval
     type = NA,
 
     ## signature for use with ffTrack sequence covariates
     signature = NA,
 
     ## Pad for use with annotate targets
-    ##Pad should be numeric and is used in annotate.targets to indicate how far each covariate should influence the surrounding bases
-    ##i.e. if pad = 5 and a covariate spans the bases 5:10, the covariate will now span 0:15
+    ## Pad should be numeric and is used in annotate.targets to indicate how far each covariate should influence the surrounding bases
+    ## i.e. if pad = 5 and a covariate spans the bases 5:10, the covariate will now span 0:15
     pad = NA,
 
     ## na.rm for use with annotate targets and is of class 'logical'
-    ##Will remove any NA values within your covariate if true, if false will leave those values, if NA will be treated as false
+    ## Will remove any NA values within your covariate if true, if false will leave those values, if NA will be treated as false
     na.rm = NA,
 
     ## field specifies the column of the covariate  to use for numeric covariates
-    ##For example, if the covariate is a numeric covariate of class GRanges and you have a column named 'Value' that contains the numeric information
-    ##You will want to set field to the chracter 'Value'
+    ## For example, if the covariate is a numeric covariate of class GRanges and you have a column named 'Value' that contains the numeric information
+    ## You will want to set field to the chracter 'Value'
     field = NA,
 
     ## grep for use with sequence covariates of class ffTrack
@@ -1085,8 +1057,8 @@ Cov = R6::R6Class("Cov",
     grep = NA,
                           
     ## Covariate name
-    ##This is a string that is the name that this covariate will be refered to as during the analysis
-    ##The final output will have a column for this covariate, and the column will be named using this value.
+    ## This is a string that is the name that this covariate will be refered to as during the analysis
+    ## The final output will have a column for this covariate, and the column will be named using this value.
     name = NA,
 
     ## Valid Covariate Types
@@ -1094,8 +1066,8 @@ Cov = R6::R6Class("Cov",
     COV.TYPES = c('numeric', 'sequence', 'interval'),
                           
     ## Valid Covariate Classes
-    ##Internal variable that lists the valid covariate clasdes
-    ##Note that character must refer to a system path to the object
+    ## Internal variable that lists the valid covariate clasdes
+    ## Note that character must refer to a system path to the object
     COV.CLASSES = c('GRanges', 'RleList', 'ffTrack', 'character')
 
     )         
@@ -1129,8 +1101,7 @@ Cov = R6::R6Class("Cov",
     Cov_Arrs = lapply(Covs, function(x) {
         if(class(x)[1] == 'Cov'){
             return( x$convert2Arr())
-        }
-        else{
+        } else{
             return(x)
         }
     })
@@ -1149,7 +1120,7 @@ Cov = R6::R6Class("Cov",
     covs = lapply(Cov_Arrs, function(x) x$cvs)
     Covs = unlist(covs, recursive = F)
 
-    ##Creating new Cov_Arr object containg all of the passed in arguement Covs
+    ##Creating new Cov_Arr object containg all of the passed in argument Covs
     ret = Cov_Arr$new()
     ret$cvs = Covs
     ret$names = names
@@ -1180,10 +1151,10 @@ Cov = R6::R6Class("Cov",
 #'
 #' 
 #' @param ... several Cov objects for packaging.
-#' @param name, a character vector containg the names of the covariates to be created, this should not include the names of any Cov objects passed 
-#' @param pad, a numeric vector indicating the width to extend each item in the covarite. e.g. if you have a GRanges covariate with two ranges (5:10) and (20:30) with a pad of 5,
+#' @param name character vector Contains names of the covariates to be created, this should not include the names of any Cov objects passed 
+#' @param pad numeric vector Indicates the width to extend each item in the covarite. e.g. if you have a GRanges covariate with two ranges (5:10) and (20:30) with a pad of 5,
 #' These ranges wil become (0:15) and (15:35)
-#' @param type, a character vector containing the types of each covariate (numeric, interval, sequencing)
+#' @param type character vector Contains the types of each covariate (numeric, interval, sequencing)
 #' @param signature, see ffTrack, a vector of signatures for use with ffTrack sequence covariates
 #' @param field, a chracter vector for use with numeric covariates (NA otherwise) the indicates the column containing the values of that covarites.
 #' For example, if you have a covariate for replication timing and the timings are in the column 'value', the parameter field should be set to the character 'Value'
@@ -1198,9 +1169,7 @@ Cov = R6::R6Class("Cov",
 Cov_Arr = R6::R6Class('Cov_Arr',
     public = list(
 
-
-
-        ##See the class documentation
+    ## See the class documentation
     initialize = function(..., name = NULL, cvs = NULL, pad = NULL, type = NULL, signature = NULL, field = NULL, na.rm = NULL, grep = NULL){
         Covs = list(...)
         if(length(Covs) == 0){
@@ -1239,7 +1208,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
     },
 
     ## Params:
-    ## No params required, included arguements will be ignored.
+    ## No params required, included arguments will be ignored.
     ## Return:
     ## a logical vector where each element corresponds to a covariate and where TRUE indicates a chr based seqlevels e.g. chr14, False -> 14
     ## UI:
@@ -1249,9 +1218,8 @@ Cov_Arr = R6::R6Class('Cov_Arr',
     chr = function(...){
         chrs = lapply(c(1:length(private$pCovs)), function(x){
             if(class(private$pCovs[[x]]) == 'GRanges'){
-                return(any(grepl('chr', seqlevels(private$pCovs[[x]]))))
-            }
-            else{
+                return(any(grepl('chr',  GenomeInfoDb::seqlevels(private$pCovs[[x]]))))
+            } else{
                 return(NA)
             }
         })
@@ -1260,7 +1228,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
 
 
     ## Params:
-    ## No params required, included arguements will be ignored.
+    ## No params required, included arguments will be ignored.
     ## Return:
     ## returns a list of character vectors. If the respective covariate is of class GRanges, the vector will contain all of the chromosome names,
     ## if it is not of class GRanges, will return NA
@@ -1270,9 +1238,8 @@ Cov_Arr = R6::R6Class('Cov_Arr',
         seqs = lapply(c(1:length(private$pCovs)), function(x){
             cov = private$pCovs[[x]]
             if(class(cov) == 'GRanges'){
-                return(seqlevels(cov))
-            }
-            else{
+                return(GenomeInfoDb::seqlevels(cov))
+            } else{
                 return(NA)
             }
         })
@@ -1300,7 +1267,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
     },
 
     ## Params:
-    ## No params required, included arguements will be ignored.
+    ## No params required, included arguments will be ignored.
     ## Return:
     ## A list of lists where each internal list corresponds to the covariate and is for use internally in the annotate.targets function
     ## The list representation of the covariate will contain the following variables: type, signature, pad, na.rm, field, grep
@@ -1318,8 +1285,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
                     na.rm = private$pna.rm[x],
                     field = private$pfield[x],
                     grep = private$pgrep[x]))
-            }
-            else{
+            } else{
                 return (list(track = private$pCovs[[x]], 
                     type = private$ptype[x],
                     signature = private$psignature[x],
@@ -1335,7 +1301,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
         },
 
     ## Params:
-    ## No params required, included arguements will be ignored.
+    ## No params required, included arguments will be ignored.
     ## Return:
     ## Nothing
     ## UI:
@@ -1414,8 +1380,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
                     private$pnames = value
                     return(private$pnames)
                                                                   
-                }
-                else{
+                } else{
                     return(private$pnames)
                 }
             },
@@ -1449,9 +1414,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
                     private$ptype = value
                     return(private$ptype)
                                                                   
-                }
-
-                else{
+                } else{
                     return(private$ptype)
                 }
             },
@@ -1477,8 +1440,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
                     private$psignature = value
                     return(private$psignature)
                                                                   
-                }
-                else{
+                } else{
                     return(private$psignature)
                 }
             },
@@ -1505,9 +1467,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
                     private$pfield = value
                     return(private$pfield)
 
-                }
-
-                else{
+                } else{
                     return(private$pfield)
                 }
             },
@@ -1533,9 +1493,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
                     private$ppad = value
                     return(private$ppad)
                                                                   
-                }
-
-                else{
+                } else{
                     return(private$ppad)
                 }
             },
@@ -1562,8 +1520,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
                     private$pna.rm = value
                     return(private$pna.rm)
                                                                   
-                }
-                else{
+                } else{
                     return(private$pna.rm)
                 }
             }, 
@@ -1588,8 +1545,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
 
                     private$pgrep = value
                     return(private$pgrep)
-                }
-                else{
+                } else{
                     return(private$pgrep)
                 }
             },
@@ -1599,8 +1555,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
                 if(!missing(value)){
                     private$pCovs = value
                     return(private$pCovs)                                   
-                }
-                else{
+                } else{
                     return(private$pCovs)
                 }
             }
@@ -1636,8 +1591,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
     Cov_Arrs = lapply(Covs, function(x) {
         if(class(x)[1] == 'Cov'){
             return( x$convert2Arr())
-        }
-        else{
+        } else{
             return(x)
         }
     })
@@ -1690,6 +1644,9 @@ Cov_Arr = R6::R6Class('Cov_Arr',
     ret$subset(range)
     return (ret)
 }
+
+
+
 
 
 
@@ -1758,8 +1715,8 @@ FishHook = R6::R6Class('FishHook',
             }
 
             ## gets the seqlevels and looks for chr to indicate USCS format
-            seqLevelsStatus_Targets = any(grepl('chr', seqlevels(targets)))
-            seqLevelsStatus_Events = any(grepl('chr', seqlevels(events)))
+            seqLevelsStatus_Targets = any(grepl('chr', GenomeInfoDb::seqlevels(targets)))
+            seqLevelsStatus_Events = any(grepl('chr', GenomeInfoDb::seqlevels(events)))
 
             if(!is.null(covariates)){
                 if(any(!(seqLevelsStatus_Targets %in% seqLevelsStatus_Covariates))){
@@ -1768,7 +1725,7 @@ FishHook = R6::R6Class('FishHook',
             }    
 
             if(!is.null(eligible)){
-                seqLevelsStatus_Eligible = any(grepl("chr",seqlevels(eligible)))
+                seqLevelsStatus_Eligible = any(grepl("chr", GenomeInfoDb::seqlevels(eligible)))
                 if(seqLevelsStatus_Targets != seqLevelsStatus_Eligible){
                     warning('Warning: seqlevels of Targets and Eligible appear to be in different formats')
                 }
@@ -1778,18 +1735,18 @@ FishHook = R6::R6Class('FishHook',
             }
 
             ## This next portion checks to make sure there is atleast some overlap of seqlevels i.e. some mapability
-            if(!any(seqlevels(targets) %in% seqlevels(events))){
+            if(!any(GenomeInfoDb::seqlevels(targets) %in% GenomeInfoDb::seqlevels(events))){
                 stop('Error: there are no seqlevels of events that match targets')
             }
 
             if(!is.null(eligible)){
-                if(!any(seqlevels(targets) %in% seqlevels(eligible))){
+                if(!any(GenomeInfoDb::seqlevels(targets) %in% GenomeInfoDb::seqlevels(eligible))){
                     stop('Error: there are no seqlevels of eligible that match targets')
                 }
             }
                             
             if(!is.null(covariates)){
-                if(any(!(unlist(lapply(covariates$seqlevels(),function(x) any(x%in%seqlevels(targets))))))){                                
+                if(any(!(unlist(lapply(covariates$seqlevels(),function(x) any(x %in% GenomeInfoDb::seqlevels(targets))))))){                                
                     warning("Warning: atleast one of the covariates has no seqlevels in common with targets")
                 }
             }
@@ -1822,7 +1779,7 @@ FishHook = R6::R6Class('FishHook',
             ##Creating the local mutational denisty track
             if(use_local_mut_density){
                 Sys.setenv(DEFAULT_BSGENOME = genome)
-                bins = gr.tile(hg_seqlengths(),   local_mut_density_bin)
+                bins = gr.tile(hg_seqlengths(), local_mut_density_bin)
                 f1 = FishHook$new(targets = bins, events = events, eligible = eligible)
                 f1$annotate(mc.cores = mc.cores, na.rm = na.rm, verbose = verbose, max.slice = max.slice, ff.chunk = ff.chunk, max.chunk = max.chunk)
                 f1$score()
@@ -1833,8 +1790,7 @@ FishHook = R6::R6Class('FishHook',
                 local_mut_density$count.density = cd
                 if(length(private$pcovariates$toList()) == 0 ){
                     private$pcovariates = c(Cov$new(Covariate = local_mut_density, type = 'numeric', name = "Local Mutation Density", field = "count.density"))
-                }
-                else{
+                } else{
                     private$pcovariates = c(Cov$new(Covariate = local_mut_density, type = 'numeric', name = "Local Mutation Density", field = "count.density"), private$pcovariates)
                 }
             }
@@ -1877,14 +1833,12 @@ FishHook = R6::R6Class('FishHook',
             eve = paste('Contains', length(private$pevents), "events to map to hypotheses.", collapse = "")
             if(is.null(private$peligible)){
                 elig = "All regions are elgible."
-            }
-            else{
+            } else{
                 elig = "Will map only eliglble regions."
             }
             if(is.null(private$pcovariates$names)){
                 covs = "No covariates will be used."
-            }
-            else{                                
+            } else{                                
                 cov.names = private$pcovariates$names
                 covs = cov.names
             }
@@ -1969,8 +1923,7 @@ FishHook = R6::R6Class('FishHook',
             ## If we are aggregated we should score that, if we are not we should score anno
             if(private$pstate == "Aggregated"){
                 targ = private$paggregated                               
-            }
-            else{
+            } else{
                 targ = private$panno
             }
 
@@ -2031,8 +1984,7 @@ FishHook = R6::R6Class('FishHook',
                 columns = columns[columns %in% names(res)]
                 annotation_columns = lapply(columns, function(x) as.character(unlist(res[,x,with=FALSE])))
                 names(annotation_columns) = columns
-            }
-            else{
+            } else{
                 annotation_columns = list()
             }
                            
@@ -2040,8 +1992,7 @@ FishHook = R6::R6Class('FishHook',
 
                 if(is.null(res$name)){
                     names = c(1:nrow(res))
-                }
-                else{
+                } else{
                     names = res$name
                 }
 
@@ -2050,8 +2001,7 @@ FishHook = R6::R6Class('FishHook',
                     Effectsize = round(res$effectsize,2),
                     q = res$q)
 
-            }
-            else{
+            } else{
                 res = self$all                               
             }
 
@@ -2069,7 +2019,7 @@ FishHook = R6::R6Class('FishHook',
         ## Events to Count
         pevents = NULL,
 
-        ## Covariates list for passing to fish.hook
+        ## Covariates list for passing to fishHook
         pcovariates = NULL,
 
         ## Potentially allow access to covariates via indexing
@@ -2134,8 +2084,7 @@ FishHook = R6::R6Class('FishHook',
                                
                 return(private$pcovariate)
                                                                   
-            }
-            else{
+            } else{
                 return(private$pcovariates)
             }
         },
@@ -2151,9 +2100,7 @@ FishHook = R6::R6Class('FishHook',
                 private$peligible = value
                 return(private$peligible)
                                                                   
-            }
-                           
-            else{
+            } else{
                 return(private$peligible)
             }
         },
@@ -2176,8 +2123,7 @@ FishHook = R6::R6Class('FishHook',
             if (is.character(targets)){
                 if (grepl('\\.rds$', targets[1])){
                     targets = readRDS(targets[1])
-                }
-                else if (grepl('(\\.bed$)', targets[1])){
+                } else if (grepl('(\\.bed$)', targets[1])){
                     targets = import.ucsc(targets[1])
                 }
             }
@@ -2205,9 +2151,7 @@ FishHook = R6::R6Class('FishHook',
                                
             return(private$ptargets)
                                
-            }
-                           
-            else{
+            } else{
                 return(private$ptargets)
             }
         },
@@ -2237,8 +2181,7 @@ FishHook = R6::R6Class('FishHook',
                                
                return(private$pevents)
                                                                   
-            }
-            else{
+            } else{
                 return(private$pevents)
             }
         },
@@ -2261,8 +2204,7 @@ FishHook = R6::R6Class('FishHook',
                                
                 return(private$pout.path)
                                                                   
-            }
-            else{
+            } else{
                 return(private$pout.path)
             }
         },
@@ -2271,17 +2213,15 @@ FishHook = R6::R6Class('FishHook',
             if(!missing(value)){
                 if(!(class(value) == 'GRanges')  && !is.null(value)){
                     stop('Error: anno must be of class GRanges')
-                }
-                else{
-                    warning('Warning: You are editing the annotated dataset generated by fish.hook, if you are trying to change targets use fish$targets.')
+                } else{
+                    warning('Warning: You are editing the annotated dataset generated by fishHook, if you are trying to change targets use fish$targets.')
                 }
                                
                 private$panno = value
                                
                 return(private$panno)
                                                                   
-           }
-           else{
+           } else{
                 return(private$panno)
            }
         },
@@ -2290,32 +2230,29 @@ FishHook = R6::R6Class('FishHook',
             if(!missing(value)){
                 if(!(class(value) == 'data.table')  && !is.null(value)){
                     stop('Error: score must be of class data.table')
-                }
-                else{
-                    warning('Warning: You are editing the annotated dataset generated by fish.hook, if you are trying to change targets use fish$targets.')
+                } else{
+                    warning('Warning: You are editing the annotated dataset generated by fishHook, if you are trying to change targets use fish$targets.')
                 }
                                                               
                 private$pscore = value
                                
                 return(private$pscore)
                                                                   
-            }
-            else{
+            } else{
                 return(private$pscore)
-                }
+            }
         },
 
         model = function(value) {
             if(!missing(value)){
                 
-                warning('Warning: You are editing the regression model generated by fish.hook. Unless you know what you arere doing I would reccomend reverting to a safe state using fish$clear()')                               
+                warning('Warning: You are editing the regression model generated by fishHook. Unless you know what you arere doing I would reccomend reverting to a safe state using fish$clear()')                               
                                                               
                 private$pmodel = value
                                
                 return(private$pmodel)
                                
-            }
-            else{
+            } else{
                 return(private$pmodel)
             }
         },
@@ -2330,8 +2267,7 @@ FishHook = R6::R6Class('FishHook',
                                
                 return(private$pmc.cores)
                                                                   
-            }
-            else{
+            } else{
                 return(private$pmc.cores)
             }
         },
@@ -2346,8 +2282,7 @@ FishHook = R6::R6Class('FishHook',
                                
                 return(private$pna.rm)
                                                                   
-            }
-            else{
+            } else{
                 return(private$pna.rm)
             }
         },
@@ -2362,8 +2297,7 @@ FishHook = R6::R6Class('FishHook',
                                
                 return(private$ppad)
                                                                   
-            }
-            else{
+            } else{
                 return(private$ppad)
             }
         },
@@ -2378,8 +2312,7 @@ FishHook = R6::R6Class('FishHook',
                                
                 return(private$pverbose)
                                                                   
-            }
-            else{
+            } else{
                 return(private$pverbose)
             }
         },
@@ -2394,8 +2327,7 @@ FishHook = R6::R6Class('FishHook',
                                
                 return(private$pmax.slice)
                                                                   
-            }
-            else{
+            } else{
                 return(private$pmax.slice)
             }
         },
@@ -2410,8 +2342,7 @@ FishHook = R6::R6Class('FishHook',
                                
                 return(private$pff.chunk)
                                                                   
-            }
-            else{
+            } else{
                 return(private$pff.chunk)
                 }
         },
@@ -2426,8 +2357,7 @@ FishHook = R6::R6Class('FishHook',
                                
                 return(private$pmax.chunk)
                                                                   
-            }               
-            else{
+            } else{
                 return(private$pmax.chunk)
             }
         },
@@ -2442,8 +2372,7 @@ FishHook = R6::R6Class('FishHook',
                                
                 return(private$pptidcol)
                                                                   
-            }
-            else{
+            } else{
                 return(private$pptidcol)
             }
         },
@@ -2458,8 +2387,7 @@ FishHook = R6::R6Class('FishHook',
                                
                 return(private$pmaxpatientpergene)
                                                                   
-            }
-            else{
+            } else{
                 return(private$pmaxpatientpergene)
             }
         },
@@ -2474,8 +2402,7 @@ FishHook = R6::R6Class('FishHook',
                                
                 return(private$pweightEvents)
                                                                   
-            }
-            else{
+            } else{
                 return(private$pweightEvents)
             }
         },
@@ -2490,8 +2417,7 @@ FishHook = R6::R6Class('FishHook',
                                
                 return(private$pnb)
                                                                   
-            }
-            else{
+            } else{
                 return(private$pnb)
             }
         },
@@ -2499,8 +2425,7 @@ FishHook = R6::R6Class('FishHook',
         all = function(value) {
             if(!missing(value)){
                 stop("Error: This is solely for accessing data. If you want to set data, use $targets")
-            }
-            else{
+            } else{
                 meta = values(private$ptargets)
                 scores = private$pscore
                 return(as.data.table(cbind(scores,meta)))
@@ -2510,8 +2435,7 @@ FishHook = R6::R6Class('FishHook',
         state = function(value) {
             if(!missing(value)){
                 stop("Error: Cannot change the state of the FishHook Object")
-            }
-            else{
+            } else{
                 return(private$pstate)
             }
         },
@@ -2520,17 +2444,15 @@ FishHook = R6::R6Class('FishHook',
             if(!missing(value)){
                 if(!(class(value) == "GRangesList")  && !is.null(value) && !(class(value) == "GRanges")){
                     stop('Error: aggregated must be of class GRangesList')
-                }
-                else{
-                    warning('Warning: You are editing the aggregated dataset generated by fish.hook, goodluck!')
+                } else{
+                    warning('Warning: You are editing the aggregated dataset generated by fishHook, goodluck!')
                 }
                                
                 private$paggregated = value
                                
                 return(private$paggregated)
                                                               
-            }
-            else{
+            } else{
                 return(private$paggregated)
             }
         }
@@ -2591,7 +2513,7 @@ FishHook = R6::R6Class('FishHook',
 #' @param targets Examples of targets are genes, enhancers, 1kb tiles of the genome that we can then convert into a rolling window. This param must be of class "GRanges".
 #' @param events Events are the given mutational regions and must be of class "GRanges". Examples of events are mutational data (e.g. C->G) copy number variations and fusion events. Targets are the given regions of the genome to annotate and must be of class "GRanges". 
 #' @param covered This is equivalent to Eligible in the FishHook class. Eligible are the regions of the genome that we feel are fit to score. For example in the case of exome sequencing where not all regions are equally represented, eligible can be a set of regions that meet an arbitrary coverage threshold. Another example of when to use eligibility is in the case of whole genomes, where your targets are 1kb tiles. Regions of the genome you would want to exclude in this case are highly repetative regions such as centromeres, telomeres, and satelite repeates. This param must be of class "GRanges".
-#' @param covariates Covariates are genomic covariates that you belive will cause your given type of event (mutations, CNVs, fusions) that are not linked to the process you are investigating (e.g. cancer biology). In the case of cancer biology we are looking for regions that are mutated as part of cancer progression, and regions that are more suceptable to random mutagenesis such as late replicating or non-expressed region (transcription coupled repair) are potential false positives. Includinig covariates for these will reduce thier prominence in the final data. This param must be of type "Cov_Arr" which can be created by wrapping Cov objects in c(). e.g. c(Cov1,Cov2,Cov3).
+#' @param covariates Covariates are genomic covariates that you believe will cause your given type of event (mutations, CNVs, fusions) that are not linked to the process you are investigating (e.g. cancer biology). In the case of cancer biology we are looking for regions that are mutated as part of cancer progression, and regions that are more suceptable to random mutagenesis such as late replicating or non-expressed region (transcription coupled repair) are potential false positives. Includinig covariates for these will reduce thier prominence in the final data. This param must be of type "Cov_Arr" which can be created by wrapping Cov objects in c(). e.g. c(Cov1,Cov2,Cov3).
 #' @return Annotate Obeject that can be scored & manipulated and aggregated.
 #' @author Zoran Z. Gajic
 #' @importFrom R6 R6Class
@@ -2638,8 +2560,7 @@ Annotated = R6::R6Class('Annotate',
                 anno = paste("Annotated has", length(private$pannotated_targets), "hypotheses.")
                     if(class(private$pannotated_targets) == "GRangesList"){
                         agg = "The data has been aggregated."
-                    }
-                    else{
+                    } else{
                         agg = "The data has not been aggregated."
                     }
                 cat(anno,agg,meta,sep = "\n", collapse = "\n")
@@ -2662,7 +2583,7 @@ Annotated = R6::R6Class('Annotate',
                 return (tmp)
             },
 
-            ## Takes in a series of run parameters for the fish.hook function
+            ## Takes in a series of run parameters for the fishHook function
             ## score.targets and allows the user to change the meta data at
             ## this point if they so desire, however this is not reccomended for
             ## standard users.
@@ -2705,10 +2626,10 @@ Annotated = R6::R6Class('Annotate',
 
             },
 
-            ## Passes a series of parameteres to the fish.hook function "aggregate.targets"
+            ## Passes a series of parameteres to the fishHook function "aggregate.targets"
             ## The only required param here is by, which is a vector upon which to
             ## group the targets in the GRanges object
-            ## See fish.hook documentation for more info on rolling and disjoint
+            ## See fishHook documentation for more info on rolling and disjoint
 
             aggregateTargets = function(by = NULL, fields = NULL, rolling = NULL, disjoint = TRUE, 
                 na.rm = FALSE, FUN = list(), verbose = TRUE){
@@ -2754,8 +2675,7 @@ Annotated = R6::R6Class('Annotate',
                     warning("Warning: Meta and Targets are of different length, removing Meta.")
                     private$meta = NULL
                     return()
-                }
-                else{
+                } else{
                     private$meta = private$meta[range]
                     return()
                 }
@@ -2809,13 +2729,13 @@ Annotated = R6::R6Class('Annotate',
 Score = R6::R6Class('Score',
 
     public = list(
-        ## Initialize takes in all of the params for the fish.hook function
+        ## Initialize takes in all of the params for the fishHook function
         ## "score.targets" and an optional meta param that will be used to remember
         ## meta data.
         ## meta data is automatically initialized to the grl "numinterval" and "name"
         ## if the passed annotated var is a grl.
         ## This will generally be called by the Annotated object method "score()"
-        ## Passes all params except meta to score.targets from the fish.hook package
+        ## Passes all params except meta to score.targets from the fishHook package
         ## the meta param is stored internally to be accessed later
         ## grl is a control variable that indicates if the passed "annotated" object is a grl
         ## if true -> assume it is a grl, if false -> assume it is a GRanges
@@ -2855,8 +2775,7 @@ Score = R6::R6Class('Score',
             anno = paste("Scored has", nrow(private$score), "hypotheses.")
             if(class(private$meta) == "GRanges"){
                 meta = paste("Scored has", ncol(values(private$meta)), "metadata columns")
-            }
-            else{
+            } else{
                 meta = paste("Scored has", ncol(private$meta), "metadata columns")
             }
             cat(anno,meta,sep = "\n", collapse = "\n")
@@ -2878,24 +2797,21 @@ Score = R6::R6Class('Score',
                 columns = columns[columns %in% names(res)]
                 annotation_columns = lapply(columns, function(x) as.character(unlist(res[,x,with=FALSE])))
                 names(annotation_columns) = columns
-            }
-            else{
+            } else{
                 annotation_columns = list()
             }
 
             if(is.null(annotations) & is.null(columns)){                                                   
                 if(is.null(res$name)){
                     names = c(1:nrow(res))
-                }
-                else{
+                } else{
                     names = res$name
                 }
                 annotations = list(Hypothesis_ID = names,
                     Count = res$count,
                     Effectsize = round(res$effectsize,2),
                     q = res$q)
-            }
-            else{
+            } else{
                 res = self$getAll()
             }
                 
@@ -3020,21 +2936,18 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg
         if (!is.null(exp)){
             if (length(exp) != length(obs)){
                 stop('Error: length of exp must be = length(obs)')
-            }
-            else{
+            } else{
                 ix1 = ix1 & !is.na(exp)
             }
         }
 
         if (is.null(highlight)){
             highlight = rep(FALSE, length(obs))
-        }
-        else if (is.logical(highlight)){
+        } else if (is.logical(highlight)){
             if (length(highlight) != length(obs)){
                 stop('Error: argument "highlight" must be either logical vector of same length as obs or a vector of indices')
             }
-        }
-        else{
+        } else{
             highlight = 1:length(obs) %in% highlight
         }
 
@@ -3068,8 +2981,7 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg
 
         if (is.null(exp)){
             exp = -log(1:N/N,10)
-        }
-        else{
+        } else{
             exp = sort(exp)
         }
 
@@ -3135,8 +3047,7 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg
 
         if (is.na(subsample[1])){
             dat[, plot(x, y, xlab = expression(Expected -log[10](italic(P))), ylab = expression(Observed -log[10](italic(P))), xlim = c(0, max.x), col = colors, ylim = c(0, max.y), pch=pch, cex=cex, bg=col.bg, ...)]
-        }
-        else{
+        } else{
             subsample = pmin(pmax(0, subsample[1]), 1)
             dat[ifelse(x<=2, ifelse(runif(length(x))<subsample, TRUE, FALSE), TRUE), plot(x, y, xlab = expression(Expected -log[10](italic(P))), ylab = expression(Observed -log[10](italic(P))), xlim = c(0, max.y), col = colors, ylim = c(0, max.y), pch=pch, cex=cex, bg=col.bg, ...)]
         }
@@ -3145,8 +3056,7 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg
             if (length(label)>0){
                 if (is.null(key(dat))){
                     warning('Warning: Need to provide names to input vector to draw labels')
-                }
-                else{
+                } else{
                     dat[list(label), text(x, y, labels=label, pos=3)];
                 }
             }
@@ -3162,13 +3072,11 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg
 
         lines(x=c(0, max.x), y = c(0, lambda*max.y), col = 'red', lty = 2, lwd = lwd);
         legend('bottomright', sprintf('lambda=\n %.2f', lambda), text.col = 'red', bty = 'n')
-    }
-    else{
+    } else{
 
         if(length(annotations) < 1){
             hover = do.call(cbind.data.frame, list(p = obs))
-        }
-        else{
+        } else{
             hover = do.call(cbind.data.frame, list(annotations, p = obs))
         }    
 
@@ -3184,20 +3092,19 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg
         if (!is.null(exp)){
             if (length(exp) != length(hover$p)){
                 stop('Error: length of exp must be = length(hover$obs)')
-            }
-            else{
+            } else{
                 ix1 = ix1 & !is.na(exp)
             }
         } 
         if (is.null(highlight)){
             highlight = rep(FALSE, length(hover$p))
-        } 
-        else if (is.logical(highlight)) {
+        } else if (is.logical(highlight)) {
             if (length(highlight) != length(hover$p)){
                 stop('Error: argument "highlight" must be either logical vector of same length as obs or a vector of indices')
             }
+        } else{
+            highlight = 1:length(hover$p) %in% highlight
         }
-        else highlight = 1:length(hover$p) %in% highlight
         hover$obs = -log10(hover$p[ix1])
         hover = hover[ix1]
         highlight = highlight[ix1]
@@ -3205,22 +3112,23 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg
             exp = -log10(exp[ix1])
         } 
         ix2 = !is.infinite(hover$obs)
-        if (!is.null(exp)) 
+        if (!is.null(exp)){
             ix2 = ix2 & !is.infinite(exp)
+        }
         hover = hover[ix2]
         highlight = highlight[ix2]
-        if (!is.null(exp)) 
+        if (!is.null(exp)){
             exp = exp[ix2]
+        } 
         N <- length(hover$obs)
-        if (is.null(exp)) 
+        if (is.null(exp)){
             exp = -log(1:N/N, 10)
-        else{
+        } else{
             exp = sort(exp)
         }
         if (is.null(max)){
             max = max(hover$obs, exp) + 0.5
-        } 
-        else{
+        } else{
             max = max
         }
         if (is.exp.null) {
@@ -3260,8 +3168,7 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg
             annotation_names_wLineBreak  = paste('<br>', annotation_names[2:length(annotation_names)],
             sep = '')
             annotation_names = c(annotation_names[1], annotation_names_wLineBreak)
-        }
-        else{
+        } else{
             annotation_names  = sapply(colnames(hover), paste0, ' : ')
         }
 
@@ -3270,8 +3177,7 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg
         if(length(gradient )!= 0){    
             dat$grad = gradient[[1]][ord]
             gradient_control = TRUE
-        }
-        else {   
+        } else {   
             dat$grad = c()
         }
         
@@ -3306,15 +3212,13 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg
                                    mode = 'markers', type = 'scatter')
                     %>% layout(xaxis = list(title = '<i>Expected -log<sub>10</sub>(P)</i>'),
                                yaxis = list(title = '<i>Observed -log<sub>10</sub>(P)</i>')) ]
-            }
-            else{
+            } else{
                 p = dat[, plot_ly(data = dat, x=x, y=y, key = dat$key, hoverinfo = 'text', text = hover_text,
                                    mode = 'markers', type = 'scatter')
                     %>% layout(xaxis = list(title = '<i>Expected -log<sub>10</sub>(P)</i>'),
                                yaxis = list(title = '<i>Observed -log<sub>10</sub>(P)</i>')) ]
             }
-        }
-        else{
+        } else{
         
             dat$ID = c(1:nrow(dat))
             dat2 = dat[ y < 2.6,]
@@ -3349,8 +3253,7 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg
                                     mode = 'markers', type = 'scatter')
                      %>% layout(xaxis = list(title = '<i>Expected -log<sub>10</sub>(P)</i>'),
                                 yaxis = list(title = '<i>Observed -log<sub>10</sub>(P)</i>')) ]
-            }
-            else{
+            } else{
                 p = dat2[,  plot_ly(data = dat2, x=x, y=y,hoverinfo = "text", text = hover_text, mode = 'markers', type = 'scatter')
                      %>% layout(xaxis = list(title = '<i>Expected -log<sub>10</sub>(P)</i>'),
                                 yaxis = list(title = '<i>Observed -log<sub>10</sub>(P)</i>')) ]

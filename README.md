@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/mskilab/fishHook.svg?branch=master)](https://travis-ci.org/mskilab/fishHook)
+[![codecov.io](https://img.shields.io/codecov/c/github/mskilab/fishHook.svg)](https://codecov.io/github/mskilab/fishHook?branch=master)
 
 fishHook
 ======
@@ -35,15 +36,13 @@ Installation
   devtools::install_github('mskilab/fishHook')
   ````
 
-See Demo
+See Demo:
 
-Note: Github does not correctly display the rendered version. In order to properly view the rendered version you must run it through ipynb.
+[fishHook Demo](https://github.com/mskilab/fishHook/blob/master/fishHook_Demo.ipynb)
 
-[fish.hook Demo](https://github.com/mskilab/fish.hook/blob/master/Fish.hook.class.demo.ipynb)
+See Documentation
 
-See documentation
-
-[R Documentation](https://raw.githubusercontent.com/mskilab/fish.hook/master/fish.hook.pdf)
+[R Documentation](https://raw.githubusercontent.com/mskilab/fishHook/master/fishHook.pdf)
 
 Description
 -----------
@@ -56,8 +55,6 @@ Attributions
 
 Demo
 -----------
-
-See Below. 
 
 
 ## Load the Required Packages

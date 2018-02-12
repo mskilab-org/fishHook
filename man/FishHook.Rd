@@ -9,16 +9,62 @@
 FishHook
 }
 \arguments{
-\item{targets}{Examples of targets are genes, enhancers, 1kb tiles of the genome that we can then convert into a rolling window. This param must be of class "GRanges".}
+\item{targets}{Examples of targets are genes, enhancers, or even 1kb tiles of the genome that we can then convert into a rolling/tiled window. This param must be of class "GRanges".}
 
-\item{events}{Events are the given mutational regions and must be of class "GRanges". Examples of events are mutational data (e.g. C->G) copy number variations and fusion events. Targets are the given regions of the genome to annotate and must be of class "GRanges".}
+\item{events}{Events are the given mutational regions and must be of class "GRanges". Examples of events are SNVs (e.g. C->G) somatic copy number alterations (SCNAs), fusion events, etc.}
 
-\item{eligible}{Eligible are the regions of the genome that we feel are fit to score. For example in the case of exome sequencing where not all regions are equally represented, eligible can be a set of regions that meet an arbitrary coverage threshold. Another example of when to use eligibility is in the case of whole genomes, where your targets are 1kb tiles. Regions of the genome you would want to exclude in this case are highly repetative regions such as centromeres, telomeres, and satelite repeates. This param must be of class "GRanges".}
+\item{eligible}{Eligible regions are the regions of the genome that have enough statistical power to score. For example, in the case of exome sequencing where all regions are not equally
+represented, eligible can be a set of regions that meet an arbitrary exome coverage threshold. Another example of when to use eligibility is in the case of whole genomes,
+where your targets are 1kb tiles. Regions of the genome you would want to exclude in this case are highly repetative regions such as centromeres, telomeres, and satelite repeates.
+This param must be of class "GRanges".}
 
-\item{covariates}{Covariates are genomic covariates that you belive will cause your given type of event (mutations, CNVs, fusions) that are not linked to the process you are investigating (e.g. cancer biology). In the case of cancer biology we are looking for regions that are mutated as part of cancer progression, and regions that are more suceptable to random mutagenesis such as late replicating or non-expressed region (transcription coupled repair) are potential false positives. Includinig covariates for these will reduce thier prominence in the final data. This param must be of type "Cov_Arr" which can be created by wrapping Cov objects in c(). e.g. c(Cov1,Cov2,Cov3).}
+\item{covariates}{Covariates are genomic covariates that you belive will cause your given type of event (mutations, CNVs, fusions, case control samples) that are not linked to the process you are
+investigating (e.g. cancer drivers). In the case of cancer drivers, we are looking for regions that are mutated as part of cancer progression. As such, regions that are more suceptable to
+random mutagenesis such as late replicating or non-expressed region (transcription coupled repair) could become false positives. Including covariates for these biological processes will
+reduce thier visible effect in the final data. This param must be of type "Cov_Arr".}
+
+\item{out.path}{A character that will indicate a system path in which to save the results of the analysis.}
+
+\item{use_local_mut_density}{A logical that when true, creates a covariate that will represent the mutational density in the genome, whose bin size will be determined by local_mut_density_bin.
+This covariate can be used when you have no other covariates as a way to correct for variations in mutational rates along the genome under the assumption that driving mutations
+will cluster in local regions as opposed to global regions. This is similar to saying, in the town of foo, there is a crime rate of X that we will assume to be the local crime rate
+If a region in foo have a crime rate Y such that Y >>>>> X, we can say that region Y has a higher crime rate than we would expect.}
+
+\item{local_mut_density_bin}{A numeric value that will indicate the size of the genomic bins to use if use_local_mut_density = TRUE. Note that this paramter should be a few orders of
+magnitude greater than the size of your targets. e.g. if your targets are 1e5 bps long, you may want a local_mut_density_bin of 1e7 or even 1e8}
+
+\item{gennome}{A character value indicating which build of the human genome to use, by default set to hg19}
+
+\item{mc.cores}{A numeric value that indicates the amount of computing cores to use when running fishHook. This will mainly be used during the annotation step of the analysis, or during
+initial instantiation of the object if use_local_mut_density = T}
+
+\item{na.rm}{A logical indicating how you handle NAs in your data, mainly used in fftab and gr.val, see these function documentations for more information}
+
+\item{pad}{A numeric indicating how far each covariate range should be extended, see Cov_Arr for more information, not that this will only be used if atleast on of the
+Covariates have pad = NA}
+
+\item{vebose}{A logical indicating whether or not to print information to the console when running FishHook}
+
+\item{max.slice}{integer Max slice of intervals to evaluate with  gr.val (default = 1e3)}
+
+\item{ff.chunk}{integer Max chunk to evaluate with fftab (default = 1e6)}
+
+\item{max.chunk}{integer gr.findoverlaps parameter (default = 1e11)}
+
+\item{ptidcol}{A character, that indicates the column name containing the patient ids, this is for use in conjunction with maxpatientpergene. If max patientpergene is specified and
+and the column referenced by ptidcol exists, we will limit the contributions of each patient to each target to maxpatientpergene. e.g. if Patient A has 3 events in target A and Patient B
+has 1 event in target A, and maxpatientpergene is set to 2, with thier ID column specified, target A will have a cournt of 3, 2 coming from patient A and 1 coming from patient B}
+
+\item{maxpatientpergene}{a numeric that indicates the max number of events any given patient can contribute to a given target. for use in conjction with ptidcol. see ptidcol for more info.}
+
+\item{weightEvents}{a logical that indicates if the events should be weighted by thier overlap with the targets. e.g. if we have a SCNA spanning 0:1000 and a target spanning 500:10000, the overlap
+of the SCNA and target is 500:1000 which is half of the original width of the SCNA event. thus if weightEvent = T, we will credit a count of 0.5 to the target for this SCNA. This deviates from
+the expected input for the gamma poisson as the gamma poisson measures whole event counts.}
+
+\item{nb}{boolean negative binomial, if false then use poisson}
 }
 \value{
-FishHook object that can be annotated.
+FishHook object ready for annotation/scoring.
 }
 \description{
 Stores Events, Targets, Eligible, Covariates.

@@ -10,12 +10,35 @@ Cov_Arr
 }
 \arguments{
 \item{...}{several Cov objects for packaging.}
+
+\item{name}{character vector Contains names of the covariates to be created, this should not include the names of any Cov objects passed}
+
+\item{pad}{numeric vector Indicates the width to extend each item in the covarite. e.g. if you have a GRanges covariate with two ranges (5:10) and (20:30) with a pad of 5,
+These ranges wil become (0:15) and (15:35)}
+
+\item{type}{character vector Contains the types of each covariate (numeric, interval, sequencing)}
+
+\item{signature, }{see ffTrack, a vector of signatures for use with ffTrack sequence covariates}
+
+\item{field, }{a chracter vector for use with numeric covariates (NA otherwise) the indicates the column containing the values of that covarites.
+For example, if you have a covariate for replication timing and the timings are in the column 'value', the parameter field should be set to the character 'Value'}
+
+\item{na.rm, }{logical vector that indicates whether or not to remove nas in the covariates}
+
+\item{grep, }{a chracter vector of  grep for use with sequence covariates of class ffTrack
+The function fftab is called during the processing of ffTrack sequence covariates grep is used to specify inexact matches (see fftab)}
+
+\item{cvs, }{a list of covariates that can include any of the covariate classes (GRanges, ffTrack, RleList, character)}
 }
 \value{
 Cov_Arr object that can be passed directly to the FishHook object constructor
 }
 \description{
 Stores Covariates for passing to FishHook object constructor. Standard initialization involves calling c(Cov1,Cov2,Cov3). 
+
+Can also be initiated by passing a vector of multiple vectors of equal length, each representing one of the internal variable names
+You must also include a list containg all of the covariates (Granges, chracters, RLELists, ffTracks)
+
 Cov_Arr serves to mask the underlieing list implemenations of Covariates in the FishHook Object. 
 This class attempts to mimic a vector in terms of subsetting and in the future will add more vector like operations.
 }
