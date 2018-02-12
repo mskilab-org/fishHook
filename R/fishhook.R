@@ -56,6 +56,13 @@
 #' (set to na.rm argument by default)
 #' Sequence covariates must be ffTrack objects (or paths to ffTrack rds) and require an additional variables $signatures, which
 #' will be used as input to fftab, and can have optional logical argument $grep to specify inexact matches (see fftab)
+#' fftab signature: signatures is a named list that specify what is to be tallied.  Each signature (ie list element)
+#' consist of an arbitrary length character vector specifying strings to %in% (grep = FALSE)
+#' or length 1 character vector to grepl (if grep = TRUE)
+#' or a length 1 or 2 numeric vector specifying exact value or interval to match (for numeric data)
+#' Every list element of signature will become a metadata column in the output GRanges
+#' specifying how many positions in the given interval match the given query
+#'
 #' Interval covariates must be Granges (or paths to GRanges rds) or paths to bed files
 #' @return GRanges of input targets annotated with covariate statistics (+/- constrained to the subranges in optional argument covered)
 #' @author Marcin Imielinski
@@ -858,6 +865,12 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
 #' @param Covariate GRanges, ffTrack, RleList or character string. Note that character objects must be paths to files containing one of the other types as a .rds file
 #' @param type character indicating the type of Covariate, valid options are: numeric, sequence, interval. See Annotate Targets for more information on Covariate types
 #' @param signature chracter that In the case where a ffTrack object is of type sequence, a signature field is required, see fftab in ffTrack for more information.
+#' fftab signature: signatures is a named list that specify what is to be tallied.  Each signature (ie list element)
+#' consist of an arbitrary length character vector specifying strings to %in% (grep = FALSE)
+#' or length 1 character vector to grepl (if grep = TRUE)
+#' or a length 1 or 2 numeric vector specifying exact value or interval to match (for numeric data)
+#' Every list element of signature will become a metadata column in the output GRanges
+#' specifying how many positions in the given interval match the given query
 #' @param name character indicating the name that this covariate will be refered to as
 #' @param pad numeric that indicates the number of nulceotides upstream and downstream to extend the covariate i.e. a covariate from position 10-20 with a pad of 5 will have a range from 5-25
 #' @param field character which is for numeric covariates and is the column name where the 'score' is held. Note that it is set to 'score' by default
@@ -1156,6 +1169,12 @@ Cov = R6::R6Class("Cov",
 #' These ranges wil become (0:15) and (15:35)
 #' @param type character vector Contains the types of each covariate (numeric, interval, sequencing)
 #' @param signature, see ffTrack, a vector of signatures for use with ffTrack sequence covariates
+#' fftab signature: signatures is a named list that specify what is to be tallied.  Each signature (ie list element)
+#' consist of an arbitrary length character vector specifying strings to %in% (grep = FALSE)
+#' or length 1 character vector to grepl (if grep = TRUE)
+#' or a length 1 or 2 numeric vector specifying exact value or interval to match (for numeric data)
+#' Every list element of signature will become a metadata column in the output GRanges
+#' specifying how many positions in the given interval match the given query
 #' @param field, a chracter vector for use with numeric covariates (NA otherwise) the indicates the column containing the values of that covarites.
 #' For example, if you have a covariate for replication timing and the timings are in the column 'value', the parameter field should be set to the character 'Value'
 #' @param na.rm, logical vector that indicates whether or not to remove nas in the covariates
