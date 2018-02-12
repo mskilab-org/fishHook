@@ -43,7 +43,8 @@
 #' @param ff.chunk integer Max chunk to evaluate with fftab (default = 1e6)
 #' @param max.chunk integer gr.findoverlaps parameter (default = 1e11)
 #' @param out.path  out.path to save variable to (default = NULL)
-#' @param covariates list 
+#' @param covariates list of lists where each internal list represents a covariate, the internal list can have elements: track, type,signature,name,pad,na.rm = na.rm,field,grep. See Cov or Cov_Arr classes for descriptions of what
+#' each of these elements do. Note that track is equivalent to the 'Covariate' parameter in Cov / Cov_Arr
 #' @param maxpatientpergene Sets the maximum number of events a patient can contribute per target (default = Inf)
 #' @param ptidcol string Column where patient ID is stored
 #' @param weightEvetns boolean If true, will weight events by their overlap with targets. e.g. if 10% of an event overlaps with a target (default = FALSE)
@@ -686,7 +687,7 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
 #' Scores targets based on covariates using Gamma-Poisson model with coverage as constant
 #' 
 #' @param targets annotated targets with fields $coverage, optional field, $count and additional numeric covariates
-#' @param covariates info
+#' @param covariates chracter vector, indicates which columns of targets contain the covariates
 #' @param model fit existing model --> covariates must be present (default = NULL)
 #' @param return.model boolean info (default = FALSE)
 #' @param nb boolean negative binomial, if false then use poisson
@@ -1222,6 +1223,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
         private$ppad = sapply(Covs, function(x) x$pad)
         private$pna.rm = sapply(Covs, function(x) x$na.rm)
         private$pgrep = sapply(Covs, function(x) x$grep)
+
     },
 
     ## Params:
@@ -1837,6 +1839,7 @@ FishHook = R6::R6Class('FishHook',
                 }
             }
 
+            
             private$pmc.cores = mc.cores
             private$pna.rm = na.rm
             private$ppad = pad
@@ -1850,10 +1853,25 @@ FishHook = R6::R6Class('FishHook',
             private$pnb = nb
         },
 
+        ## Params:
+        ## x Cov calls toList on X
+        ## Return:
+        ## x$toList
+        ## UI:
+        ## None
+        ## Notes:
+        ## This function only exists for legacy purposes
         toList = function(x){
             return (x$toList())
         },
 
+
+        ## Params:
+        ## no params, any passed params will be ignored
+        ## Return:
+        ## none
+        ## UI:
+        ## prints a summary of the internal state of the FishHook object        
         print = function(){
             targ = paste('Contains' , length(private$ptargets), "hypotheses." ,collapse = "")
             eve = paste('Contains', length(private$pevents), "events to map to hypotheses.", collapse = "")
@@ -1875,9 +1893,22 @@ FishHook = R6::R6Class('FishHook',
             cat(targ, eve, elig, 'Covariates:', covs, meta, state, sep = '\n', collapse = '\n')
         },
 
-        ## Takes a series of run params and passes them as well as
-        ## the internal data to the initialize function for the annotate object
-        ## Returns the created annotate object
+        ## Params:
+        ## mc.cores, see FishHook class documentation for more info
+        ## na.rm, see FishHook class documentation for more info
+        ## pad, see FishHook class documentation for more info
+        ## verbose, see FishHook class documentation for more info
+        ## max.slice, see FishHook class documentation for more info
+        ## ff.chunk, see FishHook class documentation for more info
+        ## max.chunk, see FishHook class documentation for more info
+        ## ptidcol, see FishHook class documentation for more info
+        ## maxpatientpergene, see FishHook class documentation for more info
+        ## Return:
+        ## None
+        ## UI:
+        ## If verbose = T, will print updates as the annotation proceeds
+        ## Notes:
+        ## This function changes the internal state of the fishHook object and sets the state to 'Annotated'
         annotate = function(mc.cores = private$pmc.cores, na.rm = private$pna.rm, pad = private$ppad,
             verbose = private$pverbose, max.slice = private$pmax.slice, ff.chunk = private$pff.chunk,
             max.chunk = private$pmax.chunk, ptidcol = private$pptidcol, maxpatientpergene = private$maxpatientpergene,
