@@ -40,12 +40,12 @@ The function fftab is called during the processing of ffTrack sequence covariate
 Cov_Arr object that can be passed directly to the FishHook object constructor
 }
 \description{
-Stores Covariates for passing to FishHook object constructor. Standard initialization involves calling c(Cov1,Cov2,Cov3). 
+Stores Covariates for passing to FishHook object constructor. Standard initialization involves calling c(Cov1,Cov2,Cov3).
 
 Can also be initiated by passing a vector of multiple vectors of equal length, each representing one of the internal variable names
 You must also include a list containg all of the covariates (Granges, chracters, RLELists, ffTracks)
 
-Cov_Arr serves to mask the underlieing list implemenations of Covariates in the FishHook Object. 
+Cov_Arr serves to mask the underlieing list implemenations of Covariates in the FishHook Object.
 This class attempts to mimic a vector in terms of subsetting and in the future will add more vector like operations.
 }
 \author{

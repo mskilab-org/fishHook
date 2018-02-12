@@ -48,7 +48,8 @@ qq_pval(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL,
 \item{titleText}{title for plotly (html) graph only}
 }
 \description{
-Explanation
+Generates R or Shiny quantile-quantile (Q-Q) plot given (minimally) an observed vector of p values, plotted their -log1 )quantiles against corresponding -log10
+quantiles of the uniform distribution.
 }
 \author{
 Marcin Imielinski, Eran Hodis, Zoran Z. Gajic

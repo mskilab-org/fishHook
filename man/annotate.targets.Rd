@@ -56,7 +56,7 @@ specifying how many positions in the given interval match the given query
 
 Interval covariates must be Granges (or paths to GRanges rds) or paths to bed files}
 
-\item{weightEvetns}{boolean If TRUE, will weight events by their overlap with targets. e.g. if 10% of an event overlaps with a target 
+\item{weightEvetns}{boolean If TRUE, will weight events by their overlap with targets. e.g. if 10% of an event overlaps with a target
 region, that target region will get assigned a score of 0.1 for that event. If false, any overlap will be given a weight of 1.}
 }
 \value{
