@@ -87,7 +87,6 @@ test_that('annotate.targets', {
     ## if events != NULL
     expect_equal(max(annotate.targets(targets, events=events)$count), 9750)
 
-
 })
 
 
@@ -225,11 +224,51 @@ test_that('Cov_Arr', {
 
 
 
+## FishHook
+
+## initialize = function(targets = NULL, out.path = NULL, eligible = NULL, ... ,events = NULL, covariates = NULL,
+##     use_local_mut_density = FALSE, local_mut_density_bin = 1e6, genome = 'BSgenome.Hsapiens.UCSC.hg19::Hsapiens',
+##     mc.cores = 1, na.rm = TRUE, pad = 0, verbose = TRUE, max.slice = 1e3, ff.chunk = 1e6, max.chunk = 1e11, ptidcol = NULL,
+##     maxpatientpergene = Inf, weightEvents = FALSE, nb = TRUE)
+
+test_that('FishHook', {
+
+    ## default
+    fish1 = FishHook$new(targets = targets, events = events)
+    expect_true(fish1$nb)
+    expect_equal(fish1$state, 'Initialized')
+    expect_false(fish1$weightEvents)
+    anno = fish1$annotate(mc.cores=1);
+    print('created anno')
+    ## toList
+    ## > fish1$toList()
+    ## Error in fish1$toList() : argument "x" is missing, with no default
+    ## print
+    expect_equal(print(fish1$print()), NULL)
+    ## annotate
+    expect_equal(anno, "Annotated")
+    ## aggregate
+    ## > agg = fish1$aggregate(mc.cores=2)
+    ## Error in fish1$aggregate(mc.cores = 2) : unused argument (mc.cores = 2)
+    expect_error(fish1$aggregate())
+    agg = fish1$aggregate(by='gene_name')
+    expect_equal(print(agg), "Clear Completed")
+    ## score
+    ##
+    ## Error in score.targets(targ, covariates = names(values(private$panno)),  : 
+    ## Error: "score.targets" input malformed --> count does not vary!
+    ## qq_plot
+    expect_error(fish1$qq_plot())
+    ## clear
+    expect_equal(print(fish1$clear()), "Clear Completed")
+
+})
 
 
+### Annotate
 
-
-
+## anno= Annotated$new(targets=targets, events=events, covariates=replication_timing)
+## SLOW
 
 
 

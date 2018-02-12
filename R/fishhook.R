@@ -702,7 +702,7 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
 
     values(targets)$count = round(values(targets)$count)
 
-    if (length(unique(values(targets)$count))<=1){
+    if (length(unique(values(targets)$count)) <= 1){
         stop('Error: "score.targets" input malformed --> count does not vary!')
     }
 
@@ -1085,7 +1085,7 @@ Cov = R6::R6Class("Cov",
 #' @return Cov_Arr object that can be passed directly into the FishHook object constructor
 #' @author Zoran Z. Gajic
 #' @export
-c.Cov = function(...){
+'c.Cov' = function(...){
 
     ##Ensuring that all of the arugments are of class Cov/Cov_Arr
     Covs = list(...)
@@ -1645,6 +1645,9 @@ Cov_Arr = R6::R6Class('Cov_Arr',
 
 
 
+
+
+
 #' @name FishHook
 #' @title title
 #' @description
@@ -1710,8 +1713,8 @@ FishHook = R6::R6Class('FishHook',
             }
 
             ## gets the seqlevels and looks for chr to indicate USCS format
-            seqLevelsStatus_Targets = any(grepl('chr', seqlevels(targets)))
-            seqLevelsStatus_Events = any(grepl('chr', seqlevels(events)))
+            seqLevelsStatus_Targets = any(grepl('chr', GenomeInfoDb::seqlevels(targets)))
+            seqLevelsStatus_Events = any(grepl('chr', GenomeInfoDb::seqlevels(events)))
 
             if(!is.null(covariates)){
                 if(any(!(seqLevelsStatus_Targets %in% seqLevelsStatus_Covariates))){
@@ -1720,7 +1723,7 @@ FishHook = R6::R6Class('FishHook',
             }    
 
             if(!is.null(eligible)){
-                seqLevelsStatus_Eligible = any(grepl("chr",seqlevels(eligible)))
+                seqLevelsStatus_Eligible = any(grepl("chr", GenomeInfoDb::seqlevels(eligible)))
                 if(seqLevelsStatus_Targets != seqLevelsStatus_Eligible){
                     warning('Warning: seqlevels of Targets and Eligible appear to be in different formats')
                 }
@@ -1730,18 +1733,18 @@ FishHook = R6::R6Class('FishHook',
             }
 
             ## This next portion checks to make sure there is atleast some overlap of seqlevels i.e. some mapability
-            if(!any(seqlevels(targets) %in% seqlevels(events))){
+            if(!any(GenomeInfoDb::seqlevels(targets) %in% GenomeInfoDb::seqlevels(events))){
                 stop('Error: there are no seqlevels of events that match targets')
             }
 
             if(!is.null(eligible)){
-                if(!any(seqlevels(targets) %in% seqlevels(eligible))){
+                if(!any(GenomeInfoDb::seqlevels(targets) %in% GenomeInfoDb::seqlevels(eligible))){
                     stop('Error: there are no seqlevels of eligible that match targets')
                 }
             }
                             
             if(!is.null(covariates)){
-                if(any(!(unlist(lapply(covariates$seqlevels(),function(x) any(x%in%seqlevels(targets))))))){                                
+                if(any(!(unlist(lapply(covariates$seqlevels(),function(x) any(x %in% GenomeInfoDb::seqlevels(targets))))))){                                
                     warning("Warning: atleast one of the covariates has no seqlevels in common with targets")
                 }
             }
@@ -1774,7 +1777,7 @@ FishHook = R6::R6Class('FishHook',
             ##Creating the local mutational denisty track
             if(use_local_mut_density){
                 Sys.setenv(DEFAULT_BSGENOME = genome)
-                bins = gr.tile(hg_seqlengths(),   local_mut_density_bin)
+                bins = gr.tile(hg_seqlengths(), local_mut_density_bin)
                 f1 = FishHook$new(targets = bins, events = events, eligible = eligible)
                 f1$annotate(mc.cores = mc.cores, na.rm = na.rm, verbose = verbose, max.slice = max.slice, ff.chunk = ff.chunk, max.chunk = max.chunk)
                 f1$score()
@@ -2479,7 +2482,7 @@ FishHook = R6::R6Class('FishHook',
 #' @param targets Examples of targets are genes, enhancers, 1kb tiles of the genome that we can then convert into a rolling window. This param must be of class "GRanges".
 #' @param events Events are the given mutational regions and must be of class "GRanges". Examples of events are mutational data (e.g. C->G) copy number variations and fusion events. Targets are the given regions of the genome to annotate and must be of class "GRanges". 
 #' @param covered This is equivalent to Eligible in the FishHook class. Eligible are the regions of the genome that we feel are fit to score. For example in the case of exome sequencing where not all regions are equally represented, eligible can be a set of regions that meet an arbitrary coverage threshold. Another example of when to use eligibility is in the case of whole genomes, where your targets are 1kb tiles. Regions of the genome you would want to exclude in this case are highly repetative regions such as centromeres, telomeres, and satelite repeates. This param must be of class "GRanges".
-#' @param covariates Covariates are genomic covariates that you belive will cause your given type of event (mutations, CNVs, fusions) that are not linked to the process you are investigating (e.g. cancer biology). In the case of cancer biology we are looking for regions that are mutated as part of cancer progression, and regions that are more suceptable to random mutagenesis such as late replicating or non-expressed region (transcription coupled repair) are potential false positives. Includinig covariates for these will reduce thier prominence in the final data. This param must be of type "Cov_Arr" which can be created by wrapping Cov objects in c(). e.g. c(Cov1,Cov2,Cov3).
+#' @param covariates Covariates are genomic covariates that you believe will cause your given type of event (mutations, CNVs, fusions) that are not linked to the process you are investigating (e.g. cancer biology). In the case of cancer biology we are looking for regions that are mutated as part of cancer progression, and regions that are more suceptable to random mutagenesis such as late replicating or non-expressed region (transcription coupled repair) are potential false positives. Includinig covariates for these will reduce thier prominence in the final data. This param must be of type "Cov_Arr" which can be created by wrapping Cov objects in c(). e.g. c(Cov1,Cov2,Cov3).
 #' @return Annotate Obeject that can be scored & manipulated and aggregated.
 #' @author Zoran Z. Gajic
 #' @importFrom R6 R6Class
