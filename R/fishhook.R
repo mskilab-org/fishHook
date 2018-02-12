@@ -2850,7 +2850,8 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg
                                yaxis = list(title = '<i>Observed -log<sub>10</sub>(P)</i>')) ]
             }
         } else{
-        
+            
+            require(plotly)
             dat$ID = c(1:nrow(dat))
             dat2 = dat[ y < 2.6,]
             dat3 = as.data.frame(dat2)

@@ -1,4 +1,3 @@
-
 library(fishHook)
 library(testthat)
 
@@ -32,8 +31,6 @@ segs = readRDS('/home/travis/build/mskilab/fishHook/data/jabba_segs_11517.rds')
 ## segs = readRDS('jabba_segs_11517.rds')
 
 eligible = readRDS('/home/travis/build/mskilab/fishHook/data/eligible.rds')
-
-
 
 
 context('unit testing fishhook operations')
@@ -79,15 +76,18 @@ test_that('annotate.targets', {
     ## weightEvents
     expect_equal(is.na(all(annotate.targets(targets, weightEvents=TRUE)$count)), TRUE)
     ## if (is.character(targets)){
-    expect_equal(length(annotate.targets('/home/travis/build/mskilab/fishHook/data/targets.rds')), 19688)
+    ## expect_equal(length(annotate.targets('/home/travis/build/mskilab/fishHook/data/targets.rds')), 19688)
     ## if (length(targets)==0){
     expect_error(annotate.targets(GRanges()))
     ## if (!is.null(out.path)){
-    expect_equal(length(annotate.targets('/home/travis/build/mskilab/fishHook/data/targets.rds', out.path = '/home/travis/build/mskilab/fishHook/data/output.RDS')), 19688)
+    ## expect_equal(length(annotate.targets('/home/travis/build/mskilab/fishHook/data/targets.rds', out.path = '/home/travis/build/mskilab/fishHook/data/output.RDS')), 19688)
     ## if (!all(cov.types %in% COV.TYPES) & !(all(cov.classes %in% COV.CLASSES))){
     expect_error(annotate.targets(targets, covariates = grl2))
     ## if events != NULL
     expect_equal(max(annotate.targets(targets, events=events)$count), 9750)
+    ##
+    annotate.targets('/home/travis/build/mskilab/fishHook/data/targets.rds')
+    expect_true(is(annotate.targets(targets), 'GRanges')) 
 
 })
 
@@ -101,7 +101,7 @@ test_that('aggregate.targets', {
     foo = aggregate.targets(targets, by='gene_name')
     expect_equal(length(foo$gene_name), 16352)
     ##  if (is.null(by) & is.character(targets)){
-    expect_error(aggregate.targets('/home/travis/build/mskilab/fishHook/data/targets.rds'))
+    ## expect_error(aggregate.targets('/home/travis/build/mskilab/fishHook/data/targets.rds'))
     ## annotate targets
     annotated = annotate.targets(targets, events=events)
     ## by
@@ -290,6 +290,11 @@ test_that('qq_pval', {
     expect_error(qq_pval(pvals, exp=(c(1, 2, 3))))
     ## not sure how to test 'lwd'
     ## or these other args
+    foobar = qq_pval(pvals, plotly=TRUE)
+    expect_match(names(foobar)[1], 'x')
+    expect_match(names(foobar)[2], 'width')
+    expect_match(names(foobar)[3], 'height')
+
 })
 
 
