@@ -22,8 +22,6 @@ replication_timing = readRDS('/home/travis/build/mskilab/fishHook/data/covariate
 eligible = readRDS('/home/travis/build/mskilab/fishHook/data/eligible.rds')
 ## eligible  = readRDS('eligible.rds')
 
-
-
 # indexed pathways
 indexed_pathways = readRDS('/home/travis/build/mskilab/fishHook/data/indexed_pathways.rds')
 ## indexed_pathways = readRDS('indexed_pathways.rds')
@@ -279,7 +277,21 @@ test_that('FishHook', {
     ## clear
     expect_equal(print(fish1$clear()), "Clear Completed")
     ## with eligible
-    foobar = FishHook$new(targets = targets, events = events, eligible = eligible)
+    ## foobar = FishHook$new(targets = targets, events = events, eligible = eligible)
+    fish2 = FishHook$new(targets = targets, events = events)
+    ## test active bindings
+    ## cvs
+    expect_equal(fish2$csv, NULL)
+    ## eligible
+    expect_equal(fish2$eligible, NULL)
+    anno2 = fish2$annotate(mc.cores=1);
+    print('created anno2')
+    ## anno
+    expect_equal(max(fish2$anno$count), 9750)
+    ## targets 
+    expect_equal(length(fish2$targets), 19688)
+
+
 
 })
 
