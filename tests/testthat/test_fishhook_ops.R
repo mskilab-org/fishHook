@@ -188,6 +188,10 @@ test_that('Cov', {
     expect_equal(foo$toList()$na.rm, NA)
     expect_equal(foo$toList()$field, NA)
     expect_equal(foo$toList()$grep, NA)
+    ## 
+    ## if(is.null(Covariate) | is.null(type)){
+    expect_error(Cov$new())
+    ## 
 
 })
 
