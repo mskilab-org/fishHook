@@ -22,7 +22,6 @@ replication_timing = readRDS('/home/travis/build/mskilab/fishHook/data/covariate
 eligible = readRDS('/home/travis/build/mskilab/fishHook/data/eligible.rds')
 ## eligible  = readRDS('eligible.rds')
 
-
 # indexed pathways
 indexed_pathways = readRDS('/home/travis/build/mskilab/fishHook/data/indexed_pathways.rds')
 ## indexed_pathways = readRDS('indexed_pathways.rds')
@@ -31,6 +30,9 @@ indexed_pathways = readRDS('/home/travis/build/mskilab/fishHook/data/indexed_pat
 segs = readRDS('/home/travis/build/mskilab/fishHook/data/jabba_segs_11517.rds')
 ## segs = readRDS('jabba_segs_11517.rds')
 
+eligible = readRDS('/home/travis/build/mskilab/fishHook/data/eligible.rds')
+
+annocov = readRDS('/home/travis/build/mskilab/fishHook/data/anno_covs.rds')
 
 
 
@@ -77,15 +79,18 @@ test_that('annotate.targets', {
     ## weightEvents
     expect_equal(is.na(all(annotate.targets(targets, weightEvents=TRUE)$count)), TRUE)
     ## if (is.character(targets)){
-    expect_equal(length(annotate.targets('/home/travis/build/mskilab/fishHook/data/targets.rds')), 19688)
+    ## expect_equal(length(annotate.targets('/home/travis/build/mskilab/fishHook/data/targets.rds')), 19688)
     ## if (length(targets)==0){
     expect_error(annotate.targets(GRanges()))
     ## if (!is.null(out.path)){
-    expect_equal(length(annotate.targets('/home/travis/build/mskilab/fishHook/data/targets.rds', out.path = '/home/travis/build/mskilab/fishHook/data/output.RDS')), 19688)
+    ## expect_equal(length(annotate.targets('/home/travis/build/mskilab/fishHook/data/targets.rds', out.path = '/home/travis/build/mskilab/fishHook/data/output.RDS')), 19688)
     ## if (!all(cov.types %in% COV.TYPES) & !(all(cov.classes %in% COV.CLASSES))){
     expect_error(annotate.targets(targets, covariates = grl2))
     ## if events != NULL
     expect_equal(max(annotate.targets(targets, events=events)$count), 9750)
+    ##
+    annotate.targets('/home/travis/build/mskilab/fishHook/data/targets.rds')
+    expect_true(is(annotate.targets(targets), 'GRanges')) 
 
 })
 
@@ -99,7 +104,7 @@ test_that('aggregate.targets', {
     foo = aggregate.targets(targets, by='gene_name')
     expect_equal(length(foo$gene_name), 16352)
     ##  if (is.null(by) & is.character(targets)){
-    expect_error(aggregate.targets('/home/travis/build/mskilab/fishHook/data/targets.rds'))
+    ## expect_error(aggregate.targets('/home/travis/build/mskilab/fishHook/data/targets.rds'))
     ## annotate targets
     annotated = annotate.targets(targets, events=events)
     ## by
@@ -120,6 +125,12 @@ test_that('aggregate.targets', {
     ## FUN 
     ## verbose
     expect_equal(length(aggregate.targets(annotated, by = 'gene_name', verbose = FALSE)[[1]]), 16352)
+    ## 
+    ##  if (is.null(by) & is.character(targets)){
+    expect_error(aggregate.targets('/home/travis/build/mskilab/fishHook/data/targets.rds'))  ## Coverage missing for input targets
+    ##  if (is.null(by) & is.character(targets)){ (continued)
+    expect_error(aggregate.targets('/home/travis/build/mskilab/fishHook/data/annotated_cov.rds'))
+
 
 })
 
@@ -186,6 +197,10 @@ test_that('Cov', {
     expect_equal(foo$toList()$na.rm, NA)
     expect_equal(foo$toList()$field, NA)
     expect_equal(foo$toList()$grep, NA)
+    ## 
+    ## if(is.null(Covariate) | is.null(type)){
+    expect_error(Cov$new())
+    ## 
 
 })
 
@@ -261,6 +276,22 @@ test_that('FishHook', {
     expect_error(fish1$qq_plot())
     ## clear
     expect_equal(print(fish1$clear()), "Clear Completed")
+    ## with eligible
+    ## foobar = FishHook$new(targets = targets, events = events, eligible = eligible)
+    fish2 = FishHook$new(targets = targets, events = events)
+    ## test active bindings
+    ## cvs
+    expect_equal(fish2$csv, NULL)
+    ## eligible
+    expect_equal(fish2$eligible, NULL)
+    anno2 = fish2$annotate(mc.cores=1);
+    print('created anno2')
+    ## anno
+    expect_equal(max(fish2$anno$count), 9750)
+    ## targets 
+    expect_equal(length(fish2$targets), 19688)
+
+
 
 })
 
@@ -288,64 +319,12 @@ test_that('qq_pval', {
     expect_error(qq_pval(pvals, exp=(c(1, 2, 3))))
     ## not sure how to test 'lwd'
     ## or these other args
+    foobar = qq_pval(pvals, plotly=TRUE)
+    expect_match(names(foobar)[1], 'x')
+    expect_match(names(foobar)[2], 'width')
+    expect_match(names(foobar)[3], 'height')
+
 })
-
-### from Zoran's tests
-
-##test_that('Cov', {
-##	rept = Cov$new(Covariate = replication_timing, type = 'numeric', name = 'rept')
-##	expect_equal(length(names(rept)), 19)
-##	expect_match(rept$type, 'numeric')
-##	expect_match(rept$name, 'rept')
-##	expect_true(inherits(rept$Covariate, 'GRanges'))
-##	expect_equal(length(rept$Covariate), 2385966)
-##    Covariates = c(rept, rept, rept, rept, rept)
-##   x = Covariates[2:4]
-##    y = x$merge(x, x)
-##    expect_equal(length(x$type), 3)
-##    test1 = x$toList()
-##    expect_equal(length(test1), 3)
-##    z = y$toList()
-##    expect_equal(length(z), 9)
-##    expect_true(all(x$names == rep('rept', 3)))
-##    x2 = x[1]$merge(x[2:3], x)
-##    x3 = c(x[1], x[2:3], x) 
-##    x4 = x3  
-##    expect_false(all(x4$chr()))
-##    expect_equal(length(x4$seqlevels()[[1]]), 25)
-##    r = rept$convert2Arr()
-##    r1 = c(rept, x, rept, rept, rept, x)
-##    r2 = c(x, rept, x, x, x, rept)
-##    targets$pathways = NULL
-##})
-
-
-#test_that('FishHook', {
-#	fish1 = FishHook$new(targets = targets, events = events, eligible = eligible)
-##	expect_equal(length(names(fish1)), 32)
-##	expect_error(fish1$annotate(), NA)  ### one way to check that an error does NOT occur
-##	## testing patient ID
-##	events$id = events$patient_code
-##	events$patient_code = NULL
-##	fish2 = FishHook$new(targets = targets, events = events, eligible = eligible)
-##	fish2$annotate(maxpatientpergene = 1, ptidcol = "id")
-##	fish2$score()
-##	testList = GRangesList(events[1:100], events[101:200], events[201:300])
-##	expect_equal(fish2$aggregated, NULL)
-##   fish2$aggregated = testList
-##    expect_equal(length(fish2$aggregated[[1]]), 100)
-##    expect_true(inherits(fish2$aggregated[[2]] , 'GRanges'))
-##	## testing aggregation
-##    tiles = gr.tile(hg_seqlengths(), 100000)
-##    expect_equal(nrow(segs), 134231)
-##    colnames(segs) = c('ID', 'chr', 'start', 'end', 'd', 'cn')
-##    segs = segs[cn >= 1.2]
-##    expect_equal(nrow(segs), 12373)
-##    expect_true(inherits(segs, 'data.table'))
-##    segs = dt2gr(segs)
-##    expect_true(inherits(segs, 'GRanges'))
-##})
-
 
 
 

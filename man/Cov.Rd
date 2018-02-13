@@ -13,7 +13,13 @@ Cov
 
 \item{type}{character indicating the type of Covariate, valid options are: numeric, sequence, interval. See Annotate Targets for more information on Covariate types}
 
-\item{signature}{chracter that In the case where a ffTrack object is of type sequence, a signature field is required, see fftab in ffTrack for more information.}
+\item{signature}{chracter that In the case where a ffTrack object is of type sequence, a signature field is required, see fftab in ffTrack for more information.
+fftab signature: signatures is a named list that specify what is to be tallied.  Each signature (ie list element)
+consist of an arbitrary length character vector specifying strings to %in% (grep = FALSE)
+or length 1 character vector to grepl (if grep = TRUE)
+or a length 1 or 2 numeric vector specifying exact value or interval to match (for numeric data)
+Every list element of signature will become a metadata column in the output GRanges
+specifying how many positions in the given interval match the given query}
 
 \item{name}{character indicating the name that this covariate will be refered to as}
 

@@ -31,9 +31,10 @@ annotate.targets(targets, covered = NULL, events = NULL, mc.cores = 1,
 
 \item{max.chunk}{integer gr.findoverlaps parameter (default = 1e11)}
 
-\item{out.path}{string Pathname to output file (default = NULL)}
+\item{out.path}{out.path to save variable to (default = NULL)}
 
-\item{covariates}{list}
+\item{covariates}{list of lists where each internal list represents a covariate, the internal list can have elements: track, type,signature,name,pad,na.rm = na.rm,field,grep. See Cov or Cov_Arr classes for descriptions of what
+each of these elements do. Note that track is equivalent to the 'Covariate' parameter in Cov / Cov_Arr}
 
 \item{maxpatientpergene}{Sets the maximum number of events a patient can contribute per target (default = Inf)}
 
@@ -46,9 +47,16 @@ Numeric tracks must have $score field if they are GRanges), and can have a $na.r
 (set to na.rm argument by default)
 Sequence covariates must be ffTrack objects (or paths to ffTrack rds) and require an additional variables $signatures, which
 will be used as input to fftab, and can have optional logical argument $grep to specify inexact matches (see fftab)
+fftab signature: signatures is a named list that specify what is to be tallied.  Each signature (ie list element)
+consist of an arbitrary length character vector specifying strings to %in% (grep = FALSE)
+or length 1 character vector to grepl (if grep = TRUE)
+or a length 1 or 2 numeric vector specifying exact value or interval to match (for numeric data)
+Every list element of signature will become a metadata column in the output GRanges
+specifying how many positions in the given interval match the given query
+
 Interval covariates must be Granges (or paths to GRanges rds) or paths to bed files}
 
-\item{weightEvetns}{boolean If TRUE, will weight events by their overlap with targets. e.g. if 10% of an event overlaps with a target 
+\item{weightEvetns}{boolean If TRUE, will weight events by their overlap with targets. e.g. if 10% of an event overlaps with a target
 region, that target region will get assigned a score of 0.1 for that event. If false, any overlap will be given a weight of 1.}
 }
 \value{

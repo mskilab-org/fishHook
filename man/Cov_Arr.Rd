@@ -18,7 +18,13 @@ These ranges wil become (0:15) and (15:35)}
 
 \item{type}{character vector Contains the types of each covariate (numeric, interval, sequencing)}
 
-\item{signature, }{see ffTrack, a vector of signatures for use with ffTrack sequence covariates}
+\item{signature, }{see ffTrack, a vector of signatures for use with ffTrack sequence covariates
+fftab signature: signatures is a named list that specify what is to be tallied.  Each signature (ie list element)
+consist of an arbitrary length character vector specifying strings to %in% (grep = FALSE)
+or length 1 character vector to grepl (if grep = TRUE)
+or a length 1 or 2 numeric vector specifying exact value or interval to match (for numeric data)
+Every list element of signature will become a metadata column in the output GRanges
+specifying how many positions in the given interval match the given query}
 
 \item{field, }{a chracter vector for use with numeric covariates (NA otherwise) the indicates the column containing the values of that covarites.
 For example, if you have a covariate for replication timing and the timings are in the column 'value', the parameter field should be set to the character 'Value'}
@@ -34,12 +40,12 @@ The function fftab is called during the processing of ffTrack sequence covariate
 Cov_Arr object that can be passed directly to the FishHook object constructor
 }
 \description{
-Stores Covariates for passing to FishHook object constructor. Standard initialization involves calling c(Cov1,Cov2,Cov3). 
+Stores Covariates for passing to FishHook object constructor. Standard initialization involves calling c(Cov1,Cov2,Cov3).
 
 Can also be initiated by passing a vector of multiple vectors of equal length, each representing one of the internal variable names
 You must also include a list containg all of the covariates (Granges, chracters, RLELists, ffTracks)
 
-Cov_Arr serves to mask the underlieing list implemenations of Covariates in the FishHook Object. 
+Cov_Arr serves to mask the underlieing list implemenations of Covariates in the FishHook Object.
 This class attempts to mimic a vector in terms of subsetting and in the future will add more vector like operations.
 }
 \author{

@@ -35,7 +35,7 @@ aggregated statistics for these meta intervals by summing coverage and counts, a
 If rolling = TRUE, will return a rolling collapse of the sorted input where "rolling" specifies the number of adjacent intervals that are aggregated in a rolling manner.
 (only makes sense for tiled target sets)
 
-If by = NULL and targets is a vector of path names, then aggregation will be done "sample wise" on the files, ie each .rds input will be assumed to comprise the same 
+If by = NULL and targets is a vector of path names, then aggregation will be done "sample wise" on the files, ie each .rds input will be assumed to comprise the same
 intervals in teh same order and aggregation will be computed coverage-weighted mean of covariates, a sum of coverage and counts, and (if present) a Fisher combined
 of $p values.  Covariates are inferred from the first file in the list.
 }
