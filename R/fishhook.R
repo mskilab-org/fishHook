@@ -1439,14 +1439,14 @@ Cov_Arr = R6::R6Class('Cov_Arr',
             },
 
             ##Covariate Signature
-            ## Here we check to make sure that all signatures are of class chracter and that they are the same length as pCovs -> the internal covariate list
+            ## Here we check to make sure that all signatures are list within lists  and that they are the same length as pCovs -> the internal covariate list
             ## If the signature vector is equal in length to the pCovs list length we will allow the assignment
             ## If the pCovs list length is a multiple of the signature vector, will will replicate the signature vector such that it matches in length
             ## to the pCovs list.
             signature = function(value) {               
                 if(!missing(value)){
-                    if(!is.character(value) && !all(is.na(value))){
-                        stop('Error: signature must be of class character')
+                    if(!all(is.na(value))){
+                        stop('Error: signature must be of class list')
                     }
                     if(length(value) != length(private$pCovs) & length(private$pCovs) %% length(value) != 0){
                         stop('Error: Length of signature must be of length equal to the number of Covariates or a divisor of number of covariates.')
@@ -1911,6 +1911,33 @@ FishHook = R6::R6Class('FishHook',
                            
         },
 
+
+
+        ## Params:
+        ## targets, a GRanges that is the output of annotate.targets. note that this is for admin degbugging and
+        ## should never be touched by the user unless you absoltely know exactly what you are doing and why you are doing it.
+        ## by, character vector with which to split into meta-territories (default = NULL)
+        ## fields, a character vector indicating which columns to be used in aggregateion by default all meta data
+        ## fields of targets EXCEPT reserved field names $coverage, $counts, $query.id (default = NULL)
+        ## rolling, positive numeric (integer) specifying how many (genome coordinate) adjacent to aggregate in a rolling
+        ## fashion; positive integer with which to performa rolling sum / weighted average WITHIN chromosomes of "rolling" ranges" --> return a granges (default = NULL)
+        ## For example, if we cut a chromosome into 5 pieces (1,2,3,4,5) and set rolling = 3, we will get an aggregated dataset (123,234,345) as the internal value
+        ## This is mainly for use with whole genome analysis in order to speed up the annotation step
+        ## disjoint, boolean only take disjoint bins of input (default = TRUE)
+        ## na.rm,  boolean only applicable for sample wise aggregation (i.e. if by = NULL) (default = FALSE)
+        ## FUN, list only applies (for now) if by = NULL, this is a named list of functions, where each item named "nm" corresponds to an
+        ## optional function of how to alternatively aggregate field "nm" per samples, for alternative aggregation of coverage and count.
+        ## This function is applied at every iteration of loading a new sample and adding to the existing set.   It is normally sum [for coverage and count]
+        ## and coverage weighted mean [for all other covariates].  Alternative coverage / count aggregation functions should have two
+        ## arguments (val1, val2) and all other alt covariate aggregation functions should have four arguments (val1, cov1, val2, cov2)
+        ## where val1 is the accumulating vector and val2 is the new vector of values. 
+        ## verbose, boolean verbose flag (default = TRUE)
+        ## Return:
+        ## None
+        ## UI:
+        ## If verbose = T, will print updates as the aggregation proceeds
+        ## Notes:
+        ## This function changes the internal state of the fishHook object and sets the state to 'Aggregated'
         aggregate = function(targets = private$panno, by = NULL, fields = NULL, rolling = NULL, disjoint = TRUE, na.rm = FALSE, FUN = list(), verbose = private$pverbose){
 
             if(private$pstate == "Initialized"){
@@ -1933,7 +1960,26 @@ FishHook = R6::R6Class('FishHook',
                            
         },
 
-        score = function(nb = private$pnb, verbose = private$pverbose, model = NULL, iter = 200, subsample = 1e5, seed = 42, p.randomize = TRUE){
+
+
+        ## Params:        
+        ## targets,  a GRanges that is the output of annotate.targets. note that this is for admin degbugging and
+        ## should never be touched by the user unless you absoltely know exactly what you are doing and why you are doing it.
+        ## annotated targets with fields $coverage, optional field, $count and additional numeric covariates
+        ## model, boolean if true,  fit existing model --> covariates must be present (default = NULL)
+        ## nb, boolean If TRUE, uses negative binomial; if FALSE then use Poisson
+        ## verbose, boolean verbose flag (default = TRUE)
+        ## iter, integer info (default = 200)
+        ## subsample, interger info (default = 1e5)
+        ## seed, numeric (integer) indicated the random number seed to be used.  (default = 42)
+        ## p.randomized, boolean Flag info (default = TRUE)
+        ## Return:
+        ## None
+        ## UI:
+        ## If verbose = T, will print updates as the scoring proceeds
+        ## Notes:
+        ## This function changes the internal state of the fishHook object and sets the state to 'Scored'
+        score = function(nb = private$pnb, verbose = private$pverbose,  iter = 200, subsample = 1e5, seed = 42, p.randomize = TRUE){
 
             if(private$pstate == "Initialized"){
                 self$annotate()
@@ -1941,16 +1987,18 @@ FishHook = R6::R6Class('FishHook',
 
             ## If we are aggregated we should score that, if we are not we should score anno
             if(private$pstate == "Aggregated"){
-                targ = private$paggregated                               
+                targ = private$paggregated
+                covs = names(values(private$aggregated))
             } else{
                 targ = private$panno
+                covs = names(values(private$anno))
             }
 
             print(targ)
 
             ## Scoring
             score = score.targets(targ,
-                covariates = names(values(private$panno)),
+                covariates = covs,
                 return.model = TRUE,
                 nb = nb,
                 verbose = verbose,
@@ -1965,6 +2013,15 @@ FishHook = R6::R6Class('FishHook',
             private$pstate = 'Scored'
         },
 
+        ## Params:
+        ## state, a character indicating which state to revert to, e.g. if you are 'Scored' you can revert to 'Annotated', 'Initialized', an possibly 'Aggregated'
+        ## however if your state is 'Initialized' you cannot revert to a 'Scored' state
+        ## Return:
+        ## none
+        ## UI:
+        ## None
+        ## Notes: !!==WARNING==!! This function will delete any data pertaining to steps that come after the reversion state, so if you revert a scored object to 'Initialized'
+        ## You will lose the scored data and the annotated data as well as any aggregate data
         clear = function(state = 'Initialized'){
             if(state == 'Initialized'){
                 private$pstate = 'Initialized'
@@ -1990,7 +2047,14 @@ FishHook = R6::R6Class('FishHook',
 
             return('Valid reversion state not specified. This is not a major error, just letting you know that nothing has been chaged')
         },
-                       
+
+
+        ## Params:
+        ## no params, any passed params will be ignored
+        ## Return:
+        ## none
+        ## UI:
+        ## prints a summary of the internal state of the FishHook object        
         ## Produces a plotly html output of the scored targets
         ## plotly = FALSE will produce a standard R graph
         ## You can assign metadata to annotations to plot
