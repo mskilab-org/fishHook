@@ -1869,7 +1869,7 @@ FishHook = R6::R6Class('FishHook',
             ## If we are aggregated we should score that, if we are not we should score anno
             if(private$pstate == "Aggregated"){
                 targ = private$paggregated
-                covs = names(values(private$paggregated))
+                covs = names(values(private$paggregated[[1]]))
             } else{
                 targ = private$panno
                 covs = names(values(private$panno))
