@@ -1931,16 +1931,18 @@ FishHook = R6::R6Class('FishHook',
 
 
         ## Params:
-        ## no params, any passed params will be ignored
+        ## plotly, boolean
+        ## columns, character vector, that indicates the names of the columns from the fishHook$all output to use in ploting.
+        ## Note that this is only used if plotly = T
+        ## annotations, a named list of character vectors. Each vector must have the same number of rows  as the fishHook$score datatable
+        ## table. Each vector will be used to annotate the plot, only if plotly = T
+        ## key, a character that is passed to the plotly function that will link each point to a give value. For example, if key is set to gene_name
+        ## The ploted points are refered to by thier gene_name. This is useful when integrating with shiny or any other tool that can
+        ## integrate with plotly plots.
         ## Return:
-        ## none
+        ## plotly object that can be plotted
         ## UI:
-        ## prints a summary of the internal state of the FishHook object        
-        ## Produces a plotly html output of the scored targets
-        ## plotly = FALSE will produce a standard R graph
-        ## You can assign metadata to annotations to plot
-        ## If no annotation is provided will use defaults
-        ## use annotation = list() to have no annotations
+        ## None
         qq_plot = function(plotly = TRUE, columns = NULL, annotations = NULL, key = NULL, ...){
             res = self$all
 
@@ -1973,20 +1975,24 @@ FishHook = R6::R6Class('FishHook',
 
         }
     ),
+
+    
+    ## Private variables are internal variables that cannot be accessed by the user
+    ## These variables will have active representations that the user can interact with the update
+    ## and view these variables, all internal manipulations will be done with these private variables
     private = list(
-        ## Genomic Ranges Object that Indicates Hypotheses
+        ## Genomic Ranges Object that Indicates the Hypotheses
         ptargets = NULL,
 
-        ## Eligible Regions for Targets
+        ## Eligible Regions, this could be things such as regions of the genome capture with
+        ## whole exome sequencing or in the case of whole genome sequencing non-repetative regions
         peligible = NULL,
 
-        ## Events to Count
+        ## Events to Count, these can be things such as wes single nucleotide variants, microarracy somatic copy number variations, fusions, breakpoints, etc.
         pevents = NULL,
 
         ## Covariates list for passing to fishHook
         pcovariates = NULL,
-
-        ## Potentially allow access to covariates via indexing
 
         ## Valid Covariate Types
         pCOV.TYPES = c('numeric', 'sequence', 'interval'),
@@ -1999,43 +2005,69 @@ FishHook = R6::R6Class('FishHook',
         ## Many Covariates
         pout.path = NULL,
 
+        ##The number of cores to use for the analysis
         pmc.cores = 1,
 
+        ##The internal state of the object
         pstate = "Initialized",
 
+        ##na.rm, see fishHook$annotate/fishHook$aggregate/fishHook$score for more info
         pna.rm = TRUE,
 
+        ##padding to use with the events, see annotate.targets for more info
         ppad = 0,
 
+        ##global verbose paramter
         pverbose = TRUE,
 
+        ##see annotate.targets for more info
         pmax.slice = 1e3,
 
+        ##see annotate.targets for more info
         pff.chunk = 1e6,
 
+        ##see annotate.targets for more info
         pmax.chunk = 1e11,
 
+        ##see annotate.targets for more info
         pptidcol = NULL,
 
+        ##see annotate.targets for more info
         pmaxpatientpergene = Inf,
 
+        ##see annotate.targets for more info
         pweightEvents = FALSE,
 
+        ##The variable containing the output of fishHook$annotate()
         panno = NULL,
 
+        ##The variable containing the output of fishHook$score()
         pscore = NULL,
 
+        ##see score.targets for more info
         pmodel = NULL,
 
+        ##see score.targets for more info
         preturn.model = TRUE,
 
+        ##see score.targets for more info
         pnb = TRUE,
 
+        ##The variable containing the output of fishHook$aggregate()
         paggregated = NULL
 
         ),
+
+    ## The active list contains a variable for each private variable.
+    ## Active variables are for user interaction,
+    ## Interactions can be as such
+    ## class$active will call the active variable function with the value missing
+    ## class$active = value will call the active variable function with the value = value
     active = list(
 
+        ## Covariates = cvs
+        ## Here we check to make sure that all cvs  are of class Cov_Arr
+        ## We then reset the object to its initialized state so as to not introduce incosistencies amongst variables
         cvs = function(value) {
             if(!missing(value)){
                 if(!(class(value)[1] == 'Cov_Arr')  & !is.null(value)){
@@ -2053,6 +2085,9 @@ FishHook = R6::R6Class('FishHook',
             }
         },
 
+        ## Eligible
+        ## Here we check to make sure that eligible is of class GRanges
+        ## We then reset the object to its initialized state so as to not introduce incosistencies amongst variables
         eligible = function(value) {
             if(!missing(value)){
                 if((!class(value) == 'GRanges') & !is.null(value)){
@@ -2069,11 +2104,13 @@ FishHook = R6::R6Class('FishHook',
             }
         },
 
-
+        ## Targets
+        ## Here we check to make sure that targets is of class GRanges or a chracter path and are not NULL
+        ## We then reset the object to its initialized state so as to not introduce incosistencies amongst variables
         targets = function(value) {
 
             if(!missing(value)){
-                if(!(class(value) == 'GRanges')){
+                if(!(class(value) == 'GRanges') && !(class(value) == 'character')){
                     stop('Error: targets must be of class GRanges')
                 }
 
@@ -2120,6 +2157,9 @@ FishHook = R6::R6Class('FishHook',
             }
         },
 
+        ## Events
+        ## Here we check to make sure that events is of class GRanges is not NULL
+        ## We then reset the object to its initialized state so as to not introduce incosistencies amongst variables
         events = function(value) {
             if(!missing(value)){
                 if(!(class(value) == 'GRanges')){
@@ -2149,7 +2189,9 @@ FishHook = R6::R6Class('FishHook',
                 return(private$pevents)
             }
         },
-
+        
+        ## out.path
+        ## Here we check to make sure that out.path is of class character and that it exists
         out.path = function(value) {
             if(!missing(value)){
                 if(!(class(value) == 'character')  && !is.null(value)){
@@ -2173,6 +2215,8 @@ FishHook = R6::R6Class('FishHook',
             }
         },
 
+        ## anno
+        ## Here we check to make sure that anno is of class GRanges
         anno = function(value) {
             if(!missing(value)){
                 if(!(class(value) == 'GRanges')  && !is.null(value)){
@@ -2190,6 +2234,8 @@ FishHook = R6::R6Class('FishHook',
            }
         },
 
+        ## scores
+        ## Here we check to make sure that scores is of class data.table
         scores = function(value) {
             if(!missing(value)){
                 if(!(class(value) == 'data.table')  && !is.null(value)){
@@ -2207,10 +2253,12 @@ FishHook = R6::R6Class('FishHook',
             }
         },
 
+        ## model
+        ## !!==WARNING==!! Do not edit this variable unless you really know what you're doing
         model = function(value) {
             if(!missing(value)){
 
-                warning('Warning: You are editing the regression model generated by fishHook. Unless you know what you arere doing I would reccomend reverting to a safe state using fish$clear()')
+                warning('Warning: You are editing the regression model generated by fishHook. Unless you know what you arere doing I would recomend reverting to a safe state using fish$clear()')
 
                 private$pmodel = value
 
@@ -2221,13 +2269,15 @@ FishHook = R6::R6Class('FishHook',
             }
         },
 
+        ## mc.cores
+        ## Here we check to make sure that scores of of class numeric and is a positive value, it is then floored for safety
         mc.cores = function(value) {
             if(!missing(value)){
-                if(!(class(value) == 'numeric')  && !is.null(value)){
+                if(!(class(value) == 'numeric')  && !is.null(value) && value > 0){
                     stop('Error: mc.cores must be of class numeric')
                 }
 
-                private$pmc.cores = value
+                private$pmc.cores = floor(value)
 
                 return(private$pmc.cores)
 
@@ -2236,6 +2286,8 @@ FishHook = R6::R6Class('FishHook',
             }
         },
 
+        ## na.rm
+        ## boolean
         na.rm = function(value) {
             if(!missing(value)){
                 if(!(class(value) == 'logical')  && !is.null(value)){
@@ -2251,6 +2303,8 @@ FishHook = R6::R6Class('FishHook',
             }
         },
 
+        ## pad
+        ## numeric
         pad = function(value) {
             if(!missing(value)){
                 if(!(class(value) == 'numeric')  && !is.null(value)){
@@ -2266,6 +2320,8 @@ FishHook = R6::R6Class('FishHook',
             }
         },
 
+        ## verbose
+        ## logical
         verbose = function(value) {
             if(!missing(value)){
                 if(!(class(value) == 'logical')  && !is.null(value)){
@@ -2281,6 +2337,8 @@ FishHook = R6::R6Class('FishHook',
             }
         },
 
+        ## max.slice
+        ## numeric
         max.slice = function(value) {
             if(!missing(value)){
                 if(!(class(value) == "numeric")  && !is.null(value)){
@@ -2296,6 +2354,8 @@ FishHook = R6::R6Class('FishHook',
             }
         },
 
+        ## ff.chuck
+        ## numeric
         ff.chunk = function(value) {
             if(!missing(value)){
                 if(!(class(value) == "numeric")  && !is.null(value)){
@@ -2311,6 +2371,8 @@ FishHook = R6::R6Class('FishHook',
                 }
         },
 
+        ## max.chunk
+        ## numeric
         max.chunk = function(value) {
             if(!missing(value)){
                 if(!(class(value) == "numeric")  && !is.null(value)){
@@ -2326,6 +2388,8 @@ FishHook = R6::R6Class('FishHook',
             }
         },
 
+        ## ptidcol
+        ## character
         ptidcol = function(value) {
             if(!missing(value)){
                 if(!(class(value) == "character")  && !is.null(value)){
@@ -2341,13 +2405,15 @@ FishHook = R6::R6Class('FishHook',
             }
         },
 
+        ## maxpatientpergene
+        ## numeric, must be greater than 0, value is floored for safety
         maxpatientpergene = function(value) {
             if(!missing(value)){
-                if(!(class(value) == "numeric")  && !is.null(value)){
+                if(!(class(value) == "numeric")  && !is.null(value) && value > 0){
                     stop("Error: maxpatientpergene must be of class numeric")
                 }
 
-                private$pmaxpatientpergene = value
+                private$pmaxpatientpergene = floor(value)
 
                 return(private$pmaxpatientpergene)
 
@@ -2356,6 +2422,8 @@ FishHook = R6::R6Class('FishHook',
             }
         },
 
+        ## weightEvents
+        ## logical
         weightEvents = function(value) {
             if(!missing(value)){
                 if(!(class(value) == "logical")  && !is.null(value)){
@@ -2371,6 +2439,8 @@ FishHook = R6::R6Class('FishHook',
             }
         },
 
+        ## nb
+        ## logical
         nb = function(value) {
             if(!missing(value)){
                 if(!(class(value) == "logical")  && !is.null(value)){
@@ -2386,6 +2456,8 @@ FishHook = R6::R6Class('FishHook',
             }
         },
 
+        ## all
+        ## cannot be used for assigning data, can only be used for accessing a data.table containing merged scores and meta data
         all = function(value) {
             if(!missing(value)){
                 stop("Error: This is solely for accessing data. If you want to set data, use $targets")
@@ -2396,17 +2468,23 @@ FishHook = R6::R6Class('FishHook',
             }
         },
 
+        ## state
+        ## for accessing the state of the fishHook object, see fishHook$clear() for more information
+        ## This active variable cannot be used for assignment, if you want to change the state use fishHook$clear()
         state = function(value) {
             if(!missing(value)){
-                stop("Error: Cannot change the state of the FishHook Object")
+                stop("Error: Cannot change the state of the FishHook Object, if you want to rever to an earlier state use fishHook$clear('state')")
             } else{
                 return(private$pstate)
             }
         },
 
+        ## aggregated
+        ## GRangesList containing aggregated targets, you probably shouldn't be messing with this unless
+        ## you really know what you're doing
         aggregated = function(value) {
             if(!missing(value)){
-                if(!(class(value) == "GRangesList")  && !is.null(value) && !(class(value) == "GRanges")){
+                if(!(class(value) == "GRangesList")  && !is.null(value)){
                     stop('Error: aggregated must be of class GRangesList')
                 } else{
                     warning('Warning: You are editing the aggregated dataset generated by fishHook, goodluck!')
@@ -2430,14 +2508,14 @@ FishHook = R6::R6Class('FishHook',
 #' @title title
 #' @description
 #'
-#' Overrides the subset operator x[] for use with FishHook to allow for vector like subsetting
+#' Overrides the subset operator x[] for use with FishHook to allow for vector like subsetting, see fishHook demo for examples
 #'
 #' @param obj FishHook object This is the FishHookObject to be subset
 #' @param i vector subset targets
 #' @param j vector subset events
 #' @param k vector subset covariats
 #' @param l vector susbet eligible
-#' @return A new FishHook object that contains only the Covs within the given range
+#' @return A new FishHook object that contains only the data within the given ranges
 #' @author Zoran Z. Gajic
 #' @export
 '[.FishHook' = function(obj, i, j, k, l){
@@ -2478,29 +2556,30 @@ FishHook = R6::R6Class('FishHook',
 #'
 #' @param obs vector of pvalues to plot, names of obs can be intepreted as labels
 #' @param highlight vector optional arg specifying indices of data points to highlight (i.e. color red) (default = c())
-#' @param exp info (default = NULL)
+#' @param exp numeric vector, expected distribution. if default (NULL) will plot observed against a uniform distribution
+#' Use this if you are expecting a non-uniform distribution. Must be equal in length to obs. (default = NULL)
 #' @param lwd integer, optional, specifying thickness of line fit to data (default = 1)
-#' @param col info (default = NULL)
-#' @param col.bg string
+#' @param col a vector of strings (colors) equivalent in length to obs, this is the color that will be used for plotting. This is only if plotly = T  (default = NULL)
+#' @param col.bg string indicating the color of the background
 #' @param pch integer dot type for scatter plot
 #' @param cex integer dot size for scatter plot
 #' @param conf.lines logical, optional, whether to draw 95 percent confidence interval lines around x-y line
 #' @param max numeric, optional, threshold to max the input p values
-#' @param max.x info
-#' @param max.y info
-#' @param qvalues info
+#' @param max.x numeric, max value for the x axis
+#' @param max.y numeric, max value for the y axis
 #' @param label character vector, optional specifying which data points to label (obs vector has to be named, for this to work)
 #' @param plotly toggles between creating a pdf (FALSE) or an interactive html widget (TRUE)
 #' @param annotations named list of vectors containing information to present as hover text (html widget), must be in same order as obs input
 #' @param gradient named list that contains one vector that color codes points based on value, must bein same order as obs input
 #' @param titleText title for plotly (html) graph only
-#' @param subsample
-#' @param key
+#' @param subsample numeric (positive integer), number of points to use for plotting, will be taken randomly from the set of obs -> p values
+#' @param key a character that is passed to the plotly function that will link each point to a give value. For example, if key is set to gene_name
+#' The ploted points are refered to by thier gene_name. This is useful when integrating with shiny or any other tool that can integrate with plotly plots.
 #' @import plotly
 #' @author Marcin Imielinski, Eran Hodis, Zoran Z. Gajic
 #' @export
 qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg = 'black', pch = 18, cex = 1, conf.lines = TRUE, max = NULL, max.x = NULL,
-    max.y = NULL, qvalues = NULL, label = NULL, plotly = FALSE, annotations = list(), gradient = list(), titleText = "", subsample = NA, key = NULL,  ...)
+    max.y = NULL,  label = NULL, plotly = FALSE, annotations = list(), gradient = list(), titleText = "", subsample = NA, key = NULL,  ...)
 {
     if(!(plotly)){
         is.exp.null = is.null(exp)
