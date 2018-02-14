@@ -1093,6 +1093,21 @@ Cov_Arr = R6::R6Class('Cov_Arr',
         private$pna.rm = sapply(Covs, function(x) x$na.rm)
         private$pgrep = sapply(Covs, function(x) x$grep)
 
+        ##If user supplied covariates as vectors
+        if(!is.null(cvs)){
+            vector_input = Cov_Arr$new()
+            vector_input$cvs = cvs
+            vector_input$names = name
+            vector_input$type = type
+            vector_input$signature = signature
+            vector_input$field = field
+            vector_input$pad = pad
+            vector_input$na.rm = na.rm
+            vector_input$grep = grep
+            self = c(self, vector_input)
+        }
+            
+
     },
 
     ## Params:
@@ -1241,7 +1256,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
             pgrep = c(),
 
             ##  Valid Covariate Types
-            COV.TYPES = c('numeric', 'sequence', 'interval'),
+            COV.TYPES = c('numeric', 'sequence', 'interval', NA),
 
             ##  Valid Covariate Classes
             COV.CLASSES = c('GRanges', 'RleList', 'ffTrack', 'character')
