@@ -336,7 +336,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
         }
     }
     
-    sovdt = gr2dt(ov)
+    ovdt = gr2dt(ov)
     
     
     cmd = 'list(coverage = sum(width), ';
