@@ -18,10 +18,10 @@
 \item{l}{vector susbet eligible}
 }
 \value{
-A new FishHook object that contains only the Covs within the given range
+A new FishHook object that contains only the data within the given ranges
 }
 \description{
-Overrides the subset operator x[] for use with FishHook to allow for vector like subsetting
+Overrides the subset operator x[] for use with FishHook to allow for vector like subsetting, see fishHook demo for examples
 }
 \author{
 Zoran Z. Gajic

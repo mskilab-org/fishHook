@@ -1195,42 +1195,16 @@ Cov_Arr = R6::R6Class('Cov_Arr',
     public = list(
 
     ## See the class documentation
-    initialize = function(..., name = NULL, cvs = NULL, pad = NULL, type = NULL, signature = NULL, field = NULL, na.rm = NULL, grep = NULL){
-        Covs = list(...)
-        if(length(Covs) == 0){
-            return()
-        }
-        ## Checks to make sure that all items within the c() operator are all of class Cov
-        isc = sapply(Covs, function(x) class(x)[1] == 'Cov')
-        if(any(!isc)){
-            stop('Error: All inputs must be of class Cov.')
-        }
-        ## ## Extracts names from all Covs
-        ## names = sapply(Covs,function(x) x$name)
-        ## names(Covs) = names
-        ## Assigning and intializing.
-        private$pCovs = lapply(Covs, function(x) x$Covariate)
-        private$pnames = sapply(Covs, function(x) x$name)
-        private$ptype = sapply(Covs, function(x) x$type)
-        private$psignature = sapply(Covs, function(x) x$signature)
-        private$pfield = sapply(Covs, function(x) x$field)
-        private$ppad = sapply(Covs, function(x) x$pad)
-        private$pna.rm = sapply(Covs, function(x) x$na.rm)
-        private$pgrep = sapply(Covs, function(x) x$grep)
+    initialize = function(..., name = NA, cvs = NULL, pad = NA, type = NA, signature = NA, field = NA, na.rm = NA, grep = NA){
 
-        ##If user supplied covariates as vectors
-        if(!is.null(cvs)){
-            vector_input = Cov_Arr$new()
-            vector_input$cvs = cvs
-            vector_input$names = name
-            vector_input$type = type
-            vector_input$signature = signature
-            vector_input$field = field
-            vector_input$pad = pad
-            vector_input$na.rm = na.rm
-            vector_input$grep = grep
-            self = c(self, vector_input)
-        }
+        self$cvs = cvs
+        self$names = name
+        self$type = type
+        self$signature = signature
+        self$field = field
+        self$pad = pad
+        self$na.rm = na.rm
+        self$grep = grep
             
 
     },
@@ -1366,19 +1340,19 @@ Cov_Arr = R6::R6Class('Cov_Arr',
             ## The list of covariates, each element can be of class: 'GRanges', 'character', 'RleList', 'ffTrack'
             pCovs = list(),
             ## A string vector containing the names of the covariates, the covariate will be refered to by its name in the final table
-            pnames = c(),
+            pnames = c(NA),
             ## Type is a string vector of types for each covariate, can be: 'numeric','sequence', or 'interval'
-            ptype = c(),
+            ptype = c(NA),
             ## A vector of signatures for use with ffTrack, se fftab
-            psignature = c(),
+            psignature = c(NA),
             ## A character vector of field names for use with numeric covariates, see the Cov_Arr class definition for more info
-            pfield = c(),
+            pfield = c(NA),
             ## A numeric vector of paddings for each covariate, see the 'pad' param in Cov_Arr class definition for more info
-            ppad = c(),
+            ppad = c(NA),
             ## A logical vector for each covariate, see the 'na.rm' param in Cov_Arr class definition for more info
-            pna.rm = c(),
+            pna.rm = c(NA),
             ##  A chracter vector for each covariate, see the 'grep' param in Cov_Arr class definition for more info
-            pgrep = c(),
+            pgrep = c(NA),
 
             ##  Valid Covariate Types
             COV.TYPES = c('numeric', 'sequence', 'interval', NA),

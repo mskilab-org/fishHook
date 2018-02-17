@@ -6,22 +6,23 @@
 \usage{
 qq_pval(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL,
   col.bg = "black", pch = 18, cex = 1, conf.lines = TRUE, max = NULL,
-  max.x = NULL, max.y = NULL, qvalues = NULL, label = NULL,
-  plotly = FALSE, annotations = list(), gradient = list(),
-  titleText = "", subsample = NA, key = NULL, ...)
+  max.x = NULL, max.y = NULL, label = NULL, plotly = FALSE,
+  annotations = list(), gradient = list(), titleText = "",
+  subsample = NA, key = NULL, ...)
 }
 \arguments{
 \item{obs}{vector of pvalues to plot, names of obs can be intepreted as labels}
 
 \item{highlight}{vector optional arg specifying indices of data points to highlight (i.e. color red) (default = c())}
 
-\item{exp}{info (default = NULL)}
+\item{exp}{numeric vector, expected distribution. if default (NULL) will plot observed against a uniform distribution
+Use this if you are expecting a non-uniform distribution. Must be equal in length to obs. (default = NULL)}
 
 \item{lwd}{integer, optional, specifying thickness of line fit to data (default = 1)}
 
-\item{col}{info (default = NULL)}
+\item{col}{a vector of strings (colors) equivalent in length to obs, this is the color that will be used for plotting. This is only if plotly = T  (default = NULL)}
 
-\item{col.bg}{string}
+\item{col.bg}{string indicating the color of the background}
 
 \item{pch}{integer dot type for scatter plot}
 
@@ -31,11 +32,9 @@ qq_pval(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL,
 
 \item{max}{numeric, optional, threshold to max the input p values}
 
-\item{max.x}{info}
+\item{max.x}{numeric, max value for the x axis}
 
-\item{max.y}{info}
-
-\item{qvalues}{info}
+\item{max.y}{numeric, max value for the y axis}
 
 \item{label}{character vector, optional specifying which data points to label (obs vector has to be named, for this to work)}
 
@@ -46,6 +45,11 @@ qq_pval(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL,
 \item{gradient}{named list that contains one vector that color codes points based on value, must bein same order as obs input}
 
 \item{titleText}{title for plotly (html) graph only}
+
+\item{subsample}{numeric (positive integer), number of points to use for plotting, will be taken randomly from the set of obs -> p values}
+
+\item{key}{a character that is passed to the plotly function that will link each point to a give value. For example, if key is set to gene_name
+The ploted points are refered to by thier gene_name. This is useful when integrating with shiny or any other tool that can integrate with plotly plots.}
 }
 \description{
 Generates R or Shiny quantile-quantile (Q-Q) plot given (minimally) an observed vector of p values, plotted their -log1 )quantiles against corresponding -log10
