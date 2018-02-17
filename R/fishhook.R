@@ -46,8 +46,8 @@
 #' @param ff.chunk integer Max chunk to evaluate with fftab (default = 1e6)
 #' @param max.chunk integer gr.findoverlaps parameter (default = 1e11)
 #' @param out.path  out.path to save variable to (default = NULL)
-#' @param covariates list of lists where each internal list represents a covariate, the internal list can have elements: track, type,signature,name,pad,na.rm = na.rm,field,grep. See Cov or Cov_Arr classes for descriptions of what
-#' each of these elements do. Note that track is equivalent to the 'Covariate' parameter in Cov / Cov_Arr
+#' @param covariates list of lists where each internal list represents a covariate, the internal list can have elements: track, type,signature,name,pad,na.rm = na.rm,field,grep. See Cov_Arr class for descriptions of what
+#' each of these elements do. Note that track is equivalent to the 'Covariate' parameter in Cov_Arr
 #' @param maxpatientpergene Sets the maximum number of events a patient can contribute per target (default = Inf)
 #' @param ptidcol string Column where patient ID is stored
 #' @param weightEvetns boolean If TRUE, will weight events by their overlap with targets. e.g. if 10% of an event overlaps with a target
@@ -862,297 +862,6 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
 
 
 
-#' Cov
-#' @title title
-#' @description
-#'
-#' Stores Covariate for passing to FishHook object. It is a decrepit class but is included for legacy purposes. If you instantiate a Cov$new, it will return a length 1 Cov_Arr containg the covariate
-#'
-#' @param Covariate GRanges, ffTrack, RleList or character string. Note that character objects must be paths to files containing one of the other types as a .rds file
-#' @param type character indicating the type of Covariate, valid options are: numeric, sequence, interval. See Annotate Targets for more information on Covariate types
-#' @param signature chracter that In the case where a ffTrack object is of type sequence, a signature field is required, see fftab in ffTrack for more information.
-#' fftab signature: signatures is a named list that specify what is to be tallied.  Each signature (ie list element)
-#' consist of an arbitrary length character vector specifying strings to %in% (grep = FALSE)
-#' or length 1 character vector to grepl (if grep = TRUE)
-#' or a length 1 or 2 numeric vector specifying exact value or interval to match (for numeric data)
-#' Every list element of signature will become a metadata column in the output GRanges
-#' specifying how many positions in the given interval match the given query
-#' @param name character indicating the name that this covariate will be refered to as
-#' @param pad numeric that indicates the number of nulceotides upstream and downstream to extend the covariate i.e. a covariate from position 10-20 with a pad of 5 will have a range from 5-25
-#' @param field character which is for numeric covariates and is the column name where the 'score' is held. Note that it is set to 'score' by default
-#' @param grep character Sequence covariates must be ffTrack objects, and can have optional logical argument $grep to specify inexact matches (see fftab)
-#' @param chr.sub boolean Indicates if the seqlevels are in the format chrI, chrV, etc. if false, we assume that the format is I, V, etc. in this case,  the chr will be added automatically during the analysis.
-#' @return Cov object that can be passed to FishHook object constructor
-#' @import R6
-#' @author Zoran Z. Gajic
-#' @importFrom R6 R6Class
-#' @export
-Cov = R6::R6Class("Cov",
-    public = list(
-
-    ## Initialization Function. See Class documentation for information.
-    initialize = function(Covariate = NA, type = NA, signature = NA,
-        name = '', pad = NA, na.rm = NA, field = NA,
-        grep = NA, chr.sub = FALSE){
-
-        ## Checks to see if covariates and type were supplied
-        if(is.null(Covariate) | is.null(type)){
-            stop('Error: Both "Covariate" and "track" arguments must be supplied.')
-        }
-
-        ## Checks to see if covariate type is one of the specified types in self$COV.TYPES
-        if(!(type %in% self$COV.TYPES)){
-            stop('Error: "type" must be "numeric", or "sequence", or "interval"')
-        }
-
-        ## Checks to see if the class of the covariates is one of the specified classes in self$COV.CLASSES
-        if(!(class(Covariate) %in% self$COV.CLASSES)){
-            stop(sprintf('Error: Malformed covariate input: Covariate  must be of class GRanges, ffTrack, Rle, object, or character path to rds object with the latter or .bw, .bed file, $type must have value %s', paste(self$COV.TYPES, collapse = ',')))
-        }
-
-        ## Requires any name provided to be a character
-        if(!(is.character(name))){
-            stop('Error: Name must be of type "character"')
-        }
-
-        ## Sequence Covariates
-        if (type == 'sequence'){
-
-            ## If the covariate is a path to a file
-            if (is.character(Covariate)) {
-                cov$track = tryCatch(readRDS(cov$track), error = function(e) 'not ffTrack')
-            }
-
-            ## Requires the covariate that was read above or provided in the initial arguments to be  an ffTrack.
-            if (class(Covariate) != 'ffTrack'){
-                stop('Error: sequence tracks must have ffTrack object as $track field or $track must be a path to an ffTrack object rds file')
-            }
-        }
-
-        ## Checks to see that the signature was provided if using a sequence covariate
-        if (class(Covariate) == 'ffTrack' & type == 'sequence'){
-            if (is.null(signature)){
-                stop('Error: sequence tracks must be ffTracks and have a $signature field specified (see fftab in ffTrack)')
-            }
-        }
-
-        ## Assigns and initialized the Cov if all of the above is satisfied
-
-        if(class(Covariate) == 'GRanges' & chr.sub){
-            seqlevels(Covariate) = gsub('chr','',seqlevels(Covariate))
-        }
-
-        self$Covariate = Covariate
-        self$type = type
-        self$signature = signature
-        self$name = name
-        self$pad = pad
-        self$na.rm = na.rm
-        self$field = field
-        self$grep = grep
-        ##Converting the Cov class object to a Cov_Arr
-        return(c(self))
-    },
-
-
-    ## Params:
-    ## No params required, included arguments will be ignored.
-    ## Return:
-    ## This will return the seq levels of the provided covariate, if the internal covariate is of type GRanges. Else will return NA.
-    ## UI:
-    ## None
-    seqlevels = function(...){
-        if(class(self$Covariate) == 'GRanges'){
-            return(GenomeInfoDb::seqlevels(self$Covariate))
-        }
-        return(NA)
-    },
-
-    ## Params:
-    ## No params required, included arguments will be ignored.
-    ## Return:
-    ## Returns a character that contains all of the internal variables stored in the object and thier values.
-    ## UI:
-    ## None
-    toString = function(...){
-        paste(c('Name: ', self$name,
-        '\ntype: ',self$type, '\tsignature: ', self$signature,
-        '\nfield: ',self$field, '\tpad: ', self$pad,
-        '\nna.rm: ', self$na.rm, '\tgrep: ', self$grep,
-        '\nCovariate: ', class(self$Covariate), '\n'), collapse = '', sep = '')
-    },
-
-    ## Params:
-    ## No params required, included arguments will be ignored.
-    ## Return:
-    ## Returns an object of type 'Cov_Arr' of length 1 that contains this covariate.
-    ## UI:
-    ## None
-    convert2Arr = function(...){
-        return(Cov_Arr$new(self))
-    },
-
-    ## Params:
-    ## No params required, included arguments will be ignored.
-    ## Return:
-    ## NULL
-    ## UI:
-    ## prints the output of self$toString() to the console.
-    print = function(...){
-        cat(self$toString())
-        return(NULL)
-    },
-
-    ## Params:
-    ## No params required, included arguments will be ignored.
-    ## Return:
-    ## If the internal covariate is of class 'GRanges', returns true if the seqlevels contain 'chr', and false otherwise. If not a 'GRanges' returns NA
-    ## UI:
-    ## None
-    chr = function(...){
-        if(class(self$Covariate) == 'GRanges'){
-            return(any(grepl('chr',  GenomeInfoDb::seqlevels(self$Covariate))))
-        }
-        return (NA)
-    },
-
-    ## Params:
-    ## No params required, included arguments will be ignored.
-    ## Return:
-    ## Converts the Covariate object to a list that is used internally in the annotate.targets function
-    ## The list is a list of covariates, where each covariate is itself a list, thus we get a lsit of lists.
-    ## The list representation of the covariate will contain the following variables: type, signature, pad, na.rm, field, grep
-    ## Each variable should be the same as in the Covariate
-    ## UI:
-    ## None
-    toList = function(...){
-        if(!(is.null(self$signature)) & class(self$Covariate) == 'ffTrack'){
-            return (list(track = self$Covariate,
-                type = self$type,
-                signature = self$signature,
-                pad = self$pad,
-                na.rm = self$na.rm,
-                field = self$field,
-                grep = self$grep))
-        } else{
-            return (list(track = self$Covariate,
-                type = self$type,
-                signature = self$signature,
-                pad = self$pad,
-                na.rm = self$na.rm,
-                field = self$field,
-                grep = self$grep))
-        }
-    },
-
-    ## Active Covariates
-    ## This can be of GRanges, RleList, character or ffTrack
-    Covariate = NA,
-
-    ## Active Track
-    ## This indicates the type of the covariate: numeric, sequence, interval
-    type = NA,
-
-    ## signature for use with ffTrack sequence covariates
-    signature = NA,
-
-    ## Pad for use with annotate targets
-    ## Pad should be numeric and is used in annotate.targets to indicate how far each covariate should influence the surrounding bases
-    ## i.e. if pad = 5 and a covariate spans the bases 5:10, the covariate will now span 0:15
-    pad = NA,
-
-    ## na.rm for use with annotate targets and is of class 'logical'
-    ## Will remove any NA values within your covariate if true, if false will leave those values, if NA will be treated as false
-    na.rm = NA,
-
-    ## field specifies the column of the covariate  to use for numeric covariates
-    ## For example, if the covariate is a numeric covariate of class GRanges and you have a column named 'Value' that contains the numeric information
-    ## You will want to set field to the chracter 'Value'
-    field = NA,
-
-    ## grep for use with sequence covariates of class ffTrack
-    ## The function fftab is called during the processing of ffTrack sequence covariates
-    ## grep is used to specify inexact matches (see fftab)
-    grep = NA,
-
-    ## Covariate name
-    ## This is a string that is the name that this covariate will be refered to as during the analysis
-    ## The final output will have a column for this covariate, and the column will be named using this value.
-    name = NA,
-
-    ## Valid Covariate Types
-    ## Internal varable that lists the valid covariate types
-    COV.TYPES = c('numeric', 'sequence', 'interval'),
-
-    ## Valid Covariate Classes
-    ## Internal variable that lists the valid covariate clasdes
-    ## Note that character must refer to a system path to the object
-    COV.CLASSES = c('GRanges', 'RleList', 'ffTrack', 'character')
-
-    )
-)
-
-
-
-
-#' @name c.Cov
-#' @title title
-#' @description
-#'
-#' Override the c operator for covariates so that when you type: c(Cov1,Cov2,Cov3) it returns a Cov_Arr object that support vector like operation.
-#'
-#' @param ... A series of Cov or Cov_Arr (Covariates), note all objects must be of type Cov or Cov_Arr
-#' @return Cov_Arr object that can be passed directly into the FishHook object constructor
-#' @author Zoran Z. Gajic
-#' @export
-'c.Cov' = function(...){
-
-    ##Ensuring that all of the arugments are of class Cov/Cov_Arr
-    Covs = list(...)
-    isc = sapply(Covs, function(x) (class(x)[1] == 'Cov' ||  class(x)[1] == 'Cov_Arr'))
-
-    ##If any other classes detected, stop.
-    if(any(!isc)){
-        stop('Error: All inputs must be of class Cov or Cov_Arr.')
-    }
-
-    ##Converting each covariate into a Cov_Arr and each Cov_Arr is left as a Cov_Arr
-    Cov_Arrs = lapply(Covs, function(x) {
-        if(class(x)[1] == 'Cov'){
-            return( x$convert2Arr())
-        } else{
-            return(x)
-        }
-    })
-
-    ## Merging vars
-    names  = unlist(sapply(Cov_Arrs, function(x) x$names))
-    type  = unlist(sapply(Cov_Arrs, function(x) x$type))
-    signature  = unlist(sapply(Cov_Arrs, function(x) x$signature))
-    field  = unlist(sapply(Cov_Arrs, function(x) x$field))
-    pad  = unlist(sapply(Cov_Arrs, function(x) x$pad))
-    na.rm  = unlist(sapply(Cov_Arrs, function(x) x$na.rm))
-    grep  = unlist(sapply(Cov_Arrs, function(x) x$grep))
-
-
-    ## Merging Covariates
-    covs = lapply(Cov_Arrs, function(x) x$cvs)
-    Covs = unlist(covs, recursive = F)
-
-    ##Creating new Cov_Arr object containg all of the passed in argument Covs
-    ret = Cov_Arr$new()
-    ret$cvs = Covs
-    ret$names = names
-    ret$type = type
-    ret$signature = signature
-    ret$field = field
-    ret$pad = pad
-    ret$na.rm = na.rm
-    ret$grep = grep
-
-    return(ret)
-}
-
 
 
 
@@ -1160,7 +869,7 @@ Cov = R6::R6Class("Cov",
 #' @title title
 #' @description
 #'
-#' Stores Covariates for passing to FishHook object constructor. Standard initialization involves calling c(Cov1,Cov2,Cov3).
+#' Stores Covariates for passing to FishHook object constructor.
 #'
 #' Can also be initiated by passing a vector of multiple vectors of equal length, each representing one of the internal variable names
 #' You must also include a list containg all of the covariates (Granges, chracters, RLELists, ffTracks)
@@ -1169,7 +878,6 @@ Cov = R6::R6Class("Cov",
 #' This class attempts to mimic a vector in terms of subsetting and in the future will add more vector like operations.
 #'
 #'
-#' @param ... several Cov objects for packaging.
 #' @param name character vector Contains names of the covariates to be created, this should not include the names of any Cov objects passed
 #' @param pad numeric vector Indicates the width to extend each item in the covarite. e.g. if you have a GRanges covariate with two ranges (5:10) and (20:30) with a pad of 5,
 #' These ranges wil become (0:15) and (15:35)
@@ -1584,31 +1292,22 @@ Cov_Arr = R6::R6Class('Cov_Arr',
 #' @title title
 #' @description
 #'
-#' Override the c operator for covariates so that when you type: c(Cov1,Cov2,Cov3) it returns a Cov_Arr object that supports vector like operation.
+#' Override the c operator for covariates so that you can merge them like a vector
 #'
-#' @param ... A series of Covariates, note all objects must be of type Cov_Arr or Cov
-#' @return Cov_Arr object that can be passed directly into the FishHook object constructor that contains all of the Covs & Cov_Arr covariates
+#' @param ... A series of Covariates, note all objects must be of type Cov_Arr 
+#' @return Cov_Arr object that can be passed directly into the FishHook object constructor that contains all of the Cov_Arr covariates
 #' Passed in the ... param
 #' @author Zoran Z. Gajic
 #' @export
 'c.Cov_Arr' = function(...){
 
-    ##Ensure that all params are of type Cov or Cov_Arr
+    ##Ensure that all params are of type Cov_Arr
     Covs = list(...)
-    isc = sapply(Covs, function(x) (class(x)[1] == 'Cov' ||  class(x)[1] == 'Cov_Arr'))
+    isc = sapply(Covs, function(x)  class(x)[1] == 'Cov_Arr'))
 
     if(any(!isc)){
-        stop('Error: All inputs must be of class Cov or Cov_Arr.')
+        stop('Error: All inputs must be of class Cov_Arr.')
     }
-
-    ##Convert all Covs to Cov_Arrs and leave all Cov_Arrs as they are
-    Cov_Arrs = lapply(Covs, function(x) {
-        if(class(x)[1] == 'Cov'){
-            return( x$convert2Arr())
-        } else{
-            return(x)
-        }
-    })
 
     ## Merging vars of the covariates
     names  = unlist(sapply(Cov_Arrs, function(x) x$names))
@@ -1803,9 +1502,9 @@ FishHook = R6::R6Class('FishHook',
                 cd[is.na(cd) | cd == Inf] = avg_cd
                 local_mut_density$count.density = cd
                 if(length(private$pcovariates$toList()) == 0 ){
-                    private$pcovariates = c(Cov$new(Covariate = local_mut_density, type = 'numeric', name = "Local Mutation Density", field = "count.density"))
+                    private$pcovariates = c(Cov_Arr$new(cvs = c(local_mut_density), type = c('numeric'), name = c("Local Mutation Density"), field = c("count.density")))
                 } else{
-                    private$pcovariates = c(Cov$new(Covariate = local_mut_density, type = 'numeric', name = "Local Mutation Density", field = "count.density"), private$pcovariates)
+                    private$pcovariates = c(Cov_Arr$new(cvs = c(local_mut_density), type = c('numeric'), name = c("Local Mutation Density"), field = c("count.density")), private$pcovariates)
                 }
             }
 
