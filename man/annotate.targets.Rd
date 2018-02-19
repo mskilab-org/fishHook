@@ -33,8 +33,8 @@ annotate.targets(targets, covered = NULL, events = NULL, mc.cores = 1,
 
 \item{out.path}{out.path to save variable to (default = NULL)}
 
-\item{covariates}{list of lists where each internal list represents a covariate, the internal list can have elements: track, type,signature,name,pad,na.rm = na.rm,field,grep. See Cov or Cov_Arr classes for descriptions of what
-each of these elements do. Note that track is equivalent to the 'Covariate' parameter in Cov / Cov_Arr}
+\item{covariates}{list of lists where each internal list represents a covariate, the internal list can have elements: track, type,signature,name,pad,na.rm = na.rm,field,grep. See Cov_Arr class for descriptions of what
+each of these elements do. Note that track is equivalent to the 'Covariate' parameter in Cov_Arr}
 
 \item{maxpatientpergene}{Sets the maximum number of events a patient can contribute per target (default = Inf)}
 
