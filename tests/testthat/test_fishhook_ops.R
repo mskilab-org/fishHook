@@ -4,36 +4,34 @@ library(fishHook)
 library(testthat)
 
 Sys.setenv(DEFAULT_BSGENOME = 'BSgenome.Hsapiens.UCSC.hg19::Hsapiens')
-
 # Sample Events
-events = readRDS('/Users/ebiederstedt/fishHook/data/events.rds')
+events = readRDS('/home/travis/build/mskilab/fishHook/data/events.rds')
 ## events = readRDS('events.rds')
 
 # Sample Targets
-targets = readRDS('/Users/ebiederstedt/fishHook/data/targets.rds')
+targets = readRDS('/home/travis/build/mskilab/fishHook/data/targets.rds')
 ## targets = readRDS('targets.rds')
 
 
 # Sample Covariate
-replication_timing = readRDS('/Users/ebiederstedt/fishHook/data/covariate.rds')
+replication_timing = readRDS('/home/travis/build/mskilab/fishHook/data/covariate.rds')
 ## replication_timing = readRDS('covariate.rds')
 
 
 # Same Eligible Subset
-eligible = readRDS('/Users/ebiederstedt/fishHook/data/eligible.rds')
+eligible = readRDS('/home/travis/build/mskilab/fishHook/data/eligible.rds')
 ## eligible  = readRDS('eligible.rds')
 
 
 # indexed pathways
-indexed_pathways = readRDS('/Users/ebiederstedt/fishHook/data/indexed_pathways.rds')
+indexed_pathways = readRDS('/home/travis/build/mskilab/fishHook/data/indexed_pathways.rds')
 ## indexed_pathways = readRDS('indexed_pathways.rds')
 
 
-segs = readRDS('/Users/ebiederstedt/fishHook/data/jabba_segs_11517.rds')
+segs = readRDS('/home/travis/build/mskilab/fishHook/data/jabba_segs_11517.rds')
 ## segs = readRDS('jabba_segs_11517.rds')
 
-
-eligible = readRDS('/Users/ebiederstedt/fishHook/data/eligible.rds')
+eligible = readRDS('/home/travis/build/mskilab/fishHook/data/eligible.rds')
 
 
 context('unit testing fishhook operations')
@@ -127,9 +125,9 @@ test_that('aggregate.targets', {
     expect_equal(length(aggregate.targets(annotated, by = 'gene_name', verbose = FALSE)[[1]]), 16352)
     ## 
     ##  if (is.null(by) & is.character(targets)){
-    expect_error(aggregate.targets('/Users/ebiederstedt/fishHook/data/targets.rds'))  ## Coverage missing for input targets
+    expect_error(aggregate.targets('/home/travis/build/mskilab/fishHook/data/targets.rds'))  ## Coverage missing for input targets
     ##  if (is.null(by) & is.character(targets)){ (continued)
-    expect_error(aggregate.targets('/Users/ebiederstedt/fishHook/data/annotated_cov.rds'))
+    expect_error(aggregate.targets('/home/travis/build/mskilab/fishHook/data/annotated_cov.rds'))
 
 
 })
