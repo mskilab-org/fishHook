@@ -7,14 +7,14 @@
 \method{c}{Cov_Arr}(...)
 }
 \arguments{
-\item{...}{A series of Covariates, note all objects must be of type Cov_Arr or Cov}
+\item{...}{A series of Covariates, note all objects must be of type Cov_Arr}
 }
 \value{
-Cov_Arr object that can be passed directly into the FishHook object constructor that contains all of the Covs & Cov_Arr covariates
+Cov_Arr object that can be passed directly into the FishHook object constructor that contains all of the Cov_Arr covariates
 Passed in the ... param
 }
 \description{
-Override the c operator for covariates so that when you type: c(Cov1,Cov2,Cov3) it returns a Cov_Arr object that supports vector like operation.
+Override the c operator for covariates so that you can merge them like a vector
 }
 \author{
 Zoran Z. Gajic

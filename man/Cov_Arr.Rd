@@ -9,8 +9,6 @@
 Cov_Arr
 }
 \arguments{
-\item{...}{several Cov objects for packaging.}
-
 \item{name}{character vector Contains names of the covariates to be created, this should not include the names of any Cov objects passed}
 
 \item{pad}{numeric vector Indicates the width to extend each item in the covarite. e.g. if you have a GRanges covariate with two ranges (5:10) and (20:30) with a pad of 5,
@@ -40,7 +38,7 @@ The function fftab is called during the processing of ffTrack sequence covariate
 Cov_Arr object that can be passed directly to the FishHook object constructor
 }
 \description{
-Stores Covariates for passing to FishHook object constructor. Standard initialization involves calling c(Cov1,Cov2,Cov3).
+Stores Covariates for passing to FishHook object constructor.
 
 Can also be initiated by passing a vector of multiple vectors of equal length, each representing one of the internal variable names
 You must also include a list containg all of the covariates (Granges, chracters, RLELists, ffTracks)

@@ -1303,7 +1303,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
 
     ##Ensure that all params are of type Cov_Arr
     Covs = list(...)
-    isc = sapply(Covs, function(x)  class(x)[1] == 'Cov_Arr'))
+    isc = sapply(Covs, function(x)  class(x)[1] == 'Cov_Arr')
 
     if(any(!isc)){
         stop('Error: All inputs must be of class Cov_Arr.')

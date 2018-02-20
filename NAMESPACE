@@ -2,9 +2,7 @@
 
 S3method("[",Cov_Arr)
 S3method("[",FishHook)
-S3method(c,Cov)
 S3method(c,Cov_Arr)
-export(Cov)
 export(Cov_Arr)
 export(FishHook)
 export(qq_pval)
