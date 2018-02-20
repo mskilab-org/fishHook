@@ -1688,7 +1688,7 @@ FishHook = R6::R6Class('FishHook',
                 covs = names(values(private$panno))
             }
 
-            print(targ)
+            #print(targ)
 
             ## Scoring
             score = score.targets(targ,
