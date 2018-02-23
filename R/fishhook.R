@@ -903,9 +903,14 @@ Cov_Arr = R6::R6Class('Cov_Arr',
     public = list(
 
     ## See the class documentation
-    initialize = function(..., name = NA, cvs = NULL, pad = NA, type = NA, signature = NA, field = NA, na.rm = NA, grep = NA){
+    initialize = function(..., name = '', cvs = NULL, pad = 0, type = NA, signature = NA, field = NA, na.rm = NA, grep = NA){
 
-        self$cvs = cvs
+        if(class(cvs) != 'list'){
+            self$cvs = list(cvs)
+        }
+        else{
+            self$cvs = cvs
+        }
         self$names = name
         self$type = type
         self$signature = signature
@@ -1688,7 +1693,9 @@ FishHook = R6::R6Class('FishHook',
                 covs = names(values(private$panno))
             }
 
-            #print(targ)
+                                        #pls
+
+            rint(targ)
 
             ## Scoring
             score = score.targets(targ,
