@@ -52,6 +52,76 @@ Attributions
 > Marcin Imielinski - Assistant Professor, Weill-Cornell Medical College. Core Member, New York Genome Center.
 
 
+TL;DR
+-----------
+
+
+## Load the Required Packages
+
+
+```R
+suppressWarnings(suppressMessages(library(fishHook)))
+suppressWarnings(suppressMessages(library(skitools)))
+```
+
+##  Load in Your Data
+**mutational_events** is a GRanges containing mutations (e.g. snvs/indels or SCNAs)
+**gene_targets** is a GRanges containg the start and ends of each gene as well as metadata. 
+This can be other 'targets' such as 1kb tiles of the genome
+**eligible** is a GRanges indicating which regions of the genome are captured in our assay (whole exome sequencing)
+This can be replace with an array/whole genome sequencing specific track.
+**covariate** is a GRanges of replication timing across the genome. This can be replaced with other covariates
+such as H3K9me3 profile, chromhmm intervals, etc.
+
+
+```R
+setwd("~/git/fishHook/data")
+mutational_events = readRDS("events.rds")
+gene_targets = readRDS("targets.rds")
+eligible = readRDS("eligible.rds")
+replication_timing = readRDS("covariate.rds")
+```
+
+## Create a Covariate Object
+
+
+```R
+cov = Cov_Arr$new(cvs = replication_timing, name = 'rept', type = 'numeric', field = 'score')
+```
+
+## Instantiate The FishHook object
+
+
+
+```R
+fish = FishHook$new(targets = gene_targets, events = mutational_events, eligible = eligible, covariates = cov)
+fish
+```
+
+## Annotate the Targets with the Covariates and Mutational Information
+
+
+```R
+fish$annotate(verbose = F)
+fish
+```
+
+## Build a Gamma Poisson Model of Background Mutational Density and Covariates and Score Your Targets
+
+
+```R
+fish$score()
+fish
+```
+
+## Statistical Validation of Results with QQ-Plots
+
+
+```R
+plot <- fish$qq_plot(plotly = F)
+```
+
+
 
 Demo
 -----------
