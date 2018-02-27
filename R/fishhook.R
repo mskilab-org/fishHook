@@ -285,6 +285,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
             } else{
                 if (is.na(cov$field)){
                     ## then must be GRanges
+                    cov$field = 'score'
                 }
                 if (is.na(cov$na.rm)){
 
