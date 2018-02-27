@@ -515,7 +515,7 @@ replication_timing
 ## Creating Covariates
 **The following information is required when creating covariates:**
 
-Covariate: This is meat of the object and in this case will be our replication timing object**
+Covariate(referenced with cvs): This is meat of the object and in this case will be our replication timing object. It can be of class GRanges, character (file path), RleList or ffTrack object. In this case replication timing is a GRanges Object.
 
 Type: There are three covariate types. Numeric, like replication timing where each region gets a numeric value assigned to it. Interval, where we indicate regions that are "marked" with this covariate. For example, H3K9me3. Sequence, which can be something like GC content.
 
@@ -523,7 +523,7 @@ Name: The name you give to this covariate
 
 **Other Parameters that are not always required:**
 
-Field: This is for numeric covariates and is the column name where the 'score' is held. Note that it is set to 'score by default.
+Field: This is for numeric covariates and is the column name where the 'score' is held. Note that it is set to 'score' by default.
 
 Signature: This is only required if the Covariate you are using is an ffTrack Object, this is similar to field.
 
@@ -531,19 +531,19 @@ Pad: This indicates how much to the left and to the right of the covariate we sh
 
 
 
-
 ```R
-rept = Cov$new(Covariate = replication_timing, type = 'numeric', name = 'rept')
+rept = Cov_Arr$new(cvs = replication_timing, type = 'numeric', name = 'rept')
 rept
 ```
 
 
-    Name: rept 
-    type:  numeric 	signature:  NA 
-    field:  NA 	pad:  NA 
-    a.rm:  NA 	grep:  NA 
-    Covariate Class:  GRanges 
-     
+    Covariate Number: 1
+    Name: rept
+    type: numeric	signature: NA
+    field: NA	pad: 0
+    na.rm: NA	grep: NA
+    Covariate Class: GRanges
+
 
 
 ## Covariate Manipulations:
@@ -557,23 +557,23 @@ rep1
 
 
     Covariate Number: 1
-    Name:rept
+    Name: rept
     type: numeric	signature: NA
-    field: NA	pad: NA
+    field: NA	pad: 0
     na.rm: NA	grep: NA
     Covariate Class: GRanges
     
     Covariate Number: 2
-    Name:rept
+    Name: rept
     type: numeric	signature: NA
-    field: NA	pad: NA
+    field: NA	pad: 0
     na.rm: NA	grep: NA
     Covariate Class: GRanges
     
     Covariate Number: 3
-    Name:rept
+    Name: rept
     type: numeric	signature: NA
-    field: NA	pad: NA
+    field: NA	pad: 0
     na.rm: NA	grep: NA
     Covariate Class: GRanges
 
@@ -587,30 +587,30 @@ rep2
 
 
     Covariate Number: 1
-    Name:rept
+    Name: rept
     type: numeric	signature: NA
-    field: NA	pad: NA
+    field: NA	pad: 0
     na.rm: NA	grep: NA
     Covariate Class: GRanges
     
     Covariate Number: 2
-    Name:rept
+    Name: rept
     type: numeric	signature: NA
-    field: NA	pad: NA
+    field: NA	pad: 0
     na.rm: NA	grep: NA
     Covariate Class: GRanges
     
     Covariate Number: 3
-    Name:rept
+    Name: rept
     type: numeric	signature: NA
-    field: NA	pad: NA
+    field: NA	pad: 0
     na.rm: NA	grep: NA
     Covariate Class: GRanges
     
     Covariate Number: 4
-    Name:rept
+    Name: rept
     type: numeric	signature: NA
-    field: NA	pad: NA
+    field: NA	pad: 0
     na.rm: NA	grep: NA
     Covariate Class: GRanges
 
@@ -624,16 +624,16 @@ rep3
 
 
     Covariate Number: 1
-    Name:rept
+    Name: rept
     type: numeric	signature: NA
-    field: NA	pad: NA
+    field: NA	pad: 0
     na.rm: NA	grep: NA
     Covariate Class: GRanges
     
     Covariate Number: 2
-    Name:rept
+    Name: rept
     type: numeric	signature: NA
-    field: NA	pad: NA
+    field: NA	pad: 0
     na.rm: NA	grep: NA
     Covariate Class: GRanges
 
@@ -647,16 +647,16 @@ rept
 
 
     Covariate Number: 1
-    Name:rept
+    Name: rept
     type: numeric	signature: NA
-    field: NA	pad: NA
+    field: NA	pad: 0
     na.rm: NA	grep: NA
     Covariate Class: GRanges
 
 
 
 ## Accessing Covariate Fields
-Covariate fields such as type are stored as vectors and when you access the field you will be returned a vector or list in the case of the Covariates themselves that is the same length as your covariates object.
+Covariate fields such as type are stored as vectors and when you acess the field you will be returned a vector or list in the case of the Covariates themselves that is the same length as your covariates object.
 
 
 ```R
@@ -708,9 +708,41 @@ rep3$type
 rep3$signature
 ```
 
-        'numeric'       'numeric'
-        <NA>            <NA>
-                     
+	'numeric'       'numeric'
+
+
+	NA          NA
+
+
+
+## Multiple Covariates
+In the case that you want to create multiple covariates at a given time, you can pass a list of covariate tracks
+to the cvs arguement and a vector of correct type to the other arguements.
+
+
+```R
+multi_cov = Cov_Arr$new(cvs = list(replication_timing, replication_timing),
+                       name = c('replication1', 'replication2'),
+                       type = c('numeric','numeric'), pad = c(0,20),
+                       field = c('score', 'score'))
+multi_cov
+```
+
+
+    Covariate Number: 1
+    Name: replication1
+    type: numeric	signature: NA
+    field: score	pad: 0
+    na.rm: NA	grep: NA
+    Covariate Class: GRanges
+    
+    Covariate Number: 2
+    Name: replication2
+    type: numeric	signature: NA
+    field: score	pad: 20
+    na.rm: NA	grep: NA
+    Covariate Class: GRanges
+
 
 
 ## fishHook Analysis using Covariates
