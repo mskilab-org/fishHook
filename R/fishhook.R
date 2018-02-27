@@ -903,10 +903,13 @@ Cov_Arr = R6::R6Class('Cov_Arr',
     public = list(
 
     ## See the class documentation
-    initialize = function(..., name = NA, cvs = NULL, pad = 0, type = NA, signature = NA, fields = NA, na.rm = NA, grep = NA){
-
+    initialize = function(..., name = NA, cvs = NULL, pad = 0, type = NA, signature = NA, field = NA, na.rm = NA, grep = NA){
+        
         ##If cvs are valid and are a list of tracks concatenate with any premade covs
-        if(!is.null(cvs) && class(cvs) == 'list'){
+        if(!is.null(cvs)){
+            if(class(cvs) != 'list'){
+                cvs = list(cvs)
+            }            
             self$cvs = c(cvs)
         }
         ##Otherwise assume that no cvs are given
@@ -1710,7 +1713,7 @@ FishHook = R6::R6Class('FishHook',
 
                                         #pls
 
-            rint(targ)
+            #print(targ)
 
             ## Scoring
             score = score.targets(targ,
