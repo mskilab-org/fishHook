@@ -903,14 +903,17 @@ Cov_Arr = R6::R6Class('Cov_Arr',
     public = list(
 
     ## See the class documentation
-    initialize = function(..., name = '', cvs = NULL, pad = 0, type = NA, signature = NA, field = NA, na.rm = NA, grep = NA){
+    initialize = function(..., name = NA, cvs = NULL, pad = 0, type = NA, signature = NA, fields = NA, na.rm = NA, grep = NA){
 
-        if(class(cvs) != 'list'){
-            self$cvs = list(cvs)
+        ##If cvs are valid and are a list of tracks concatenate with any premade covs
+        if(!is.null(cvs) && class(cvs) == 'list'){
+            self$cvs = c(cvs)
         }
+        ##Otherwise assume that no cvs are given
         else{
-            self$cvs = cvs
+            return(self)
         }
+        
         self$names = name
         self$type = type
         self$signature = signature
@@ -943,6 +946,9 @@ Cov_Arr = R6::R6Class('Cov_Arr',
     ## Note:
     ## non-GRanges Covariates will not return NA
     chr = function(...){
+        if(length(private$pCovs) == 0){
+            return(NULL)
+        }
         chrs = lapply(c(1:length(private$pCovs)), function(x){
             if(class(private$pCovs[[x]]) == 'GRanges'){
                 return(any(grepl('chr',  GenomeInfoDb::seqlevels(private$pCovs[[x]]))))
@@ -962,6 +968,9 @@ Cov_Arr = R6::R6Class('Cov_Arr',
     ## UI:
     ## None
     seqlevels = function(...){
+        if(length(private$pCovs) == 0){
+            return(NULL)
+        }
         seqs = lapply(c(1:length(private$pCovs)), function(x){
             cov = private$pCovs[[x]]
             if(class(cov) == 'GRanges'){
@@ -983,6 +992,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
     ## Notes:
     ## If you want to create a new Cov_Arr containing certain covariates, use the '[' operator, e.g. Cov_Arr[2:3]
     subset = function(range, ...){
+        
         private$pCovs = private$pCovs[range]
         private$pnames = private$pnames[range]
         private$ptype = private$ptype[range]
@@ -1034,6 +1044,11 @@ Cov_Arr = R6::R6Class('Cov_Arr',
     ## UI:
     ## Prints information about the Cov_Arr to the console with all of covariates printed in order with variables printed alongside each covariate
     print = function(...){
+        if(length(private$pCovs) == 0){
+            cat('Empty Cov_Arr Object\n')
+            return(NULL)
+        }
+        
         out= sapply(c(1:length(private$pCovs)),
             function(x){
                 cat(c('Covariate Number: ' , x, '\nName: ', private$pnames[x],
@@ -1053,19 +1068,19 @@ Cov_Arr = R6::R6Class('Cov_Arr',
             ## The list of covariates, each element can be of class: 'GRanges', 'character', 'RleList', 'ffTrack'
             pCovs = list(),
             ## A string vector containing the names of the covariates, the covariate will be refered to by its name in the final table
-            pnames = c(NA),
+            pnames = c(),
             ## Type is a string vector of types for each covariate, can be: 'numeric','sequence', or 'interval'
-            ptype = c(NA),
+            ptype = c(),
             ## A vector of signatures for use with ffTrack, se fftab
-            psignature = c(NA),
+            psignature = c(),
             ## A character vector of field names for use with numeric covariates, see the Cov_Arr class definition for more info
-            pfield = c(NA),
+            pfield = c(),
             ## A numeric vector of paddings for each covariate, see the 'pad' param in Cov_Arr class definition for more info
-            ppad = c(NA),
+            ppad = c(),
             ## A logical vector for each covariate, see the 'na.rm' param in Cov_Arr class definition for more info
-            pna.rm = c(NA),
+            pna.rm = c(),
             ##  A chracter vector for each covariate, see the 'grep' param in Cov_Arr class definition for more info
-            pgrep = c(NA),
+            pgrep = c(),
 
             ##  Valid Covariate Types
             COV.TYPES = c('numeric', 'sequence', 'interval', NA),
