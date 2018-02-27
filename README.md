@@ -52,6 +52,10 @@ Attributions
 > Marcin Imielinski - Assistant Professor, Weill-Cornell Medical College. Core Member, New York Genome Center.
 
 
+
+
+
+
 TL;DR
 -----------
 
@@ -76,7 +80,8 @@ such as H3K9me3 profile, chromhmm intervals, etc.
 
 ```R
 setwd("~/git/fishHook/data")
-mutational_events = readRDS("events.rds")
+mutational_evenls
+ts = readRDS("events.rds")
 gene_targets = readRDS("targets.rds")
 eligible = readRDS("eligible.rds")
 replication_timing = readRDS("covariate.rds")
@@ -120,6 +125,11 @@ fish
 ```R
 plot <- fish$qq_plot(plotly = F)
 ```
+
+
+
+
+
 
 
 
