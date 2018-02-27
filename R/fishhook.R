@@ -1063,6 +1063,8 @@ Cov_Arr = R6::R6Class('Cov_Arr',
         })
     }
 
+    
+
     ),
 
     ## Private variables are internal variables that cannot be accessed by the user
@@ -1308,7 +1310,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
     ),
 )
 
-
+    
 
 
 

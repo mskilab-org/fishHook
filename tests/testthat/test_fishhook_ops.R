@@ -233,6 +233,18 @@ test_that('Cov_Arr', {
     ##expect_equal(foobar$toList()[[1]]$grep, NA)
     ## print
     ##expect_equal(foobar$print()[[1]], NULL)
+    foobar4 = Cov_Arr$new(cvs = list(replication_timing, replication_timing), type = c('numeric','numeric'))
+    expect_equal(any(foobar4$chr()), FALSE)
+    expect_equal(length(foobar4$toList()), 2)
+    expect_equal(foobar4$toList()[[2]]$type, 'numeric')
+
+    expect_output(foobar4$print())
+
+    foobar5 = c(foobar4,foobar4)
+    expect_equal(length(foobar5$cvs), 4)
+    foobar6 = foobar5[c(1,3)]
+    expect_equal(length(foobar6$cvs), 2)
+    
 
 })
 
@@ -278,7 +290,10 @@ test_that('FishHook', {
     expect_equal(print(fish1$clear()), "Clear Completed")
     ## with eligible
     ## foobar = FishHook$new(targets = targets, events = events, eligible = eligible)
-    fish2 = FishHook$new(targets = targets, events = events)
+    fish2 = FishHook$new(targets = targets, events = events,
+                         covariates = Cov_Arr$new(cvs = replication_timing,
+                                                  name = 'rept', type = 'numeric',
+                                                  field = 'score'))
     ## test active bindings
     ## cvs
     expect_equal(fish2$csv, NULL)
@@ -290,6 +305,30 @@ test_that('FishHook', {
     expect_equal(max(fish2$anno$count), 9750)
     ## targets 
     expect_equal(length(fish2$targets), 19688)
+    ##Scoring
+    fish2$score()
+    expect_equal(ncol(fish2$scores), 17)
+
+    ##Clearing
+    fish2$clear('Annotated')
+    expect_equal(fish2$state, 'Annotated')
+    expect_equal(fish2$scores, NULL)
+    fish2$score()
+    plot = fish2$qq_plot()
+    expect_equal(length(plot[[1]]), 7)
+    
+    
+    
+    ##testing rolling aggregation
+    start = c(1,1001,2001,3001,4001,5001)
+    end = c(1000,2000,3000,4000,5000,6000)
+    chr = 1
+    test = dt2gr(as.data.table(cbind(start,end,chr)))
+    mcols(test) = NULL
+    fishAgg = FishHook$new(targets = test, events = test)
+    fishAgg$aggregate(rolling = 3)
+    expect_equal(length(fishAgg$aggregated), 4)
+    expect_equal(any(!width(fishAgg$aggregated) == rep(3000,4)), FALSE)
 
 
 
