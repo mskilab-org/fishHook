@@ -210,17 +210,19 @@ test_that('Cov_Arr', {
 
     ## initialize = function(..., name = NULL, cvs = NULL, pad = NULL, type = NULL, signature = NULL, field = NULL, na.rm = NULL, grep = NULL)
     ## default
-    foobar = Cov_Arr$new(Cov$new(Covariate=replication_timing, type='numeric'))
-    foobar2 = Cov_Arr$new(Cov$new(Covariate=replication_timing[50:100], type='numeric'))
+    foobar = Cov_Arr$new(cvs = replication_timing, type='numeric')
+    foobar2 = Cov_Arr$new(cvs=replication_timing[50:100], type='numeric')
+    foobar3 = Cov_Arr$new(csv=list(replication_timing,replication_timing), type = c('numeric','numeric'))
     ## merge
     #### check it runs
     ##expect_error(foobar$merge(foobar2), NA)
     ## chr
     ## expect_false(foobar$chr())
     ## seqlevels
-    expect_equal(length(foobar$seqlevels()[[1]]), 1)
+    expect_equal(length(foobar$seqlevels()[[1]]), 25)
     ## subset
-    expect_equal(length(foobar$subset(1:4)), 4)
+    foobar3$subset(1)
+    expect_equal(length(foobar3$type), 1)
     ## toList
     ##expect_equal(length(foobar$toList()[[1]]$track), 2385966)
     ##expect_equal(foobar$toList()[[1]]$type, 'numeric')
