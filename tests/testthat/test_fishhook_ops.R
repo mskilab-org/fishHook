@@ -339,7 +339,7 @@ test_that('FishHook', {
     ## targets 
     expect_equal(length(fish2$targets), 19688)
     ##Scoring
-    fish2$score()
+    #fish2$score()
     expect_error(fish2$score())
     expect_equal(ncol(fish2$scores), 17)
     ##Clearing
@@ -376,10 +376,7 @@ test_that('FishHook', {
                                       eligible = mis_eve,
                                       covariates = Cov_Arr$new(csv = c(mis_eve,events[1]) ,
                                                   type = c('interval'), name = c('mis','eve')))})
-
     expect_error({fish5 = FishHook$new(targets = targets, events = events[1], eligible = mis_eve)})
-    
-
 })
 
 
