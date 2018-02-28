@@ -100,7 +100,7 @@ test_that('annotate.targets', {
     ## else if (grepl('(\\.bed$)', targets[1])){
     expect_equal(length(annotate.targets(targetsbed)), 19688)
     ## if (!is.null(out.path)){
-    expect_equal(length(annotate.targets(targetsbed, out.path='/home/travis/build/mskilab/fishHook/data/')))
+    expect_equal(length(annotate.targets(targetsbed, out.path='/home/travis/build/mskilab/fishHook/data/foobar.rds')))
     
 
 })
