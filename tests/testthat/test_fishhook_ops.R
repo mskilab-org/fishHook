@@ -339,8 +339,8 @@ test_that('FishHook', {
     ## targets 
     expect_equal(length(fish2$targets), 19688)
     ##Scoring
-    #fish2$score()
-    expect_error(fish2$score())
+    fish2$score()
+    #expect_error(fish2$score())
     expect_equal(ncol(fish2$scores), 17)
     ##Clearing
     fish2$clear('Annotated')
