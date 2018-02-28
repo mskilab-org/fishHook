@@ -80,7 +80,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
         if (grepl('\\.rds$', targets[1])){
             targets = readRDS(targets[1])
         } else if (grepl('(\\.bed$)', targets[1])){
-            targets = import.ucsc(targets[1])
+            targets = rtracklayer::import(targets[1], (format = "BED"))
         }
     }
 
