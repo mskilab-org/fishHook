@@ -1228,7 +1228,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
             pad = function(value) {
                 if(!missing(value)){
                     if(!is.numeric(value) && !all(is.na(value))){
-                        stop("Error: pad must be of class character")
+                        stop("Error: pad must be of class numeric")
                     }
                     if(length(value) != length(private$pCovs) & length(private$pCovs) %% length(value) != 0){
                         stop("Error: Length of pad must be of length equal to the number of Covariates or a divisor of number of covariates.")
@@ -1254,7 +1254,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
             na.rm = function(value) {
                 if(!missing(value)){
                     if(!is.logical(value) && !all(is.na(value))){
-                        stop("Error: na.rm must be of class character")
+                        stop("Error: na.rm must be of class logical")
                     }
                     if(length(value) != length(private$pCovs) & length(private$pCovs) %% length(value) != 0){
                         stop("Error: Length of na.rm must be of length equal to the number of Covariates or a divisor of number of covariates.")

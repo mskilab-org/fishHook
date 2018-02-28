@@ -88,7 +88,12 @@ test_that('annotate.targets', {
     expect_equal(max(annotate.targets(targets, events=events)$count), 9750)
     ##
     annotate.targets('/home/travis/build/mskilab/fishHook/data/targets.rds')
-    expect_true(is(annotate.targets(targets), 'GRanges')) 
+    expect_true(is(annotate.targets(targets), 'GRanges'))
+    ##Interval Covariates
+    int = Cov_Arr$new(cvs = replication_timing[1], name = 'int', type = 'interval', pad = 10)
+    fish3 = FishHook$new(targets = targets, events = events[1], covariates = int)
+    fish3$annotate()
+    fish3$score()
 })
 
 
@@ -126,6 +131,18 @@ test_that('aggregate.targets', {
     expect_error(aggregate.targets('/home/travis/build/mskilab/fishHook/data/targets.rds'))  ## Coverage missing for input targets
     ##  if (is.null(by) & is.character(targets)){ (continued)
     expect_error(aggregate.targets('/home/travis/build/mskilab/fishHook/data/annotated_cov.rds'))
+    ##testing rolling aggregation
+    start = c(1,1001,2001,3001,4001,5001)
+    end = c(1000,2000,3000,4000,5000,6000)
+    chr = 1
+    test = dt2gr(as.data.table(cbind(start,end,chr)))
+    mcols(test) = NULL
+    fishAgg = FishHook$new(targets = test, events = test)
+    fishAgg$aggregate(rolling = 3)
+    expect_error(fishAgg$aggregate(rolling = 0))
+    expect_error(fishAgg$aggregate(rolling = 4.5))
+    expect_equal(length(fishAgg$aggregated), 4)
+    expect_equal(any(!width(fishAgg$aggregated) == rep(3000,4)), FALSE)
 
 })
 
@@ -238,6 +255,29 @@ test_that('Cov_Arr', {
     expect_equal(length(foobar5$cvs), 4)
     foobar6 = foobar5[c(1,3)]
     expect_equal(length(foobar6$cvs), 2)
+    ##Testing print empty cov_arr
+    empty = Cov_Arr$new()
+    ##Testing active binding errors in cov_arr    
+    ##Names
+    expect_error({foobar3$names = 1})
+    expect_error({foobar3$names = c('1','2')})
+    ##Type
+    expect_error({foobar3$type = 1})
+    expect_error({foobar3$type = c('1','2')})
+    expect_error({foobar3$type = 'hello'})
+    foobar3$type = 'interval'
+    ##pad
+    expect_error({foobar3$type = '1'})
+    expect_error({foobar3$type = c('1','2')})
+    ##na.rm
+    expect_error({foobar3$na.rm = '1'})
+    expect_error({foobar3$na.rm = c('1','2')})
+    ##grep
+    expect_error({foobar3$grep = 1})
+    expect_error({foobar3$grep = c('1','2')})
+    ##Cov_Arr concatentation error on non cov_arr inputs
+    expect_error({fail = c(foobar3, '')})
+    
 })
 
 
@@ -252,7 +292,9 @@ test_that('Cov_Arr', {
 
 test_that('FishHook', {
     ## default
-    fish1 = FishHook$new(targets = targets, events = events)
+    fish1 = FishHook$new(targets = targets, events = events, eligible =eligible, use_local_mut_density = T)
+    expect_equal(length(fish1$toList(fish1$cvs)), 1)
+    expect_output(fish1$print())
     expect_true(fish1$nb)
     expect_equal(fish1$state, 'Initialized')
     expect_false(fish1$weightEvents)
@@ -284,7 +326,7 @@ test_that('FishHook', {
     fish2 = FishHook$new(targets = targets, events = events,
                          covariates = Cov_Arr$new(cvs = replication_timing,
                                                   name = 'rept', type = 'numeric',
-                                                  field = 'score'))
+                                                  field = NA, pad = 10))
     ## test active bindings
     ## cvs
     expect_equal(fish2$csv, NULL)
@@ -298,6 +340,7 @@ test_that('FishHook', {
     expect_equal(length(fish2$targets), 19688)
     ##Scoring
     fish2$score()
+    expect_error(fish2$score())
     expect_equal(ncol(fish2$scores), 17)
     ##Clearing
     fish2$clear('Annotated')
@@ -314,8 +357,29 @@ test_that('FishHook', {
     mcols(test) = NULL
     fishAgg = FishHook$new(targets = test, events = test)
     fishAgg$aggregate(rolling = 3)
+    fishAgg$clear('')
+    expect_error(fishAgg$aggregate(rolling = 0))
+    expect_error(fishAgg$aggregate(rolling = 4.5))
     expect_equal(length(fishAgg$aggregated), 4)
     expect_equal(any(!width(fishAgg$aggregated) == rep(3000,4)), FALSE)
+    ##Interval Covariates
+    int = Cov_Arr$new(cvs = replication_timing[1], name = 'int', type = 'interval', pad = 10)
+    fish3 = FishHook$new(targets = targets, events = events[1], covariates = int)
+    fish3$annotate()
+    fish3$score()
+    ##Mismatched warning
+    mis_eve = gr2dt(events[1])
+    mis_eve$seqnames = 'f'
+    mis_eve = dt2gr(mis_eve)
+    expect_error({fish4 = FishHook$new(targets = targets, events = mis_eve, eligible = targets[1])})
+    expect_error({fish4 = FishHook$new(targets = targets, events = events[1],
+                                      eligible = mis_eve,
+                                      covariates = Cov_Arr$new(csv = c(mis_eve,events[1]) ,
+                                                  type = c('interval'), name = c('mis','eve')))})
+
+    expect_error({fish5 = FishHook$new(targets = targets, events = events[1], eligible = mis_eve)})
+    
+
 })
 
 
@@ -346,7 +410,6 @@ test_that('qq_pval', {
     expect_match(names(foobar)[1], 'x')
     expect_match(names(foobar)[2], 'width')
     expect_match(names(foobar)[3], 'height')
-
 })
 
 
