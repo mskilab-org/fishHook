@@ -89,7 +89,6 @@ test_that('annotate.targets', {
     ##
     annotate.targets('/home/travis/build/mskilab/fishHook/data/targets.rds')
     expect_true(is(annotate.targets(targets), 'GRanges')) 
-
 })
 
 
@@ -97,7 +96,6 @@ test_that('annotate.targets', {
 ## aggregate.targets
 
 test_that('aggregate.targets', {
-
     expect_error(aggregate.targets(targets))  ## Error: argument "by" must be specified and same length as targets or "rolling" must be non NULL
     foo = aggregate.targets(targets, by='gene_name')
     expect_equal(length(foo$gene_name), 16352)
@@ -128,7 +126,6 @@ test_that('aggregate.targets', {
     expect_error(aggregate.targets('/home/travis/build/mskilab/fishHook/data/targets.rds'))  ## Coverage missing for input targets
     ##  if (is.null(by) & is.character(targets)){ (continued)
     expect_error(aggregate.targets('/home/travis/build/mskilab/fishHook/data/annotated_cov.rds'))
-
 
 })
 
@@ -207,7 +204,6 @@ test_that('score.targets', {
 ## Cov_Arr
 
 test_that('Cov_Arr', {
-
     ## initialize = function(..., name = NULL, cvs = NULL, pad = NULL, type = NULL, signature = NULL, field = NULL, na.rm = NULL, grep = NULL)
     ## default
     foobar = Cov_Arr$new(cvs = replication_timing, type='numeric')
@@ -222,7 +218,7 @@ test_that('Cov_Arr', {
     expect_equal(length(foobar$seqlevels()[[1]]), 25)
     ## subset
     foobar3$subset(1)
-    expect_equal(length(foobar3$type), 1)
+    expect_equal(length(foobar3$cvs), 1)
     ## toList
     ##expect_equal(length(foobar$toList()[[1]]$track), 2385966)
     ##expect_equal(foobar$toList()[[1]]$type, 'numeric')
@@ -237,15 +233,11 @@ test_that('Cov_Arr', {
     expect_equal(any(foobar4$chr()), FALSE)
     expect_equal(length(foobar4$toList()), 2)
     expect_equal(foobar4$toList()[[2]]$type, 'numeric')
-
     expect_output(foobar4$print())
-
     foobar5 = c(foobar4,foobar4)
     expect_equal(length(foobar5$cvs), 4)
     foobar6 = foobar5[c(1,3)]
     expect_equal(length(foobar6$cvs), 2)
-    
-
 })
 
 
@@ -259,7 +251,6 @@ test_that('Cov_Arr', {
 ##     maxpatientpergene = Inf, weightEvents = FALSE, nb = TRUE)
 
 test_that('FishHook', {
-
     ## default
     fish1 = FishHook$new(targets = targets, events = events)
     expect_true(fish1$nb)
@@ -308,17 +299,13 @@ test_that('FishHook', {
     ##Scoring
     fish2$score()
     expect_equal(ncol(fish2$scores), 17)
-
     ##Clearing
     fish2$clear('Annotated')
     expect_equal(fish2$state, 'Annotated')
     expect_equal(fish2$scores, NULL)
     fish2$score()
     plot = fish2$qq_plot()
-    expect_equal(length(plot[[1]]), 7)
-    
-    
-    
+    expect_equal(length(plot[[1]]), 7)           
     ##testing rolling aggregation
     start = c(1,1001,2001,3001,4001,5001)
     end = c(1000,2000,3000,4000,5000,6000)
@@ -329,9 +316,6 @@ test_that('FishHook', {
     fishAgg$aggregate(rolling = 3)
     expect_equal(length(fishAgg$aggregated), 4)
     expect_equal(any(!width(fishAgg$aggregated) == rep(3000,4)), FALSE)
-
-
-
 })
 
 
