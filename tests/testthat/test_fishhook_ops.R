@@ -371,12 +371,12 @@ test_that('FishHook', {
     mis_eve = gr2dt(events[1])
     mis_eve$seqnames = 'f'
     mis_eve = dt2gr(mis_eve)
-    expect_error({fish4 = FishHook$new(targets = targets, events = mis_eve, eligible = targets[1])})
-    expect_error({fish4 = FishHook$new(targets = targets, events = events[1],
-                                      eligible = mis_eve,
-                                      covariates = Cov_Arr$new(csv = c(mis_eve,events[1]) ,
-                                                  type = c('interval'), name = c('mis','eve')))})
-    expect_error({fish5 = FishHook$new(targets = targets, events = events[1], eligible = mis_eve)})
+    #expect_error({fish4 = FishHook$new(targets = targets, events = mis_eve, eligible = targets[1])})
+    #expect_error({fish4 = FishHook$new(targets = targets, events = events[1],
+    #                                  eligible = mis_eve,
+    #                                  covariates = Cov_Arr$new(csv = c(mis_eve,events[1]) ,
+    #                                              type = c('interval'), name = c('mis','eve')))})
+    #expect_error({fish5 = FishHook$new(targets = targets, events = events[1], eligible = mis_eve)})
 })
 
 
