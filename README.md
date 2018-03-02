@@ -68,11 +68,14 @@ library(fishHook)
 ```
 
 ##  Load in Your Data
-**mutational_events** is a GRanges containing mutations (e.g. snvs/indels or SCNAs)\n
+**mutational_events** is a GRanges containing mutations (e.g. snvs/indels or SCNAs)
+
 **gene_targets** is a GRanges containg the start and ends of each gene as well as metadata. 
-This can be other 'targets' such as 1kb tiles of the genome\n
+This can be other 'targets' such as 1kb tiles of the genome
+
 **eligible** is a GRanges indicating which regions of the genome are captured in our assay (whole exome sequencing)
-This can be replace with an array/whole genome sequencing specific track.\n
+This can be replace with an array/whole genome sequencing specific track.
+
 **covariate** is a GRanges of replication timing across the genome. This can be replaced with other covariates
 such as H3K9me3 profile, chromhmm intervals, etc.
 
