@@ -230,6 +230,7 @@ test_that('score.targets', {
 ## Cov_Arr
 
 test_that('Cov_Arr', {
+
     ## initialize = function(..., name = NULL, cvs = NULL, pad = NULL, type = NULL, signature = NULL, field = NULL, na.rm = NULL, grep = NULL)
     ## default
     foobar = Cov_Arr$new(cvs = replication_timing, type='numeric')
@@ -286,7 +287,19 @@ test_that('Cov_Arr', {
     expect_error({foobar3$grep = c('1','2')})
     ##Cov_Arr concatentation error on non cov_arr inputs
     expect_error({fail = c(foobar3, '')})
-    
+    ##covariate merging
+    foobar7 = foobar5$merge(foobar5)
+    expect_equal(length(foobar7$cvs), 8)
+    ##chr function
+    foobar8 = Cov_Arr$new()
+    expect_equal(foobar8$chr(), NULL)
+    foobar9 = Cov_Arr$new(cvs = list(replication_timing, 'hello'), name = c('r1','r2'))
+    expect_equal(foobar9$chr()[2], NA)
+    expect_equal(foobar9$chr()[1], F)
+    ##seqlevels function
+    expect_equal(foobar8$seqlevels(), NULL)
+    expect_equal(foobar9$seqleveles()[[2]], NA)
+    expect_equal(length(foobar9$chr()[[1]]), 25)
 })
 
 
@@ -479,10 +492,7 @@ test_that('FishHook', {
     ##agg
     expect_error({fish2$aggregated = 'hello'})
     grl = GRangesList(events[1], events[1], events[1])
-    expect_warning({fish2$aggregated = grl})
-
-
-    
+    expect_warning({fish2$aggregated = grl})    
 })
 
 
