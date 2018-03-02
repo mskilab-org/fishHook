@@ -2634,24 +2634,6 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg
             ix = 10^(-tmp.exp) * N
             c95 = qbeta(0.975, ix, N - ix + 1)
             c05 = qbeta(0.025, ix, N - ix + 1)
-            if (FALSE){
-                ## Don't need if not using conf.line (might put this in the future)
-                plot(tmp.exp, -log(c95, 10), ylim = c(0, max), xlim = c(0, max),
-                type = "l", axes = FALSE, xlab = '', ylab = '')
-
-                par(new = T)
-                plot(tmp.exp, -log(c05, 10), ylim = c(0, max), xlim = c(0, max),
-                type = "l", axes = FALSE, xlab = '', ylab = '')
-
-                par(new = T)
-                p1 = rep(tmp.exp[1], 2)
-                p2 = c(-log(c95, 10)[1], -log(c05, 10)[1])
-                lines(x = p1, y = p2)
-                x.coords = c(tmp.exp, rev(tmp.exp))
-                y.coords = c(-log(c95, 10), rev(-log(c05, 10)))
-                polygon(x.coords, y.coords, col = 'light gray', border = NA)
-                par(new = T)
-            }
         }
 
         ## creating the ploting data.table (dat) and organizing the annotations to create hover text
