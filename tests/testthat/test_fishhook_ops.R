@@ -300,6 +300,7 @@ test_that('Cov_Arr', {
 ##     maxpatientpergene = Inf, weightEvents = FALSE, nb = TRUE)
 
 test_that('FishHook', {
+
     ## default
     fish1 = FishHook$new(targets = targets, events = events, eligible =eligible, use_local_mut_density = T)
     expect_equal(length(fish1$toList(fish1$cvs)), 1)
@@ -386,6 +387,17 @@ test_that('FishHook', {
     #                                  covariates = Cov_Arr$new(csv = c(mis_eve,events[1]) ,
     #                                              type = c('interval'), name = c('mis','eve')))})
     #expect_error({fish5 = FishHook$new(targets = targets, events = events[1], eligible = mis_eve)})
+    ##Testing FishHook subsetting
+    fish2$eligible = eligible
+    expect_equal(fish2$state, 'Initialized')
+    fish2$cvs = c(int,int,int,int)
+    expect_equal(fish2$state, 'Initialized')
+    fish5 = fish2
+    fish6 = fish5[c(1:10000), c(1:100000), c(1,2), c(1:100)]
+    expect_equal(length(fish6$targets), 10000)
+    expect_equal(length(fish6$events), 100000)
+    expect_equal(length(fish6$cvs$cvs), 2)
+    expect_equal(length(fish6$eligible), 100)
 })
 
 
