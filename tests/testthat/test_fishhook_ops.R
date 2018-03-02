@@ -398,6 +398,27 @@ test_that('FishHook', {
     expect_equal(length(fish6$events), 100000)
     expect_equal(length(fish6$cvs$cvs), 2)
     expect_equal(length(fish6$eligible), 100)
+    ##Testing fishHook active Bindings
+    #cvs
+    expect_error({fish2$cvs = 'Hello World'})
+    #eligible
+    expect_error({fish2$eligible = 'Hello World'})
+    #targets
+    expect_error({fish2$targets = 42})
+    ##Need to fix issue with loading bed files
+    #fish2$targets = '~/git/fishHook/data/targets.bed'
+    fish2$targets = '/home/travis/build/mskilab/fishHook/data/targets.rds'
+    empty_ranges = GRanges()
+    expect_error({fish2$targets = empty_ranges})
+    ##Events
+    expect_error({fish2$events = 'Hello World'})
+    expect_equal(length(fish2$events) , 1985704)
+    ##Out path
+    expect_error({fish2$out.path = 12})
+    fish2$out.path = '/home/travis/build/mskilab/fishHook/data/out'
+    expect_error({fish2$out.path = '~/git/fishHook/data/out'})
+    expect_equal({fish2$out.path, '/home/travis/build/mskilab/fishHook/data/out'})
+    
 })
 
 

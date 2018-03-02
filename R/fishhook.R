@@ -1956,23 +1956,15 @@ FishHook = R6::R6Class('FishHook',
                 }
 
             targets = value
-            ## checks if targets is NULL
-            if (is.null(targets)){
-                stop('Targets cannot be NULL.')
-            }
 
             ## checks to see if targets is a path & import if so
             if (is.character(targets)){
                 if (grepl('\\.rds$', targets[1])){
                     targets = readRDS(targets[1])
                 } else if (grepl('(\\.bed$)', targets[1])){
+                    require(rtracklayer)
                     targets = import.ucsc(targets[1])
                 }
-            }
-
-            ## Forces targets to be a GRanges Objects
-            if(class(targets) != 'GRanges'){
-                stop('Error: Loaded or provided class of targets must be "GRanges"')
             }
 
             ## checks to see if target contains any data
@@ -2008,11 +2000,6 @@ FishHook = R6::R6Class('FishHook',
                }
 
                 events = value
-
-               ## Forces Events to Exist
-               if(is.null(events)){
-                   stop('Error: Events must exist and cannot be NULL')
-               }
 
                ## Forces Events to be a GRanges  Object
                if (class(events) != 'GRanges'){
