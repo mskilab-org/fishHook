@@ -64,8 +64,7 @@ TL;DR
 
 
 ```R
-suppressWarnings(suppressMessages(library(fishHook)))
-suppressWarnings(suppressMessages(library(skitools)))
+library(fishHook)
 ```
 
 ##  Load in Your Data
