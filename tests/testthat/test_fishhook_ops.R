@@ -418,6 +418,70 @@ test_that('FishHook', {
     fish2$out.path = '/home/travis/build/mskilab/fishHook/data/out'
     expect_error({fish2$out.path = '~/git/fishHook/data/out'})
     expect_equal({fish2$out.path, '/home/travis/build/mskilab/fishHook/data/out'})
+    ##anno
+    expect_error({fish2$anno = 'hello world'})
+    expect_warning({fish2$anno = eligible})
+    ##scores
+    expect_error({fish2$scores = 'Hello World'})
+    x = as.data.table('a')
+    expect_warning({fish2$scores = x})
+    ##Model
+    expect_equal(fish2$model, NULL)
+    expect_warning({fish2$model = 'hello'})
+    ##mc.cores
+    expect_error({fish2$mc.cores = 'hello'})
+    fish2$mc.cores = 2
+    expect_equal(fish2$mc.cores, 2)
+    ##na.rm
+    expect_error({fish2$na.rm = 'hello'})
+    fish2$na.rm = T
+    expect_equal(fish2$na.rm, T)
+    ##pad
+    expect_error({fish2$pad = 'hello'})
+    fish2$pad = 2
+    expect_equal(fish2$pad, 2)
+    ##verbose
+    expect_error({fish2$verbose = 'hello'})
+    fish2$verbose = T
+    expect_equal(fish2$verbose, T)
+    ##max.slice
+    expect_error({fish2$max.slice = 'hello'})
+    fish2$max.slice = 2
+    expect_equal(fish2$max.slice, 2)
+    ##ff.chunk
+    expect_error({fish2$ff.chunk = 'hello'})
+    fish2$ff.chunk = 2
+    expect_equal(fish2$ff.chunk, 2)
+    ##max.chunk
+    expect_error({fish2$max.chunk = 'hello'})
+    fish2$max.chunk = 2
+    expect_equal(fish2$max.chunk, 2)
+    ##ptidcol
+    expect_error({fish2$ptidcol = 1})
+    fish2$ptidcol = "hello"
+    expect_equal(fish2$ptidcol, "hello")
+    ##maxpatientpergene
+    expect_error({fish2$maxpatientpergene = 'hello'})
+    fish2$maxpatientpergene = 2
+    expect_equal(fish2$maxpatientpergene, 2)
+    ##weightEvents
+    expect_error({fish2$weightEvents = 'hello'})
+    fish2$weightEvents = T
+    expect_equal(fish2$weightEvents, T)
+    ##nb
+    expect_error({fish2$nb = 'hello'})
+    fish2$nb = T
+    expect_equal(fish2$nb, T)
+    ##all
+    expect_error({fish2$all = 'hello'})
+    ##state
+    expect_error({fish2$state = 'hello'})
+    ##agg
+    expect_error({fish2$aggregated = 'hello'})
+    grl = GRangesList(events[1], events[1], events[1])
+    expect_warning({fish2$aggregated = grl})
+
+
     
 })
 
