@@ -12,6 +12,8 @@ events = readRDS('/home/travis/build/mskilab/fishHook/data/events.rds')
 targets = readRDS('/home/travis/build/mskilab/fishHook/data/targets.rds')
 ## targets = readRDS('targets.rds')
 
+## targets BED
+targetsbed = '/home/travis/build/mskilab/fishHook/data/targets.bed'
 
 # Sample Covariate
 replication_timing = readRDS('/home/travis/build/mskilab/fishHook/data/covariate.rds')
@@ -94,6 +96,13 @@ test_that('annotate.targets', {
     fish3 = FishHook$new(targets = targets, events = events[1], covariates = int)
     fish3$annotate()
     fish3$score()
+    ## 
+    ## else if (grepl('(\\.bed$)', targets[1])){
+    expect_equal(length(annotate.targets(targetsbed)), 19688)
+    ## if (!is.null(out.path)){
+    ## expect_equal(length(annotate.targets(targetsbed, out.path='/home/travis/build/mskilab/fishHook/data/foobar.rds')))
+    
+
 })
 
 
