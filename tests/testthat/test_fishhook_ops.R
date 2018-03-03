@@ -235,7 +235,7 @@ test_that('Cov_Arr', {
     ## default
     foobar = Cov_Arr$new(cvs = replication_timing, type='numeric')
     foobar2 = Cov_Arr$new(cvs=replication_timing[50:100], type='numeric')
-    foobar3 = Cov_Arr$new(csv=list(replication_timing,replication_timing), type = c('numeric','numeric'))
+    foobar3 = Cov_Arr$new(cvs=list(replication_timing,replication_timing), type = c('numeric','numeric'), name = c('1','1'), is.na = F)
     ## merge
     #### check it runs
     ##expect_error(foobar$merge(foobar2), NA)
@@ -271,22 +271,32 @@ test_that('Cov_Arr', {
     ##Names
     expect_error({foobar3$names = 1})
     expect_error({foobar3$names = c('1','2')})
-    ##Type
+    ##Type    
+    foobar3 = c(foobar3, foobar3, foobar3, foobar3)
     expect_error({foobar3$type = 1})
-    expect_error({foobar3$type = c('1','2')})
+    foobar3$type = c('sequence')
     expect_error({foobar3$type = 'hello'})
     foobar3$type = 'interval'
     ##pad
-    expect_error({foobar3$type = '1'})
-    expect_error({foobar3$type = c('1','2')})
+    expect_error({foobar3$pad = '1'})
+    foobar3$pad = 1
+    expect_equal(foobar3$pad[3], 1)
+    expect_error({foobar3$pad = c(1,1,1,1,1,1,1,1,1,1,1,1)})
     ##na.rm
     expect_error({foobar3$na.rm = '1'})
     expect_error({foobar3$na.rm = c('1','2')})
+    expect_error({foobar3$na.rm = c(T,T,T,T,T,T,T,T,T,T,T,T)}
     ##grep
     expect_error({foobar3$grep = 1})
     expect_error({foobar3$grep = c('1','2')})
+    ##Sequence
+    expect_error({foobar3$signature = 1})
+    ##Field
+    expect_error({foobar3$field = 1})
+    foobar3$field = '1'
+    expect_equal(foobar3$field[1], '1')
     ##Cov_Arr concatentation error on non cov_arr inputs
-    expect_error({fail = c(foobar3, '')})
+    foobar3$signature = c(1,2,3,4,5,6,7,8)
     ##covariate merging
     foobar7 = foobar5$merge(foobar5)
     expect_equal(length(foobar7$cvs), 8)
@@ -300,6 +310,14 @@ test_that('Cov_Arr', {
     expect_equal(foobar8$seqlevels(), NULL)
     expect_equal(foobar9$seqleveles()[[2]], NA)
     expect_equal(length(foobar9$chr()[[1]]), 25)
+    ##empty output print
+    expect_output(foobar8$print())
+    expect_equal(foobar8$print(), NULL)
+    
+
+
+
+    
 })
 
 

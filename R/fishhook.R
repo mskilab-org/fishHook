@@ -1019,22 +1019,13 @@ Cov_Arr = R6::R6Class('Cov_Arr',
             return(list())
         }
         out = lapply(c(1:length(private$pCovs)), function(x){
-            if(!(is.na(private$psignature[x])) & class(private$pCovs[[x]]) == 'ffTrack'){
-                return (list(track = private$pCovs[[x]], type = private$ptype[x],
-                    signature = private$psignature[x],
-                    pad = private$ppad[x],
-                    na.rm = private$pna.rm[x],
-                    field = private$pfield[x],
-                    grep = private$pgrep[x]))
-            } else{
-                return (list(track = private$pCovs[[x]],
-                    type = private$ptype[x],
-                    signature = private$psignature[x],
-                    pad = private$ppad[x],
-                    na.rm = private$pna.rm[x],
-                    field = private$pfield[x],
-                    grep = private$pgrep[x]))
-            }
+            return (list(track = private$pCovs[[x]],
+                         type = private$ptype[x],
+                         signature = private$psignature[x],
+                         pad = private$ppad[x],
+                         na.rm = private$pna.rm[x],
+                         field = private$pfield[x],
+                         grep = private$pgrep[x]))
         })
         names(out) = private$pnames
         return(out)
@@ -1174,9 +1165,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
             ## to the pCovs list.
             signature = function(value) {
                 if(!missing(value)){
-                    if(!all(is.na(value))){
-                        stop('Error: signature must be of class list')
-                    }
+        
                     if(length(value) != length(private$pCovs) & length(private$pCovs) %% length(value) != 0){
                         stop('Error: Length of signature must be of length equal to the number of Covariates or a divisor of number of covariates.')
                     }
