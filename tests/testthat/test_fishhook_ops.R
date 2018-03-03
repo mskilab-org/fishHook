@@ -430,7 +430,7 @@ test_that('FishHook', {
     expect_error({fish2$out.path = 12})
     fish2$out.path = '/home/travis/build/mskilab/fishHook/data/out'
     expect_error({fish2$out.path = '~/git/fishHook/data/out'})
-    expect_equal({fish2$out.path, '/home/travis/build/mskilab/fishHook/data/out'})
+    expect_equal(fish2$out.path, '/home/travis/build/mskilab/fishHook/data/out')
     ##anno
     expect_error({fish2$anno = 'hello world'})
     expect_warning({fish2$anno = eligible})
