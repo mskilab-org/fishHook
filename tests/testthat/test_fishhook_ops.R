@@ -193,40 +193,6 @@ test_that('score.targets', {
 
 
 
-### Feb 19, 2018
-### it looks like class Cov has been deprecated 
-
-## Cov()
-
-##test_that('Cov', {
-##    expect_error(Cov())
-##    foo = Cov$new(Covariate=replication_timing, type='numeric')
-    ## seqlevels
-##    expect_equal(length(foo$seqlevels()), 25)
-    ## toString
-##    expect_match(foo$toString(),"Name: \ntype: numeric\tsignature: NA\nfield: NA\tpad: NA\nna.rm: NA\tgrep: NA\nCovariate: GRanges\n")
-    ## convert2Arr
-##    expect_equal(foo$convert2Arr()$type, 'numeric') ## outputs whatever the user above input
-    ## print
-##    expect_equal(print(foo$print()), NULL)   
-    ## chr
-##    expect_equal(foo$chr(), FALSE)
-    ## toList
-##    expect_equal(length(foo$toList()$track), 2385966)
-##    expect_equal(foo$toList()$type, 'numeric')
-##    expect_equal(foo$toList()$signature, NA)
-##    expect_equal(foo$toList()$pad, NA)
-##    expect_equal(foo$toList()$na.rm, NA)
-##    expect_equal(foo$toList()$field, NA)
-##    expect_equal(foo$toList()$grep, NA)
-    ## 
-    ## if(is.null(Covariate) | is.null(type)){
-##    expect_error(Cov$new())
-    ## 
-##})
-
-
-
 ## Cov_Arr
 
 test_that('Cov_Arr', {
