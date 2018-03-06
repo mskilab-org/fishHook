@@ -6,7 +6,7 @@ events = readRDS('~/git/fishHook/data/events.rds')
 targets = readRDS('~/git/fishHook/data/targets.rds')
 replication_timing = readRDS('~/git/fishHook/data/covariate.rds')
 eligible = readRDS('~/git/fishHook/data/eligible.rds')
-
+anno = readRDS('~/git/fishHook/data/anno.rds')
 
 
 Sys.setenv(DEFAULT_BSGENOME = 'BSgenome.Hsapiens.UCSC.hg19::Hsapiens')
@@ -61,8 +61,8 @@ test_that('annotate.targets', {
     el1 = eligible[1]
     r1 = replication_timing[1]
     expect_error({annotate.targets(targets = targets[1], events = events[1], maxpatientpergene = 'hello')})
-    c1 = Cov_Arr$new(cvs = list('~/git/fishHook/data/covariate.rds'), type = 'numeric', name = 'c1', pad = 10)
-    c2 = Cov_Arr$new(cvs = list('~/git/fishHook/data/covariate.rds'), type = 'interval', name = 'c2', pad = 10, na.rm = T)
+    c1 = Cov_Arr$new(cvs = list('/home/travis/build/mskilab/fishHook/data/covariate.rds'), type = 'numeric', name = 'c1', pad = 10)
+    c2 = Cov_Arr$new(cvs = list('/home/travis/build/mskilab/fishHook/data/covariate.rds'), type = 'interval', name = 'c2', pad = 10, na.rm = T)
     c3 = Cov_Arr$new(cvs = list(RleList()), type = 'interval', name = 'c3', pad = 10, na.rm = T)
     anno = annotate.targets(targets = t1, events = e1, covariates = c1$toList())
     anno2 = annotate.targets(targets = t1, events = e1, covariates = c2$toList())
@@ -133,6 +133,11 @@ test_that('annotate.targets', {
 ## aggregate.targets
 
 test_that('aggregate.targets', {
+
+    expect_error(aggregate.targets('~/git/fishHook/data/targets.rds', rolling = 1))
+    expect_error(aggregate.targets('~/git/fishHook/data/targets1.rds', rolling = 1))
+    agg = aggregate.targets(c('~/git/fishHook/data/anno.rds','~/git/fishHook/data/anno.rds','~/git/fishHook/data/anno.rds'), rolling = 1, na.rm = T)
+    expect_error({agg = aggregate.targets(anno, rolling = -1)})
     expect_error(aggregate.targets(targets))  ## Error: argument "by" must be specified and same length as targets or "rolling" must be non NULL
     foo = aggregate.targets(targets, by='gene_name')
     expect_equal(length(foo$gene_name), 16352)
