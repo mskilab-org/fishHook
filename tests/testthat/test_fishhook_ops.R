@@ -1,7 +1,13 @@
 
 library(fishHook)
-
 library(testthat)
+##ZG Testing Paths
+events = readRDS('~/git/fishHook/data/events.rds')
+targets = readRDS('~/git/fishHook/data/targets.rds')
+replication_timing = readRDS('~/git/fishHook/data/covariate.rds')
+eligible = readRDS('~/git/fishHook/data/eligible.rds')
+
+
 
 Sys.setenv(DEFAULT_BSGENOME = 'BSgenome.Hsapiens.UCSC.hg19::Hsapiens')
 # Sample Events
@@ -34,6 +40,10 @@ segs = readRDS('/home/travis/build/mskilab/fishHook/data/jabba_segs_11517.rds')
 ## segs = readRDS('jabba_segs_11517.rds')
 
 eligible = readRDS('/home/travis/build/mskilab/fishHook/data/eligible.rds')
+
+
+
+
 
 
 context('unit testing fishhook operations')
@@ -332,6 +342,37 @@ test_that('Cov_Arr', {
 
 test_that('FishHook', {
 
+    ##FishHook initialization warnings:
+    ##Mismatched seqlevels
+    r1 = replication_timing[1]
+    r2 = replication_timing[1]
+    r2 = gr2dt(r2)
+    r2$seqnames = 'chr1'
+    r2 = dt2gr(r2)
+    c1 = Cov_Arr$new(cvs = r1, type = 'interval', name = 'c1')
+    c2 = Cov_Arr$new(cvs = r2, type = 'interval', name = 'c2')
+    t1 = targets[1]
+    t2 = t1
+    t2 = gr2dt(t2)
+    t2$seqnames = 'chr1'
+    t2 = dt2gr(t2)
+    expect_warning({fish = FishHook$new(targets = t1, events = t1,  covariates = c(c1,c2))})
+    expect_warning({fish = FishHook$new(targets = t1, events = t1, covariates = c(c2))})
+    expect_warning({expect_error({fish = FishHook$new(targets = t1, events = t1, eligible = t2)})})
+    expect_warning({expect_error({fish = FishHook$new(targets = t1, events = t2)})})
+    ##Improper Cov class
+    expect_error({fish = FishHook$new(targets = t1, events = t1, covariates = t1)})
+    t1 = targets[1]
+    expect_error({fish = FishHook$new(targets = 'hello', events = t1)})
+    expect_error({fish = FishHook$new(targets = t1, events = 'hello')})
+    expect_error({fish = FishHook$new(targets = t1, events = t1, eligible = 'hello')})
+    ##local mut_density with covariates present
+    r1 = replication_timing[1]
+    c1 = Cov_Arr$new(cvs = r1, type = 'interval', name = 'c1')
+    fish = FishHook$new(targets = targets, events = events, eligible = eligible, covariates = c(c1), use_local_mut_density = T)
+    ##Printing functions, all regions eligible and no covs
+    fish = FishHook$new(targets = t1, events = t1)
+    expect_output(fish$print())
     ## default
     fish1 = FishHook$new(targets = targets, events = events, eligible =eligible, use_local_mut_density = T)
     expect_equal(length(fish1$toList(fish1$cvs)), 1)

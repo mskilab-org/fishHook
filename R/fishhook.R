@@ -1432,6 +1432,38 @@ FishHook = R6::R6Class('FishHook',
             use_local_mut_density = FALSE, local_mut_density_bin = 1e6, genome = 'BSgenome.Hsapiens.UCSC.hg19::Hsapiens',
             mc.cores = 1, na.rm = TRUE, pad = 0, verbose = TRUE, max.slice = 1e3, ff.chunk = 1e6, max.chunk = 1e11, ptidcol = NULL,
             maxpatientpergene = Inf, weightEvents = FALSE, nb = TRUE){
+
+
+
+            #Make sure the format of targets, events, eligible, and covarates is correct
+
+
+            ##Targets
+            if(!(class(targets) == 'GRanges')  & !is.null(targets)){
+                stop('Error: targets must be of class GRanges')
+            }
+        
+        
+            ##Events
+            if(!(class(events) == 'GRanges')  & !is.null(events)){
+                stop('Error: events must be of class GRanges')
+            }
+            
+            
+            ##Eligible
+            if(!(class(eligible) == 'GRanges')  & !is.null(eligible)){
+                stop('Error: eligible must be of class GRanges')
+            }
+
+            
+            ##Covariates
+            if(!(class(covariates) == 'Cov_Arr')  & !is.null(covariates)){
+                stop('Error: covariates must be of class Cov_Arr')
+            }
+
+
+            
+            
              ## This next portion checks to make sure that the seqlevels are in the same format
             if(!is.null(covariates)){
                 ## Gets whther seqlevels of covariates are chr or not chr
@@ -1488,10 +1520,6 @@ FishHook = R6::R6Class('FishHook',
             ## Initializes and Validates covariates
             if(is.null(covariates)){
                 covariates = Cov_Arr$new()
-            }
-
-            if(class(covariates)[1] != "Cov_Arr"){
-                stop("Error: Covariates must be a vector of covariates or an object of class 'Cov_Arr'")
             }
 
             self$cvs = covariates
@@ -1986,21 +2014,16 @@ FishHook = R6::R6Class('FishHook',
             if(!missing(value)){
                 if(!(class(value) == 'GRanges')){
                     stop('Error: Events must be of class GRanges')
-               }
-
+                }
+                
                 events = value
-
-               ## Forces Events to be a GRanges  Object
-               if (class(events) != 'GRanges'){
-                   stop('Error: Events must be of class "GRanges"')
-               }
-
-               private$pevents = events
-
-               ## Change here when making the smart swaps
-               self$clear()
-
-               return(private$pevents)
+                
+                private$pevents = events
+                
+                ## Change here when making the smart swaps
+                self$clear()
+                
+                return(private$pevents)
 
             } else{
                 return(private$pevents)
