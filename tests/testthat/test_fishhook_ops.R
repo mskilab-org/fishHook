@@ -355,10 +355,7 @@ test_that('FishHook', {
     fish = FishHook$new(targets = targets, events = events, eligible = eligible)
     fish$score()
     p = fish$qq_plot(columns = c('gene_name', 'strand'))
-    expect_equal(grepl('gene_name', p$x[[3]][[1]]$text[1]) && grepl('strand', p$x[[3]][[1]]$text[1]), T)
-
-
-    
+    expect_equal(grepl('gene_name', p$x[[3]][[1]]$text[1]) && grepl('strand', p$x[[3]][[1]]$text[1]), T)   
     ## default
     fish1 = FishHook$new(targets = targets, events = events, eligible =eligible, use_local_mut_density = T)
     expect_equal(length(fish1$toList(fish1$cvs)), 1)
@@ -568,6 +565,16 @@ test_that('qq_pval', {
     expect_match(names(foobar)[1], 'x')
     expect_match(names(foobar)[2], 'width')
     expect_match(names(foobar)[3], 'height')
+    dist = rnorm(1000, mean = 10)/1000
+    p1 = qq_pval(dist)
+    p2 = qq_pval(dist, exp = rnorm(1000, mean = 8)/1000)
+    p3 = qq_pval(dist, exp = rnorm(1000, mean = 8)/1000, highlight = rep(c(T,F),500))
+    p4 = qq_pval(dist, exp = rnorm(1000, mean = 8)/1000, highlight = rep(c(T,F),500), max.x = 10, max.y = 10)
+    p4 = qq_pval(dist, exp = rnorm(1000, mean = 8)/1000, highlight = rep(c(T,F),500), max.x = 10, max.y = 10, subsample = 100)
+    p5 = qq_pval(plotly = T, obs = dist, exp = rnorm(1000, mean = 8)/1000, highlight = rep(c(T,F),500))
+    p6 = qq_pval(plotly = T, obs = dist, exp = rnorm(1000, mean = 8)/1000, highlight = rep(c(T,F),500), gradient = list('arb' = c(1:1000)))
+    p7 = qq_pval(plotly = T, obs = rnorm(10000,mean = 10)/1000, exp = rnorm(10000, mean = 8)/10000, highlight = rep(c(T,F),5000), gradient = list('arb' = c(1:10000)))
+    p8 = qq_pval(plotly = T, obs = rnorm(10000,mean = 10)/1000, exp = rnorm(10000, mean = 8)/10000, highlight = rep(c(T,F),5000))
 })
 
 
