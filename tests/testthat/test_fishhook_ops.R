@@ -2,10 +2,10 @@
 library(fishHook)
 library(testthat)
 ##ZG Testing Paths
-events = readRDS('~/git/fishHook/data/events.rds')
-targets = readRDS('~/git/fishHook/data/targets.rds')
-replication_timing = readRDS('~/git/fishHook/data/covariate.rds')
-eligible = readRDS('~/git/fishHook/data/eligible.rds')
+#events = readRDS('~/git/fishHook/data/events.rds')
+#targets = readRDS('~/git/fishHook/data/targets.rds')
+#replication_timing = readRDS('~/git/fishHook/data/covariate.rds')
+#eligible = readRDS('~/git/fishHook/data/eligible.rds')
 
 
 
@@ -336,9 +336,26 @@ test_that('FishHook', {
     r1 = replication_timing[1]
     c1 = Cov_Arr$new(cvs = r1, type = 'interval', name = 'c1')
     fish = FishHook$new(targets = targets, events = events, eligible = eligible, covariates = c(c1), use_local_mut_density = T)
+    ##Trying to score after we have already scored
+    fish = FishHook$new(targets = targets, events = events, eligible = eligible)
+    fish$score()
+    expect_error(fish$annotate())
+    fish$clear('Annotated')
+    fish$aggregate(rolling = 4)
+    fish$aggregated = fish$anno
+    fish$score()    
     ##Printing functions, all regions eligible and no covs
+    t1 = targets[1]
     fish = FishHook$new(targets = t1, events = t1)
     expect_output(fish$print())
+    ##QQ_plot
+    fish = FishHook$new(targets = targets, events = events, eligible = eligible)
+    fish$score()
+    p = fish$qq_plot(columns = c('gene_name', 'strand'))
+    expect_equal(grepl('gene_name', p$x[[3]][[1]]$text[1]) && grepl('strand', p$x[[3]][[1]]$text[1]), T)
+
+
+    
     ## default
     fish1 = FishHook$new(targets = targets, events = events, eligible =eligible, use_local_mut_density = T)
     expect_equal(length(fish1$toList(fish1$cvs)), 1)
