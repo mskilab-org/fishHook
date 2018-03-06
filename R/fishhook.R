@@ -69,6 +69,7 @@
 #' Interval covariates must be Granges (or paths to GRanges rds) or paths to bed files
 #' @return GRanges of input targets annotated with covariate statistics (+/- constrained to the subranges in optional argument covered)
 #' @author Marcin Imielinski
+#' @export
 annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 1, na.rm = TRUE, pad = 0, verbose = TRUE, max.slice = 1e3,
     ff.chunk = 1e6, max.chunk = 1e11, out.path = NULL, covariates = list(), maxpatientpergene = Inf, ptidcol = NULL, weightEvents = FALSE, ...)
 {
@@ -2767,14 +2768,4 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg
             hovermode = 'compare')
     }
 }
-
-
-
-
-
-
-
-
-
-
 

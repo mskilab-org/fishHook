@@ -54,7 +54,20 @@ context('unit testing fishhook operations')
 ##    ff.chunk = 1e6, max.chunk = 1e11, out.path = NULL, covariates = list(), maxpatientpergene = Inf, ptidcol = NULL, weightEvents = FALSE, ...)
 
 test_that('annotate.targets', {
-	## default args
+
+    ## default args
+    t1 = targets[1]
+    e1 = events[1]
+    el1 = eligible[1]
+    r1 = replication_timing[1]
+    expect_error({annotate.targets(targets = targets[1], events = events[1], maxpatientpergene = 'hello')})
+    c1 = Cov_Arr$new(cvs = list('~/git/fishHook/data/covariate.rds'), type = 'numeric', name = 'c1', pad = 10)
+    c2 = Cov_Arr$new(cvs = list('~/git/fishHook/data/covariate.rds'), type = 'interval', name = 'c2', pad = 10, na.rm = T)
+    c3 = Cov_Arr$new(cvs = list(RleList()), type = 'interval', name = 'c3', pad = 10, na.rm = T)
+    anno = annotate.targets(targets = t1, events = e1, covariates = c1$toList())
+    anno2 = annotate.targets(targets = t1, events = e1, covariates = c2$toList())
+    anno3 = annotate.targets(targets = t1, events = e1, covariates = c3$toList())
+    anno4 = annotate.targets(targets = e1, events = e1, eligible = e1)
     expect_true(is(annotate.targets(targets), 'GRanges'))   ## annotate.targets(targets, weightEvents=TRUE)
     expect_equal(length(annotate.targets(targets)), 19688)
     foo = annotate.targets(targets)
