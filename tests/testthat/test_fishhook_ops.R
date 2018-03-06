@@ -327,8 +327,8 @@ test_that('FishHook', {
     t2 = dt2gr(t2)
     expect_warning({fish = FishHook$new(targets = t1, events = t1,  covariates = c(c1,c2))})
     expect_warning({fish = FishHook$new(targets = t1, events = t1, covariates = c(c2))})
-    expect_warning({expect_error({fish = FishHook$new(targets = t1, events = t1, eligible = t2)})})
-    expect_warning({expect_error({fish = FishHook$new(targets = t1, events = t2)})})
+    #expect_warning({expect_error({fish = FishHook$new(targets = t1, events = t1, eligible = t2)})})
+    #expect_warning({expect_error({fish = FishHook$new(targets = t1, events = t2)})})
     ##Improper Cov class
     expect_error({fish = FishHook$new(targets = t1, events = t1, covariates = t1)})
     t1 = targets[1]
