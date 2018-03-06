@@ -55,7 +55,7 @@ context('unit testing fishhook operations')
 
 test_that('annotate.targets', {
 	## default args
-	expect_true(is(annotate.targets(targets), 'GRanges'))   ## annotate.targets(targets, weightEvents=TRUE)
+    expect_true(is(annotate.targets(targets), 'GRanges'))   ## annotate.targets(targets, weightEvents=TRUE)
     expect_equal(length(annotate.targets(targets)), 19688)
     foo = annotate.targets(targets)
     expect_equal(max(foo$query.id), 19688)
@@ -253,6 +253,7 @@ test_that('Cov_Arr', {
     foobar3$type = c('sequence')
     expect_error({foobar3$type = 'hello'})
     foobar3$type = 'interval'
+    expect_error({foobar3$type = rep('interval', 10)})
     ##pad
     expect_error({foobar3$pad = '1'})
     foobar3$pad = 1
@@ -270,9 +271,10 @@ test_that('Cov_Arr', {
     ##Field
     expect_error({foobar3$field = 1})
     foobar3$field = '1'
+    expect_error({foobar3$field = c('1','1','1','1','1','1','1','1','1')})
     expect_equal(foobar3$field[1], '1')
     ##Cov_Arr concatentation error on non cov_arr inputs
-    #foobar3$signature = c(1,2,3,4,5,6,7,8)
+    expect_error({foobar3$signature = c(1,2,3,4,5,6,7,8)})
     ##covariate merging
     foobar7 = foobar5$merge(foobar5)
     expect_equal(length(foobar7$cvs), 8)
@@ -289,8 +291,9 @@ test_that('Cov_Arr', {
     ##empty output print
     expect_output(foobar8$print())
     expect_equal(foobar8$print(), NULL)
+    ##c with item that is not Cov_Arr
+    expect_error({foobar10 = c(foobar2, 1)})
     
-
 
 
     
