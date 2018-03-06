@@ -2,11 +2,11 @@
 library(fishHook)
 library(testthat)
 ##ZG Testing Paths
-events = readRDS('~/git/fishHook/data/events.rds')
-targets = readRDS('~/git/fishHook/data/targets.rds')
-replication_timing = readRDS('~/git/fishHook/data/covariate.rds')
-eligible = readRDS('~/git/fishHook/data/eligible.rds')
-anno = readRDS('~/git/fishHook/data/anno.rds')
+## events = readRDS('~/git/fishHook/data/events.rds')
+## targets = readRDS('~/git/fishHook/data/targets.rds')
+## replication_timing = readRDS('~/git/fishHook/data/covariate.rds')
+## eligible = readRDS('~/git/fishHook/data/eligible.rds')
+## anno = readRDS('~/git/fishHook/data/anno.rds')
 
 
 Sys.setenv(DEFAULT_BSGENOME = 'BSgenome.Hsapiens.UCSC.hg19::Hsapiens')
@@ -34,6 +34,9 @@ eligible = readRDS('/home/travis/build/mskilab/fishHook/data/eligible.rds')
 # indexed pathways
 indexed_pathways = readRDS('/home/travis/build/mskilab/fishHook/data/indexed_pathways.rds')
 ## indexed_pathways = readRDS('indexed_pathways.rds')
+
+# Sample annotate
+anno = readRDS('/home/travis/build/mskilab/fishHook/data/anno.rds')
 
 
 segs = readRDS('/home/travis/build/mskilab/fishHook/data/jabba_segs_11517.rds')
@@ -134,9 +137,9 @@ test_that('annotate.targets', {
 
 test_that('aggregate.targets', {
 
-    expect_error(aggregate.targets('~/git/fishHook/data/targets.rds', rolling = 1))
-    expect_error(aggregate.targets('~/git/fishHook/data/targets1.rds', rolling = 1))
-    agg = aggregate.targets(c('~/git/fishHook/data/anno.rds','~/git/fishHook/data/anno.rds','~/git/fishHook/data/anno.rds'), rolling = 1, na.rm = T)
+    expect_error(aggregate.targets('/home/travis/build/mskilab/fishHook/data/targets.rds', rolling = 1))
+    expect_error(aggregate.targets('/home/travis/build/mskilab/fishHook/data/targets.rds', rolling = 1))
+    agg = aggregate.targets(c('/home/travis/build/mskilab/fishHook/data/anno.rds','/home/travis/build/mskilab/fishHook/data/anno.rds'), rolling = 1, na.rm = T)
     expect_error({agg = aggregate.targets(anno, rolling = -1)})
     expect_error(aggregate.targets(targets))  ## Error: argument "by" must be specified and same length as targets or "rolling" must be non NULL
     foo = aggregate.targets(targets, by='gene_name')
