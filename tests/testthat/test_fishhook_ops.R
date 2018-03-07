@@ -219,6 +219,32 @@ test_that('score.targets', {
     ## classReturn = FALSE
     expect_equal(dim(as.data.table(score.targets(annotated, classReturn = TRUE)))[1], 19688)
 
+    ## MISC testing
+    expect_error({s1 = score.targets(anno, covariates = c('hello'))})
+    anno$cov2 = c(1:length(anno))
+    anno$cov2 = as.character(anno$cov2)
+    expect_error({s2 = score.targets(anno)})
+    anno3 = anno
+    anno3$count = NULL
+    anno3$cov2 = NULL
+    expect_error({s3 = score.targets(anno3)})
+    anno3$count = 1
+    expect_error({s4 = score.targets(anno3)})
+    anno3$dummy = NA
+    anno3$dummy = as.numeric(anno3$dummy)
+    anno3$count = c(1:length(anno3))
+    expect_error({s5 = score.targets(anno3)})
+    anno$cov2 = NULL
+    s6 = score.targets(anno, subsample = 0.7)
+    anno$cov = NULL
+    anno$p = NULL
+    m1 = score.targets(anno, return.model = T)
+    s8 = score.targets(anno[1:1000], model = m1)
+    anno$fac = c(1:2)
+    anno$fac = as.factor(anno$fac)
+    anno$cov = as.numeric(c(1:length(anno)))
+    anno4 = anno[1:1000]
+    #s9 = score.targets(anno4, verbose = T, model = m1, covariates = c('cov', 'fac'))
 })
 
 
@@ -596,6 +622,12 @@ test_that('qq_pval', {
     p6 = qq_pval(plotly = T, obs = dist, exp = rnorm(1000, mean = 8)/1000, highlight = rep(c(T,F),500), gradient = list('arb' = c(1:1000)))
     p7 = qq_pval(plotly = T, obs = rnorm(10000,mean = 10)/1000, exp = rnorm(10000, mean = 8)/10000, highlight = rep(c(T,F),5000), gradient = list('arb' = c(1:10000)))
     p8 = qq_pval(plotly = T, obs = rnorm(10000,mean = 10)/1000, exp = rnorm(10000, mean = 8)/10000, highlight = rep(c(T,F),5000))
+    p9 = qq_pval(plotly = T, obs = rnorm(10000,mean = 10)/1000, exp = rnorm(10000, mean = 8)/10000, highlight = 'hello')
+    expect_error({p10 = qq_pval(plotly = T, obs = rnorm(10000,mean = 10)/1000, exp = rnorm(10000, mean = 8)/10000, highlight = rep(c(T,F), 1000000))})
+    expect_warning({p11 = qq_pval(obs = rnorm(10000,mean = 10)/1000, exp = rnorm(10000, mean = 8)/10000, label = c(1:1000))})
+    p12 = qq_pval(obs = rnorm(10020,mean = 10)/1000, exp = rnorm(10020, mean = 8)/10020)
+    expect_error({p13 = qq_pval(obs = rnorm(10000,mean = 10)/1000, exp = rnorm(10000, mean = 8)/10000, highlight = rep(c(T,F), 100000000))})
+    p14 = qq_pval(obs = rnorm(10000,mean = 10)/1000, exp = rnorm(10000, mean = 8)/10000, highlight = c(1:5000))
 })
 
 
