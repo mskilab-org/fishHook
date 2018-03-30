@@ -86,7 +86,9 @@ data(targets)
 data(eligible)
 data(replication_timing_cov)
 
+events = events
 gene_targets = targets
+eligible = eligible
 replication_timing = replication_timing
 ```
 
