@@ -81,12 +81,13 @@ such as H3K9me3 profile, chromhmm intervals, etc.
 
 
 ```R
-setwd("~/git/fishHook/data")
-mutational_evenls
-ts = readRDS("events.rds")
-gene_targets = readRDS("targets.rds")
-eligible = readRDS("eligible.rds")
-replication_timing = readRDS("covariate.rds")
+data(events)
+data(targets)
+data(eligible)
+data(replication_timing_cov)
+
+gene_targets = targets
+replication_timing = replication_timing
 ```
 
 ## Create a Covariate Object
