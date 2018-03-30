@@ -18,7 +18,7 @@ events = load('/home/travis/build/mskilab/fishHook/data/events.rda')
 ## events = readRDS('events.rds')
 
 # Sample Targets
-targets = readRDS('/home/travis/build/mskilab/fishHook/data/targets.rda')
+targets = load('/home/travis/build/mskilab/fishHook/data/targets.rda')
 ## targets = readRDS('targets.rds')
 
 ## targets BED
