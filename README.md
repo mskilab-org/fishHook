@@ -161,7 +161,8 @@ setwd("~/git/fishHook/data")
 
 
 ```R
-mutational_events = readRDS("events.rds")
+data(events)
+mutational_events = events
 mutational_events
 ```
 
@@ -188,7 +189,8 @@ mutational_events
 
 
 ```R
-gene_targets = readRDS("targets.rds")
+data(targets)
+gene_targets = targets
 gene_targets
 ```
 
@@ -215,7 +217,7 @@ gene_targets
 
 
 ```R
-eligible = readRDS("eligible.rds")
+data(eligible)
 eligible
 ```
 
