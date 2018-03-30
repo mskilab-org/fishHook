@@ -2,11 +2,18 @@
 library(fishHook)
 library(testthat)
 ##ZG Testing Paths
+
+data(events)
+data(targets)
+data(replication_timing_cov)
+replication_timing = replication_timing_cov
+data(eligible)
+
 ## events = readRDS('~/git/fishHook/data/events.rds')
 ## targets = readRDS('~/git/fishHook/data/targets.rds')
 ## replication_timing = readRDS('~/git/fishHook/data/covariate.rds')
 ## eligible = readRDS('~/git/fishHook/data/eligible.rds')
-## anno = readRDS('~/git/fishHook/data/anno.rds')
+anno = readRDS('~/git/fishHook/data/anno.rds')
 
 
 Sys.setenv(DEFAULT_BSGENOME = 'BSgenome.Hsapiens.UCSC.hg19::Hsapiens')
@@ -244,7 +251,7 @@ test_that('score.targets', {
     anno$fac = as.factor(anno$fac)
     anno$cov = as.numeric(c(1:length(anno)))
     anno4 = anno[1:1000]
-    #s9 = score.targets(anno4, verbose = T, model = m1, covariates = c('cov', 'fac'))
+    s9 = score.targets(anno4, verbose = T,  covariates = c('cov', 'fac'))
 })
 
 
