@@ -14,7 +14,7 @@ library(testthat)
 
 Sys.setenv(DEFAULT_BSGENOME = 'BSgenome.Hsapiens.UCSC.hg19::Hsapiens')
 # Sample Events
-events = readRDS('/home/travis/build/mskilab/fishHook/data/events.rda')
+events = load('/home/travis/build/mskilab/fishHook/data/events.rda')
 ## events = readRDS('events.rds')
 
 # Sample Targets
@@ -25,12 +25,12 @@ targets = readRDS('/home/travis/build/mskilab/fishHook/data/targets.rda')
 targetsbed = '/home/travis/build/mskilab/fishHook/data/targets.bed'
 
 # Sample Covariate
-replication_timing = readRDS('/home/travis/build/mskilab/fishHook/data/replication_timing_cov.rda')
+replication_timing = load('/home/travis/build/mskilab/fishHook/data/replication_timing_cov.rda')
 ## replication_timing = readRDS('covariate.rds')
 
 
 # Same Eligible Subset
-eligible = readRDS('/home/travis/build/mskilab/fishHook/data/eligible.rda')
+eligible = load('/home/travis/build/mskilab/fishHook/data/eligible.rda')
 ## eligible  = readRDS('eligible.rds')
 
 
@@ -45,7 +45,7 @@ anno = readRDS('/home/travis/build/mskilab/fishHook/data/anno.rds')
 segs = readRDS('/home/travis/build/mskilab/fishHook/data/jabba_segs_11517.rds')
 ## segs = readRDS('jabba_segs_11517.rds')
 
-eligible = readRDS('/home/travis/build/mskilab/fishHook/data/eligible.rda')
+eligible = load('/home/travis/build/mskilab/fishHook/data/eligible.rda')
 
 
 
