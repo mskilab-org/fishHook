@@ -1614,11 +1614,16 @@ FishHook = R6::R6Class('FishHook',
             }
             if(is.null(private$pcovariates$names)){
                 covs = "No covariates will be used."
-            } else{
+            } else{          
                 cov.names = private$pcovariates$names
-                covs = cov.names
+                if(length(cov.names) > 10){
+                    covs = paste('Will use',length(cov.names),'covariates.', collapse = "")
+                }
+                else{
+                    covs = cov.names
+                }
             }
-            meta = paste('Targets contains', ncol(values(private$ptargets)), 'metadata columns')
+            meta = paste('Targets contains', ncol(values(private$ptargets)), 'metadata columns.')
             state = paste('Current State:', private$pstate)
             cat(targ, eve, elig, 'Covariates:', covs, meta, state, sep = '\n', collapse = '\n')
         },
