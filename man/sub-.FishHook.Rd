@@ -13,7 +13,7 @@
 
 \item{j}{vector subset events}
 
-\item{k}{vector subset covariats}
+\item{k}{vector subset covariates}
 
 \item{l}{vector susbet eligible}
 }

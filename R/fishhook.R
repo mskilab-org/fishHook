@@ -424,6 +424,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
 #' @importFrom data.table setkey := data.table as.data.table
 #' @importFrom S4Vectors values values<-
 #' @importFrom GenomeInfoDb seqnames
+#' @export
 aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, disjoint = TRUE, na.rm = FALSE, FUN = list(), verbose = TRUE)
 {
 
@@ -693,6 +694,7 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
 #' @return GRanges of scored results
 #' @author Marcin Imielinski
 #' @import GenomicRanges
+#' @export
 score.targets = function(targets, covariates = names(values(targets)), model = NULL, return.model = FALSE, nb = TRUE,
     verbose = TRUE, iter = 200, subsample = 1e5, seed = 42, p.randomized = TRUE, classReturn = FALSE)
 {
@@ -781,6 +783,7 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
     }
 
     if (any(is.fact = (sapply(covariates, function(x) class(res[, x])) %in% c('factor')))){
+        is.fact = (sapply(covariates, function(x) class(res[, x])) %in% c('factor'))
         ix = which(is.fact)
         new.col = lapply(ix, function(i){
             val = res[, covariates[i]]
@@ -1372,6 +1375,22 @@ Cov_Arr = R6::R6Class('Cov_Arr',
     ##Call the subset function of the Cov_Arr class that will modify the cloned Cov_Arr
     ret$subset(range)
     return (ret)
+}
+
+
+
+#' @name length.Cov_Arr
+#' @title title
+#' @description
+#'
+#' Overrides the length function 'length(Cov_Arr)' for use with Cov_Arr
+#'
+#' @param obj Cov_Arr object that is passed to the length function
+#' @return number of covariates contained in the Cov_Arr object as defined by length(Cov_Arr$cvs)
+#' @author Zoran Z. Gajic
+#' @export
+'length.Cov_Arr' = function(obj,...){
+    return(length(obj$cvs))
 }
 
 
@@ -2347,6 +2366,45 @@ FishHook = R6::R6Class('FishHook',
 
 
 
+#' @name length.FishHook
+#' @title title
+#' @description
+#'
+#' Overrides the length function 'length(FishHook)' for use with FishHook 
+#'
+#' @param obj FishHook object that is passed to the length function
+#' @return length of the targets contained in the FishHook object
+#' @author Zoran Z. Gajic
+#' @export
+'length.FishHook' = function(obj,...){
+    return(length(obj$targets))
+}
+
+
+
+#' @name dim.FishHook
+#' @title title
+#' @description
+#'
+#' Overrides the dim function 'dim(FishHook)' for use with FishHook 
+#'
+#' @param obj FishHook object that is passed to the length function
+#' @return returns a numeric vector containing the lengths of various FishHook variables in the following order:
+#' i : number of targets
+#' j : number of  events
+#' k : number of covariates
+#' l : number of  eligible regions
+#' @author Zoran Z. Gajic
+#' @export
+'dim.FishHook' = function(obj,...){
+    length_targets = length(obj$targets)
+    length_events = length(obj$events)
+    length_covariates = length(obj$cvs)
+    length_eligible = length(obj$eligible)
+    return(c(length_targets, length_events, length_covariates, length_eligible))
+}
+
+
 #' @name [.FishHook
 #' @title title
 #' @description
@@ -2356,7 +2414,7 @@ FishHook = R6::R6Class('FishHook',
 #' @param obj FishHook object This is the FishHookObject to be subset
 #' @param i vector subset targets
 #' @param j vector subset events
-#' @param k vector subset covariats
+#' @param k vector subset covariates
 #' @param l vector susbet eligible
 #' @return A new FishHook object that contains only the data within the given ranges
 #' @author Zoran Z. Gajic
