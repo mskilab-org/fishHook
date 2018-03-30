@@ -89,7 +89,7 @@ data(replication_timing_cov)
 events = events
 gene_targets = targets
 eligible = eligible
-replication_timing = replication_timing
+replication_timing = replication_timing_cov
 ```
 
 ## Create a Covariate Object
@@ -150,7 +150,7 @@ library(fishHook)
 ```
 
 ## Now we will need some data
-fishHook utilizes Gamma-Poisson regression to identify frequently-mutated or amplified/deleted regions of the genome from sequencing and microarray data. To do this we need to take a set of genomic targets, and test each one against the hypothesis that they are significantly altered in comparison to the other targets. In this first example we will use genes as our targets and use exome data as the mutational events. Since exome sequencing tends to exhibit strong sequencing bias, we want to include this information in our analysis. To do this we constructed a GRanges called eligible that will indicate the regions that have sufficient coverage. 
+fishHook utilizes Gamma-Poisson regression to nominate regions enriched in mutation  from sequencing and/or microarray data. To do this we take a set of genomic targets, and test each one against the hypothesis that they have a background level of mutational burden. In this first example we use genes as our targets and  exome data as the mutational events. Since exome sequencing tends to exhibit strong sequencing bias, we to include this information in our analysis by indicating sufficently covered regions in the variable eligible.
 
 
 ```R
@@ -239,7 +239,7 @@ eligible
 
 
 ## The FishHook Object
-All of the data manipulations are handled by the fishHook object given entered data. You can initialize it as follows. 
+All of the data manipulations are handled by the fishHook object. You can initialize it as follows. 
 
 
 ```R
@@ -259,8 +259,9 @@ fish
 
 
 
-## Points about FishHook Object
-The FishHook object will take various states during our analysis. You can access this through state or from the output of the fish object. You can also access any of the provided variables.
+## Points about the FishHook Object
+The FishHook object will take various states during our analysis. You can view the current state from the print output of the fish object or by accessing it directly via fish$state.
+All provided variables can be accessed in this manner.
 
 
 ```R
@@ -332,7 +333,7 @@ fish$eligible
 
 
 ## Annotating The FishHook Object
-In order to test each hypothesis against the null, which will be the normal mutational load of the genes. To do this we will need to count how many events fall into each target gene. We call this process annotation and can be done as follows. Note that we use verbose=F so as to limit spam. This process should take from a few seconds up to a minute.
+To begin, we will need to count how many events fall into each target region (gene). We call this process annotation and it can be done as follows. Note that we use verbose=F so as to limit console output. This process should take from a few seconds up to a minute.
 
 
 ```R
@@ -340,7 +341,7 @@ fish$annotate(verbose = F)
 ```
 
 ## Note that the State of our FishHook Object is now "Annotated"
-You can access the annotation information with anno
+You can access the annotation information with the anno variable.
 
 
 ```R
@@ -393,7 +394,7 @@ fish$anno
 
 
 ## Scoring the Targets
-Now that we have determined the mutational burden (count) at each target, we can now need to create a null model and test each of our hypothesize against this model. Note that because we are using the targets as their own controls there is an assumption that a majority of the targets will follow the null hypothesis.
+Now that we have determined the mutational burden (count) at each target, we can create a  model of background mutations to and test against. Note that because we are using the targets (genes) as their own controls, there is an assumption that a majority of the targets will follow the null hypothesis. 
 
 
 ```R
@@ -451,7 +452,7 @@ fish$score()
 
 
 ## Note that the State of our FishHook Object is now "Scored"
-You can access the scoring information with scores. Or if you want to merge this with the origanl targets data you can use 'all'. This includes the p and q values assigned to each target.
+You can access the scoring information with the 'scores' variable. If you want to merge the scored data  with the origanl targets data, you can acess the 'all' variable. This data includes the p and q values assigned to each target.
 
 
 ```R
@@ -511,7 +512,7 @@ fish$all[1:10]
 
 
 ## Visualizing The Data
-Grabbing the raw data from the scores field in the fish object is an ok way to manually go through the data but if we are looking to easily identify what is and what is not significant we would have a hard time with the manual inspection. To solve this issue we can utilize a qqplot that will plot the observed distribution of p values versus the expected (uniform) distribution of p values. Significnat hits will be ones that vary greatly from the expected.
+Manually inspecting the raw data from the scores field in the fish object is possible, but not ideal. To solve this issue, we can utilize a qqplot that will plot the observed distribution of p values versus the expected (uniform) distribution of p values. Significnat hits will be ones that vary greatly from the expected.
 
 
 ```R
@@ -524,7 +525,7 @@ plot <- fish$qq_plot(plotly = F)
 ![](images/standard_plot_noplotly.png)
 
 ## Visualizing the Data cont.
-The above is cool and all but we probably want to annotate the hover text of each point with targets metadata, to do that we can use the columns param in qq_plot(). Note that you can specify any column that is present in the 'all' output. You can also provide your own vectors through annotations. P value will be included in all graphs created but Count, Effectsize, HypothesisID and q will only be added by default if not annotations are specified by the user.
+The above plot is functional but static. Lets say we want to annotate the hover text of each point with its corresponding target's metadata. To do that we can create an interactive plot by setting 'plotly = T' (default) and using the 'columns' param in the 'qq_plot()' function. Note that you can specify any column that is present in the 'all' output. You can also provide your own vectors through the 'annotations' parameter. P value will be included in all graphs created but count, effectsize, hypothesisID and q values will only be added by default if no annotations are specified by the user.
 
 
 ```R
@@ -570,11 +571,12 @@ plot2
 
 
 ## Covariates
-Now we know how to test for which targets are a hotspot for mutations. However, mutational hotspots can be caused by various biological phenomina that are unrelated to cancer. Fore example, replication timing, transcription status, chromatin state and sequence context can all play a role in the formation of mutations. We refer to these biological factors that influence mutation covariates. FishHook has its own object for instantiating covariates, but first lets load up the replication timing covariate as a Genomic Ranges object. It contain a 'score' for each region of the genome.
+Mutational hotspots can be caused by various biological phenomina that are unrelated to cancer. For example, replication timing, transcription state, chromatin state and sequence context can all play a role in mutagenic processes. We refer to these biological factors that influence mutation as 'covariates'. FishHook has its own object for instantiating covariates, but first lets load up the replication timing covariate as a Genomic Ranges object. It contain a 'score' for each region of the genome.
 
 
 ```R
-replication_timing = readRDS("covariate.rds")
+data(replication_timing_cov)
+replication_timing = replication_timing_cov
 replication_timing
 ```
 
@@ -600,19 +602,19 @@ replication_timing
 ## Creating Covariates
 **The following information is required when creating covariates:**
 
-Covariate(referenced with cvs): This is meat of the object and in this case will be our replication timing object. It can be of class GRanges, character (file path), RleList or ffTrack object. In this case replication timing is a GRanges Object.
+Covariate(referenced with cvs): This is meat of the object and in this case will be our replication timing object. It can be of class GRanges, character (file path), RleList or ffTrack object or a list containing the aforementioned objectss. In this case replication timing is a single GRanges Object.
 
-Type: There are three covariate types. Numeric, like replication timing where each region gets a numeric value assigned to it. Interval, where we indicate regions that are "marked" with this covariate. For example, H3K9me3. Sequence, which can be something like GC content.
+Type: There are three covariate types. Numeric, for example, includes replication timing, where each region gets a numeric value assigned to it. Interval, where we indicate regions that are "marked" with this covariate. For example, H3K9me3. Sequence, which can be something like GC content.
 
-Name: The name you give to this covariate
+Name: The name you give to this covariate and how it will be refered to for the rest of the analysis
 
 **Other Parameters that are not always required:**
 
-Field: This is for numeric covariates and is the column name where the 'score' is held. Note that it is set to 'score' by default.
+Field: This is for numeric covariates and is the column name where the numeric value is held. Note that it is set to 'score' by default.
 
 Signature: This is only required if the Covariate you are using is an ffTrack Object, this is similar to field.
 
-Pad: This indicates how much to the left and to the right of the covariate we should consider its influence. e.g. if a covariate was from position 100-150 with pad = 5 we would consider it for positions 95-155.
+Pad: This indicates how much to the left and to the right of the covariate we should consider its influence. e.g. if a covariate was located at  position 100-150, with pad = 5, we would consider the covariate at  positions 95-155.
 
 
 
@@ -741,7 +743,7 @@ rept
 
 
 ## Accessing Covariate Fields
-Covariate fields such as type are stored as vectors and when you acess the field you will be returned a vector or list in the case of the Covariates themselves that is the same length as your covariates object.
+Covariate fields such as type are stored as vectors and can be accessed from the Covariate object. Note that they will be of the same length as the list of covariates (accessible with covs$cvs)
 
 
 ```R
@@ -801,15 +803,15 @@ rep3$signature
 
 
 ## Multiple Covariates
-In the case that you want to create multiple covariates at a given time, you can pass a list of covariate tracks
+In the case where you want to create multiple covariates, you can pass a list of covariate tracks
 to the cvs arguement and a vector of correct type to the other arguements.
 
 
 ```R
 multi_cov = Cov_Arr$new(cvs = list(replication_timing, replication_timing),
                        name = c('replication1', 'replication2'),
-                       type = c('numeric','numeric'), pad = c(0,20),
-                       field = c('score', 'score'))
+                       type = c('numeric', 'numeric'), pad = c(0,20),
+                       field = c('score'))
 multi_cov
 ```
 
@@ -831,7 +833,7 @@ multi_cov
 
 
 ## fishHook Analysis using Covariates
-The only difference is that when we initiate the class, we will need to pass in the Covariates. Note that annotating the covariates takes some extra time. You can speed this part up by using mc.cores (set number of cores) or with parameters we will cover in the next section.
+The only change required to use covariates is to pass them as an arguement to the FishHook class constructor. Note that annotating the covariates takes some extra time. You can speed this part up by using mc.cores (set number of cores) or with parameters we will cover in the next section.
 
 
 ```R
@@ -896,7 +898,7 @@ plot
 
 
 ## fishHook Analysis using Covariates (cont.)
-Covariates rely on our prior knowledge about mutational processes. However, there are likely factors that influence mutations that are not known as thus it would be impossible for us to define a covariate for them. However, all of the mutational evidence is present in the mutational landscape (events) and as such we can create a covariate from our events that we will call local mutational density that can model the mutational landscape in the area surrounding our targets. We can use the flag 'use_local_mut_density' for this. The bin for this covariate be specified using 'local_mut_density_bin' and is by default set to 1e6.
+Covariates rely on our prior knowledge about mutational processes. However, there are likely factors that influence mutations that are not known or it might be impossible for us to define a covariate for them. However, all of the mutational evidence is present in the mutational landscape (events) and as such we can create a covariate from our events that we will call local mutational density. This is a covariate that will model the local mutational landscape and is larger in size than the target. This covariate will allow us to test if a given gene has a greater mutational burden than its local (2D) enviornment. We can use the flag 'use_local_mut_density' for this. The bin for this covariate be specified using 'local_mut_density_bin' and is by default set to 1e6. 
 
 
 ```R
@@ -996,17 +998,17 @@ plot
 
 
 ## FishHook Extras: Subsetting
-The fishHook object can be subseted in the following way: 
+The fishHook object can be subset in the following way: 
 
     fish[i,j,k,l] 
 
 where: 
 * i is a vector indicating which targets to keep, 
 * j is a vector indicating which events to keep,
-* k is a vector indicating which covariates to keep, and
-* l is a vector indicating which eligible regions to keep
+* k is a vector indicating which covariates to keep, 
+* l is a vector indicating which eligible regions to keep.
 
-Here are some examples to play with using the previous fish object
+Here are some examples to try with using the previous fish object
 
 
 ```R
