@@ -6,7 +6,7 @@ library(testthat)
 
 ## load('~/git/fishHook/data/events.rda')
 ## load('~/git/fishHook/data/targets.rda')
-## replication_timing = load('~/git/fishHook/data/replication_timing_cov.rda')
+## load('~/git/fishHook/data/replication_timing_cov.rda')
 ## eligible = load('~/git/fishHook/data/eligible.rda')
 ## anno = readRDS('~/git/fishHook/data/anno.rds')
 
@@ -26,7 +26,7 @@ targetsbed = '/home/travis/build/mskilab/fishHook/data/targets.bed'
 
 # Sample Covariate
 load('/home/travis/build/mskilab/fishHook/data/replication_timing_cov.rda')
-replication_timing = replication_timing_cov
+replication_timing = replication_timing
 ## replication_timing = readRDS('covariate.rds')
 
 
