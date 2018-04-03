@@ -4,11 +4,11 @@ library(testthat)
 ##ZG Testing Paths
 
 
-load('~/git/fishHook/data/events.rda')
-load('~/git/fishHook/data/targets.rda')
-replication_timing = load('~/git/fishHook/data/replication_timing_cov.rda')
-eligible = load('~/git/fishHook/data/eligible.rda')
-anno = readRDS('~/git/fishHook/data/anno.rds')
+## load('~/git/fishHook/data/events.rda')
+## load('~/git/fishHook/data/targets.rda')
+## replication_timing = load('~/git/fishHook/data/replication_timing_cov.rda')
+## eligible = load('~/git/fishHook/data/eligible.rda')
+## anno = readRDS('~/git/fishHook/data/anno.rds')
 
 
 
