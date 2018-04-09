@@ -36,10 +36,6 @@ Installation
   devtools::install_github('mskilab/fishHook')
   ````
 
-See Demo:
-
-[fishHook Demo](https://github.com/mskilab/fishHook/blob/master/fishHook_Demo.ipynb)
-
 See Documentation
 
 [R Documentation](https://raw.githubusercontent.com/mskilab/fishHook/master/fishHook.pdf)
