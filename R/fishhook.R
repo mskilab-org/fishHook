@@ -20,6 +20,47 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ###############################################################################
 
+
+
+
+## eligible.rda  events.rda  replication_timing_cov.rda  targets.rda
+
+#' Sample events
+#'
+#' @name events
+#' @docType data
+#' @keywords data
+#' @format \code{GRanges}
+NULL
+
+
+#' Sample targets
+#'
+#' @name targets
+#' @docType data
+#' @keywords data
+#' @format \code{GRanges}
+NULL
+
+
+#' Sample replication_timing, GC-content score
+#'
+#' @name replication_timing
+#' @docType data
+#' @keywords data
+#' @format \code{GRanges}
+NULL
+
+
+#' Sample eligible
+#'
+#' @name targets
+#' @docType data
+#' @keywords data
+#' @format \code{GRanges}
+NULL
+
+
 #' @name annotate.targets
 #' @title title
 #' @description
