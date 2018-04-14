@@ -14,40 +14,34 @@ library(testthat)
 
 Sys.setenv(DEFAULT_BSGENOME = 'BSgenome.Hsapiens.UCSC.hg19::Hsapiens')
 # Sample Events
-load('/home/travis/build/mskilab/fishHook/data/events.rda')
-## events = readRDS('events.rds')
 
-# Sample Targets
-load('/home/travis/build/mskilab/fishHook/data/targets.rda')
-## targets = readRDS('targets.rds')
+
+## Events
+events = readRDS(system.file("data", "events.rds", package = 'fishHook'))
+
+## Sample Targets
+targets = readRDS(system.file("data", "targets.rds", package = 'fishHook'))
 
 ## targets BED
-targetsbed = '/home/travis/build/mskilab/fishHook/data/targets.bed'
+targetsbed = system.file("data", "targets.bed", package = 'fishHook')
 
-# Sample Covariate
-load('/home/travis/build/mskilab/fishHook/data/replication_timing_cov.rda')
-replication_timing = replication_timing
-## replication_timing = readRDS('covariate.rds')
+## Sample Covariate
+replication_timing = readRDS(system.file("data", "covariate.rds", package = 'fishHook'))
 
+## Same Eligible Subset
+eligible = readRDS(system.file("data", "eligible.rds", package = 'fishHook'))
 
-# Same Eligible Subset
-load('/home/travis/build/mskilab/fishHook/data/eligible.rda')
-## eligible  = readRDS('eligible.rds')
+## indexed pathways
+indexed_pathways = readRDS(system.file("data", "indexed_pathways.rds", package = 'fishHook'))
 
+## segs 
+segs = readRDS(system.file("data", "jabba_segs_11517.rds", package = 'fishHook'))
 
-# indexed pathways
-indexed_pathways = readRDS('/home/travis/build/mskilab/fishHook/data/indexed_pathways.rds')
-## indexed_pathways = readRDS('indexed_pathways.rds')
-
-# Sample annotate
-anno = readRDS('/home/travis/build/mskilab/fishHook/data/anno.rds')
+## eligible
+eligible = readRDS(system.file("data", "eligible.rds", package = 'fishHook'))
 
 
-segs = readRDS('/home/travis/build/mskilab/fishHook/data/jabba_segs_11517.rds')
-## segs = readRDS('jabba_segs_11517.rds')
-
-load('/home/travis/build/mskilab/fishHook/data/eligible.rda')
-
+context('unit testing fishhook operations')
 
 
 
