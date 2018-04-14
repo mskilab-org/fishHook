@@ -12,15 +12,17 @@ library(testthat)
 
 
 
+
+
 Sys.setenv(DEFAULT_BSGENOME = 'BSgenome.Hsapiens.UCSC.hg19::Hsapiens')
 # Sample Events
 
 
 ## Events
-events = readRDS(system.file("data", "events.rds", package = 'fishHook'))
+## events = readRDS(system.file("data", "events.rds", package = 'fishHook'))
 
 ## Sample Targets
-targets = readRDS(system.file("data", "targets.rds", package = 'fishHook'))
+##targets = readRDS(system.file("data", "targets.rds", package = 'fishHook'))
 
 ## targets BED
 targetsbed = system.file("data", "targets.bed", package = 'fishHook')
@@ -29,7 +31,7 @@ targetsbed = system.file("data", "targets.bed", package = 'fishHook')
 replication_timing = readRDS(system.file("data", "covariate.rds", package = 'fishHook'))
 
 ## Same Eligible Subset
-eligible = readRDS(system.file("data", "eligible.rds", package = 'fishHook'))
+## eligible = readRDS(system.file("data", "eligible.rds", package = 'fishHook'))
 
 ## indexed pathways
 indexed_pathways = readRDS(system.file("data", "indexed_pathways.rds", package = 'fishHook'))
@@ -38,12 +40,7 @@ indexed_pathways = readRDS(system.file("data", "indexed_pathways.rds", package =
 segs = readRDS(system.file("data", "jabba_segs_11517.rds", package = 'fishHook'))
 
 ## eligible
-eligible = readRDS(system.file("data", "eligible.rds", package = 'fishHook'))
-
-
-context('unit testing fishhook operations')
-
-
+## eligible = readRDS(system.file("data", "eligible.rds", package = 'fishHook'))
 
 
 
