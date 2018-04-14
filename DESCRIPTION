@@ -13,9 +13,9 @@ Depends:
     gUtils, 
     ffTrack, 
     data.table (>= 1.9),
+    rtracklayer (>= 1.26)
 Imports:
     MASS,
-    rtracklayer (>= 1.26),
     zoo,
     GenomeInfoDb,
     S4Vectors,
