@@ -22,7 +22,7 @@ Sys.setenv(DEFAULT_BSGENOME = 'BSgenome.Hsapiens.UCSC.hg19::Hsapiens')
 ## events = readRDS(system.file("data", "events.rds", package = 'fishHook'))
 
 ## Sample Targets
-##targets = readRDS(system.file("data", "targets.rds", package = 'fishHook'))
+targets = readRDS(system.file("data", "targets.rds", package = 'fishHook'))
 
 ## targets BED
 targetsbed = system.file("data", "targets.bed", package = 'fishHook')
@@ -42,6 +42,9 @@ segs = readRDS(system.file("data", "jabba_segs_11517.rds", package = 'fishHook')
 ## eligible
 ## eligible = readRDS(system.file("data", "eligible.rds", package = 'fishHook'))
 
+# Sample annotate
+anno = readRDS(system.file("data", "anno.rds", package = 'fishHook'))
+
 
 
 context('unit testing fishhook operations')
@@ -59,9 +62,9 @@ test_that('annotate.targets', {
     el1 = eligible[1]
     r1 = replication_timing[1]
     expect_error({annotate.targets(targets = targets[1], events = events[1], maxpatientpergene = 'hello')})
-    c1 = Cov_Arr$new(cvs = list('/home/travis/build/mskilab/fishHook/data/covariate.rds'), type = 'numeric', name = 'c1', pad = 10)
-    c2 = Cov_Arr$new(cvs = list('/home/travis/build/mskilab/fishHook/data/covariate.rds'), type = 'interval', name = 'c2', pad = 10, na.rm = T)
-    c3 = Cov_Arr$new(cvs = list(RleList()), type = 'interval', name = 'c3', pad = 10, na.rm = T)
+    c1 = Cov_Arr$new(cvs = list(system.file("data", "covariate.rds", package = 'fishHook')), type = 'numeric', name = 'c1', pad = 10)
+    c2 = Cov_Arr$new(cvs = list(system.file("data", "covariate.rds", package = 'fishHook')), type = 'interval', name = 'c2', pad = 10, na.rm = TRUE)
+    c3 = Cov_Arr$new(cvs = list(RleList()), type = 'interval', name = 'c3', pad = 10, na.rm = TRUE)
     anno = annotate.targets(targets = t1, events = e1, covariates = c1$toList())
     anno2 = annotate.targets(targets = t1, events = e1, covariates = c2$toList())
     #anno3 = annotate.targets(targets = t1, events = e1, covariates = c3$toList())
@@ -110,7 +113,7 @@ test_that('annotate.targets', {
     ## if events != NULL
     expect_equal(max(annotate.targets(targets, events=events)$count), 9750)
     ##
-    annotate.targets('/home/travis/build/mskilab/fishHook/data/targets.rds')
+    annotate.targets(system.file("data", "targets.rds", package = 'fishHook'))
     expect_true(is(annotate.targets(targets), 'GRanges'))
     ##Interval Covariates
     int = Cov_Arr$new(cvs = replication_timing[1], name = 'int', type = 'interval', pad = 10)
@@ -130,11 +133,13 @@ test_that('annotate.targets', {
 
 ## aggregate.targets
 
+c(system.file("data", "anno.rds", package = 'fishHook'), system.file("data", "anno.rds", package = 'fishHook'))
+
 test_that('aggregate.targets', {
 
-    expect_error(aggregate.targets('/home/travis/build/mskilab/fishHook/data/targets.rds', rolling = 1))
-    expect_error(aggregate.targets('/home/travis/build/mskilab/fishHook/data/targets.rds', rolling = 1))
-    agg = aggregate.targets(c('/home/travis/build/mskilab/fishHook/data/anno.rds','/home/travis/build/mskilab/fishHook/data/anno.rds'), rolling = 1, na.rm = T)
+    expect_error(aggregate.targets(system.file("data", "targets.rds", package = 'fishHook'), rolling = 1))
+    expect_error(aggregate.targets(system.file("data", "targets.rds", package = 'fishHook'), rolling = 1))
+    agg = aggregate.targets(c(system.file("data", "anno.rds", package = 'fishHook'), system.file("data", "anno.rds", package = 'fishHook')), rolling = 1, na.rm = T)
     expect_error({agg = aggregate.targets(anno, rolling = -1)})
     expect_error(aggregate.targets(targets))  ## Error: argument "by" must be specified and same length as targets or "rolling" must be non NULL
     foo = aggregate.targets(targets, by='gene_name')
@@ -163,9 +168,9 @@ test_that('aggregate.targets', {
     expect_equal(length(aggregate.targets(annotated, by = 'gene_name', verbose = FALSE)[[1]]), 16352)
     ## 
     ##  if (is.null(by) & is.character(targets)){
-    expect_error(aggregate.targets('/home/travis/build/mskilab/fishHook/data/targets.rds'))  ## Coverage missing for input targets
+    expect_error(aggregate.targets(system.file("data", "targets.rds", package = 'fishHook')))  ## Coverage missing for input targets
     ##  if (is.null(by) & is.character(targets)){ (continued)
-    expect_error(aggregate.targets('/home/travis/build/mskilab/fishHook/data/annotated_cov.rds'))
+    expect_error(aggregate.targets(system.file("data", "annotated_cov.rds", package = 'fishHook')))
     ##testing rolling aggregation
     start = c(1,1001,2001,3001,4001,5001)
     end = c(1000,2000,3000,4000,5000,6000)
@@ -233,13 +238,13 @@ test_that('score.targets', {
     s6 = score.targets(anno, subsample = 0.7)
     anno$cov = NULL
     anno$p = NULL
-    m1 = score.targets(anno, return.model = T)
+    m1 = score.targets(anno, return.model = TRUE)
     s8 = score.targets(anno[1:1000], model = m1)
     anno$fac = c(1:2)
     anno$fac = as.factor(anno$fac)
     anno$cov = as.numeric(c(1:length(anno)))
     anno4 = anno[1:1000]
-    s9 = score.targets(anno4, verbose = T,  covariates = c('cov', 'fac'))
+    s9 = score.targets(anno4, verbose = TRUE,  covariates = c('cov', 'fac'))
 })
 
 
@@ -504,7 +509,7 @@ test_that('FishHook', {
     expect_error({fish2$targets = 42})
     ##Need to fix issue with loading bed files
     #fish2$targets = '~/git/fishHook/data/targets.bed'
-    fish2$targets = '/home/travis/build/mskilab/fishHook/data/targets.rds'
+    fish2$targets = system.file("data", "targets.rds", package = 'fishHook')
     empty_ranges = GRanges()
     expect_error({fish2$targets = empty_ranges})
     ##Events
