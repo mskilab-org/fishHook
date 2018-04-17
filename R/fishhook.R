@@ -122,6 +122,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
         if (grepl('\\.rds$', targets[1])){
             targets = readRDS(targets[1])
         } else if (grepl('(\\.bed$)', targets[1])){
+            require(rtracklayer)
             targets = rtracklayer::import(targets[1], (format = "BED"))
         }
     }
@@ -314,7 +315,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
                 } else{
                     ## assume it is a UCSC format
                     require(rtracklayer)
-                    cov$track = import(cov$track)
+                    cov$track = rtracklayer::import(cov$track)
                 }
             }
 
@@ -349,7 +350,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
                 } else{
                     ## assume it is a UCSC format
                     require(rtracklayer)
-                    cov$track = import(cov$track)
+                    cov$track = rtracklayer::import(cov$track)
                 }
 
             }
@@ -1500,8 +1501,13 @@ FishHook = R6::R6Class('FishHook',
 
 
             ##Targets
-            if(!(class(targets) == 'GRanges')  && !is.null(targets)){
-                stop('Error: targets must be of class GRanges')
+            if(!((class(targets) == 'GRanges') || class(targets) == 'character')  && !is.null(targets)){
+                stop('Error: targets must be of class GRanges or character')
+            }
+            
+            if(class(targets) == 'character'){
+                self$targets = targets
+                targets = self$targets
             }
         
         
@@ -2037,7 +2043,7 @@ FishHook = R6::R6Class('FishHook',
 
             if(!missing(value)){
                 if(!(class(value) == 'GRanges') && !(class(value) == 'character')){
-                    stop('Error: targets must be of class GRanges')
+                    stop('Error: targets must be of class GRanges or character')
                 }
 
             targets = value
@@ -2048,7 +2054,7 @@ FishHook = R6::R6Class('FishHook',
                     targets = readRDS(targets[1])
                 } else if (grepl('(\\.bed$)', targets[1])){
                     require(rtracklayer)
-                    targets = import.ucsc(targets[1])
+                    targets = rtracklayer::import(targets[1], (format = "BED"))
                 }
             }
 
