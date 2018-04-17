@@ -27,6 +27,12 @@
 
 #' Sample events
 #'
+#' An object of type 'GRanges' that contains a set of events dervided from the TCGA whole exome sequencing data.
+#'
+#' Metadata columns:
+#' id, inidcates to which sample (patient) the mutational event belongs to. There are a total
+#' of 8475 patients and 1985704 total events
+#' 
 #' @name events
 #' @docType data
 #' @keywords data
@@ -35,6 +41,11 @@ NULL
 
 
 #' Sample targets
+#'
+#' An object of type 'GRanges' that contains 19,688 human genes
+#'
+#' Metadata columns:
+#' gene_name, inidcates the name by which this gene is refered to as. e.g. TP53
 #'
 #' @name targets
 #' @docType data
@@ -45,6 +56,12 @@ NULL
 
 #' Sample replication_timing, GC-content score
 #'
+#' An object of type 'GRanges' that contains information regarind how long each genomic region takes to replicate.
+#' This will be used as a covariate in the fishHook model
+#'
+#' Metadata columns:
+#' score, indicates the relative rate of replication timing in this region
+#' 
 #' @name replication_timing
 #' @docType data
 #' @keywords data
@@ -54,6 +71,16 @@ NULL
 
 #' Sample eligible
 #'
+#' An object of type 'GRanges' that contains all of the eligible regions of whole exome sequencing.
+#' Whole exome sequencing only sequences exonic sequences and thus most of the genome should be
+#' disregarded when conducting the analysis. In addition, many exonic regions are not even captured in
+#' whole exome sequencing. We define an eligible (covered) region here as a region where 80% of samples
+#' have mapping reads. i.e. if we sequence 10 people and only 6 (60%)  have reads in that region then we
+#' would consider that region uneigible.
+#'
+#' Metadata columns:
+#' score, indicates the percent of samples that have reads mapping to that region.
+#' 
 #' @name targets
 #' @docType data
 #' @keywords data
