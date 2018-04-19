@@ -1489,8 +1489,10 @@ Cov_Arr = R6::R6Class('Cov_Arr',
 #' will cluster in local regions as opposed to global regions. This is similar to saying, in the town of foo, there is a crime rate of X that we will assume to be the local crime rate
 #' If a region in foo have a crime rate Y such that Y >>>>> X, we can say that region Y has a higher crime rate than we would expect.
 #' @param local_mut_density_bin A numeric value that will indicate the size of the genomic bins to use if use_local_mut_density = TRUE. Note that this paramter should be a few orders of
-#' magnitude greater than the size of your targets. e.g. if your targets are 1e5 bps long, you may want a local_mut_density_bin of 1e7 or even 1e8
-#' @param gennome A character value indicating which build of the human genome to use, by default set to hg19
+#' magnitude greater than the size of your targetls
+#'
+#' e.g. if your targets are 1e5 bps long, you may want a local_mut_density_bin of 1e7 or even 1e8
+#' @param genome A character value indicating which build of the human genome to use, by default set to hg19
 #' @param mc.cores A numeric value that indicates the amount of computing cores to use when running fishHook. This will mainly be used during the annotation step of the analysis, or during
 #' initial instantiation of the object if use_local_mut_density = T
 #' @param na.rm A logical indicating how you handle NAs in your data, mainly used in fftab and gr.val, see these function documentations for more information
