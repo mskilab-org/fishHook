@@ -8,7 +8,20 @@ R package for applying Gamma-Poisson regression to identify statistical enrichme
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
 
-Installation
+# Table of Contents:
+-----------
+1. [Installation](#installation)
+2. [R Documentation](#rdocs)
+3. [Attributions](#attributions)
+4. [TL;DR](#tldr)
+5. [FishHook Demo](#demo)
+6. [FishHook Operations](#fishhook_ops)
+7. [Active Bindings and FishHook Variables](#active_bindings)
+7. [FishHook Functions](#functions)
+
+<div id="installation"/>
+
+Installation 
 -----------
 
 1. Install devtools from CRAN (if you don't have it already)
@@ -36,12 +49,20 @@ Installation
   devtools::install_github('mskilab/fishHook')
   ````
 
-See Documentation
 
+
+
+<div id="rdocs"/>
+
+See Documentation 
+------------
 [R Documentation](https://raw.githubusercontent.com/mskilab/fishHook/master/fishHook.pdf)
 
-Description
------------
+
+
+
+
+<div id="attributions"/>
 
 Attributions
 ------------
@@ -50,7 +71,7 @@ Attributions
 
 
 
-
+<div id="tldr"/>
 
 TL;DR
 -----------
@@ -131,7 +152,7 @@ plot <- fish$qq_plot(plotly = F)
 
 
 
-
+<div id="demo"/>
 
 
 Demo
@@ -994,6 +1015,7 @@ plot
 
 ![](images/plotly4.png)
 
+<div id="fishhook_ops"/>
 
 ## FishHook Extras: Subsetting
 The fishHook object can be subset in the following way: 
@@ -1203,6 +1225,7 @@ test6
     
 
 
+<div id="active_bindings"/>
 
 # Active Bindings
 -----------
@@ -1461,7 +1484,7 @@ You can also assign variables using the active bindings like so:<br/><br/>
 **Default:** NA
 
 
-
+<div id="functions"/>
 
 # Relavent Functions
 -----------
