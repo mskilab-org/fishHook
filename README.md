@@ -1463,7 +1463,164 @@ You can also assign variables using the active bindings like so:<br/><br/>
 
 
 
+# Relavent Functions
+-----------
+These are functions stored in the R6 objects, Cov_Arr and FishHook. They can be acessed by: <br/><br/>
+FishHook\$Function() <br/><br/>
+Cov_Arr\$Function() <br/><br/>
+
+# FishHook
+-----------
+
+# initialize()
+**Description:** Initializes the FishHook Object. Can be called with: <br/><br/>
+x = FishHook$new(...)<br/><br/>
+**Params:** <br/>
+1. **targets:** Examples of targets are genes, enhancers, or even 1kb tiles of the genome that we can then convert into a rolling/tiled window. This param must be of class "GRanges".    
+2. **events:** Events are the given mutational regions and must be of class "GRanges". Examples of events are SNVs (e.g. C->G) somatic copy number alterations (SCNAs), fusion events, etc.  
+3. **eligible:** Eligible regions are the regions of the genome that have enough statistical power to score. For example, in the case of exome sequencing where all regions are not equally represented, eligible can be a set of regions that meet an arbitrary exome coverage threshold. Another example of when to use eligibility is in the case of whole genomes, where your targets are 1kb tiles. Regions of the genome you would want to exclude in this case are highly repetative regions such as centromeres, telomeres, and satelite repeates. This param must be of class "GRanges".     
+4. **covariates:** Covariates are genomic covariates that you belive will cause your given type of event (mutations, CNVs, fusions, case control samples) that are not linked to the process you are investigating (e.g. cancer drivers). In the case of cancer drivers, we are looking for regions that are mutated as part of cancer progression. As such, regions that are more suceptable to random mutagenesis such as late replicating or non-expressed region (transcription coupled repair) could become false positives. Including covariates for these biological processes will reduce thier visible effect in the final data. This param must be of type "Cov_Arr".  
+5. **out.path:** A character that will indicate a system path in which to save the results of the analysis. 
+6. **use_local_mut_density:** A logical that when true, creates a covariate that will represent the mutational density in the genome, whose bin size will be determined by local_mut_density_bin. This covariate can be used when you have no other covariates as a way to correct for variations in mutational rates along the genome under the assumption that driving mutations will cluster in local regions as opposed to global regions. This is similar to saying, in the town of foo, there is a crime rate of X that we will assume to be the local crime rate. If a region in foo have a crime rate Y such that Y >>>>> X, we can say that region Y has a higher crime rate than we would expect.      
+7. **local_mut_density_bin:** A numeric value that will indicate the size of the genomic bins to use if use_local_mut_density = TRUE. Note that this paramter should be a few orders of magnitude greater than the size of your targets e.g. if your targets are 1e5 bps long, you may want a local_mut_density_bin of 1e7 or even 1e8  
+8. **genome:** A character value indicating which build of the human genome to use, by default set to hg19 
+9. **mc.cores:** A numeric value that indicates the amount of computing cores to use when running fishHook. This will mainly be used during the annotation step of the analysis, or during initial instantiation of the object if use_local_mut_density = T     
+10. **na.rm:** A logical indicating how you handle NAs in your data, mainly used in fftab and gr.val, see these function documentations for more information.
+11. **pad:** A numeric indicating how far each covariate range should be extended, see Cov_Arr for more information, not that this will only be used if atleast on of the Covariates have pad = NA.  
+12. **verbose:** A logical indicating whether or not to print information to the console when running FishHook  
+13. **max.slice:** A parameter used when annotating covariates, indicates the max.slice paramter for gr.val. This parameter indicates the maximum number of ranges (covariate rows) to use at a time. This is correlated with memory usage. For example, a high max.slice will yeild faster running times but will require more memory.
+14. **ff.chunk:** For use with ffTrack covariates. Indicates the max interval length to load in from ffTrack. Larger values will result in faster run times but will increase memory
+15. **max.chunk:** Used when finding the overlap between events and targets. This is a parameter passed into gr.findoverlaps and indicates the total number of ranges(events) to consider at a given time. Larger values will result in faster run times but will increase memory usage.
+16. **ptidcol:** This is used when you want to limit the number of events that any given patient can contribute. This parameter is a character that indicates the column name of the 'events' variable that contains the patient IDs. This should be used in conjunction with the maxpatientpergene parameter.
+17. **maxptpergene:** This is used when you want to limit the number of events that any given patient can contribute. This parameter is a numeric that indicates the maximum number of events any given patient can contribute to any given target. This should be used in conjunction with the ptidcol parameter.
+18. **weightEvents:** A logical that indicates if the events should be weighted by thier overlap with the targets. e.g. if we have a SCNA spanning 0:1000 and a target spanning 500:10000, the overlap  
+
+<br/>**Return:** FishHook object ready for annotation/scoring<br/><br/>
+**UI:** None 
+                                                                                           
+
+     
+
+# print()
+**Description:** Prints out a summary of the FishHook object. Can be used by invoking the variable name.<br/><br/>
+**Params:** No parameters required. Provided parameters will be ignored. <br/><br/>
+**Return:** None<br/><br/>
+**UI:** Prints information about the FishHook object to the console including; total events, total targets, whether eligible regions will be used, and covariates/number of covariates.
+
+# annotate()
+**Description:** Counts the number of events that fall into each of the targets as well as calcualtes values for the covariates at each target.<br/>
+**Params:** <br/>
+1. **mc.cores:** A numeric value that indicates the amount of computing cores to use when running fishHook. This will mainly be used during the annotation step of the analysis, or during initial instantiation of the object if use_local_mut_density = T
+2. **na.rm:** A logical indicating how you handle NAs in your data, mainly used in fftab and gr.val, see these function documentations for more information.
+3. **pad:** A numeric indicating how far each covariate range should be extended, see Cov_Arr for more information, not that this will only be used if atleast on of the Covariates have pad = NA.  
+4. **verbose:** A logical indicating whether or not to print information to the console when running FishHook
+5. **max.slice:** A parameter used when annotating covariates, indicates the max.slice paramter for gr.val. This parameter indicates the maximum number of ranges (covariate rows) to use at a time. This is correlated with memory usage. For example, a high max.slice will yeild faster running times but will require more memory.
+6. **ff.chunk:** For use with ffTrack covariates. Indicates the max interval length to load in from ffTrack. Larger values will result in faster run times but will increase memory
+7. **max.chunk:** Used when finding the overlap between events and targets. This is a parameter passed into gr.findoverlaps and indicates the total number of ranges(events) to consider at a given time. Larger values will result in faster run times but will increase memory usage.
+8. **ptidcol:** This is used when you want to limit the number of events that any given patient can contribute. This parameter is a character that indicates the column name of the 'events' variable that contains the patient IDs. This should be used in conjunction with the maxpatientpergene parameter.
+9. **maxpatientpergene:** This is used when you want to limit the number of events that any given patient can contribute. This parameter is a numeric that indicates the maximum number of events any given patient can contribute to any given target. This should be used in conjunction with the ptidcol parameter.
+
+**Return:** None, but updates the FishHook object so that it is in the 'Annotated' state.The annotated information can be accesed using the 'anno' active binding.<br/><br/>
+**UI:** None 
+
+
+# aggregate()
+**Description:** Aggregates targets into groups for aggregate scoring. e.g. aggregate genes in a pathway or tiles of a genome.<br/><br/>
+**Params:** <br/>
+1. **by:** A character vector with which to split into meta-territories (default = NULL) 
+2. **fields:** A character vector indicating which columns to be used in aggregateion by default all meta data fields of targets EXCEPT reserved field names \$coverage, \$counts, \$query.id (default = NULL)         
+3. **rolling:** A positive numeric (integer) specifying how many (genome coordinate) adjacent to aggregate in a rolling fashion; positive integer with which to performa rolling sum / weighted average WITHIN chromosomes of "rolling" ranges" --> return a granges For example, if we cut a chromosome into 5 pieces (1,2,3,4,5) and set rolling = 3, we will get an aggregated dataset (123,234,345) as the internal value. This is mainly for use with whole genome analysis in order to speed up the annotation step (default = NULL)  
+4. **disjoint:** boolean only take disjoint bins of input (default = TRUE)     
+5. **na.rm:** boolean only applicable for sample wise aggregation (i.e. if by = NULL) (default = FALSE)                                                                           
+6. **FUN:** list only applies (for now) if by = NULL, this is a named list of functions, where each item named "nm" corresponds to an optional function of how to alternatively aggregate field "nm" per samples, for alternative aggregation of coverage and count. This function is applied at every iteration of loading a new sample and adding to the existing set. It is normally sum [for coverage and count] and coverage weighted mean [for all other covariates].  Alternative coverage / count aggregation functions should have two arguments (val1, val2) and all other alt covariate aggregation functions should have four arguments (val1, cov1, val2, cov2) where val1 is the accumulating vector and val2 is the new vector of values.                              
+7. **verbose:** boolean verbose flag (default = TRUE)    
+
+**Return:** None, but sets the internal state of the object to 'Aggregated'.<br/><br/>
+**UI:** None 
+
+
+# score()
+**Description:** If the FishHook object is in the Annotated State, this function will fit a regression model (negative binomial/poisson) to the targets and assign significance. If the FishHook object is in the Initialized state, this function will first annotate the FishHook object and then score.<br/><br/>
+**Params:** <br/>
+1. **verbose:** boolean verbose flag (default = TRUE)  
+2. **iter:** max iterations to use when fitting the linear model (only for negative binomial)
+3. **subsample:** Number of targets to use when fitting the model (selected randomly).
+4. **seed:** numeric (integer) indicated the random number seed to be used.  (default = 42) 
+6. **nb:** boolean If TRUE, uses negative binomial; if FALSE then use Poisson                                    
+    
+**Return:** None, but sets the internal state of the object to 'Scored'. You can acess the scored data with FishHook\$all<br/><br/>
+**UI:** None 
+
+
+# clear()
+**Description:** Resets the FishHook object to an earlier state. The order of states goes: 'Initialized','Annotated','Scored' <br/><br/>
+**Params:** <br/>
+1. **state:** A character indicating which state to revert to, e.g. if you are 'Scored' you can revert to 'Annotated', 'Initialize'. If your state is 'Annotated' you can revert to 'Initialized'. If your state is 'Initialized' attempting to rever will do nothing.
+
+**Return:** Nothing, but changes the internal state of the object<br/><br/>
+**UI:** None 
+
+
+# qq_plot()
+**Description:** Creates a qqplot plot (either base R or plotly) to visualize target significance and how good the model is for a given dataset. <br/>
+**Params:** <br/> <br/>
+1. **plotly:** boolean value indicating if the function should return a plotly (TRUE) or base R plot (FALSE) object.
+2. **columns:** A character vector, that indicates the names of the columns from the fishHook$all output to use in annotating hovertext on plotly plots. This will only be used if plotly = T.  
+3. **annotations:** A named list of character vectors. Each vector must have the same number of rows  as the fishHook\$all data.table. These character vectors will be used to annotate hover text on the plotly plots in the same order as the targets. This will only be used if plotly = T    
+4. **key:** A character that is passed to the plotly function that will link each point to a give value. For example, if key is set to gene_name. The ploted points are refered to by the value in the column gene_name. This is useful when integrating with shiny or any other tool that can integrate with plotly plots.  
+
+
+**Return:** Either a base R or a plotly plot. This is dependant on the 'plotly' parameter. <br/><br/>
+**UI:** None 
 
 
 
+# Cov_Arr
+-----------
+
+## initialize()
+**Description:** Initializes the Cov_Arr Object. Can be called with: <br/><br/>
+x = Cov_Arr$new(...)<br/><br/>
+**Params:** <br/>
+1. **name:** A character vector containing all of the names for the covariates.
+2. **pad:** A numeric vector indicating how far each covariate range should be extended. e.g. If a covariate has ranges [10,20] and pad = 5, the covariate ranges will be set to [5,25].
+3. **type:** A character vector that contains the types of each covariate (numeric, interval, sequencing).
+4. **signature:** signature is for use with ffTRack and is a list of named lists that specifies what is to be tallied. Each signature (list element) consists of an arbitrary length character vector specifying strings to match if grep == FALSE. Signarure can also be a length 1 character vector to grepl (if grep = TRUE) or a length 1 or 2 numeric vector specifying exact value or interval to match (for numeric data).
+5. **field:**  A character vector for use with numeric covariates (NA otherwise) the indicates the column containing the values of that covarites. For example, if you have a covariate for replication timing and the values are in the column 'value', the parameter field should be set to the character 'Value'.
+6. **na.rm:** A logical vector that indicates whether or not to remove nas in the covariates. 
+7. **grep:** A logical vector for use with ffTrack covariates. It specifies what form of signaure to use. See the signature paramter for more information.
+8. **cvs:** A list of covariates that can include any of the covariate classes (GRanges, ffTrack, RleList, character).
+
+<br/>**Return:** Returns an object of type Cov_Arr that can be passed directly to the fishHook class. <br/><br/>
+**UI:** None 
+
+
+
+
+# chr()
+**Description:** Returns a logical vector where each element corresponds to a covariate and where TRUE indicates a chr based seqlevels e.g. chr14  will return TRUE  <br/><br/>
+**Params:** No parameters required. Provided parameters will be ignored. <br/><br/>
+**Return:** logical vector<br/><br/>
+**UI:** None 
+
+
+# seqlevels()
+**Description:** returns a list of character vectors. If the respective covariate is of class GRanges, the vector will contain all of the chromosome names. If a covariate is not of class GRanges, will return an NA.   <br/><br/>
+**Params:** No parameters required. Provided parameters will be ignored. <br/><br/>
+**Return:** character vector <br/><br/>
+**UI:** None 
+
+
+# toList()
+**Description:** Returns a list of lists where each internal list corresponds to a covariate and is for use internally in the annotate.targets function. The list representation of the covariate will contain the following variables: type, signature, pad, na.rm, field, grep <br/><br/>
+**Params:** No parameters required. Provided parameters will be ignored. <br/><br/>
+**Return:** list of lists<br/><br/>
+**UI:** None 
+
+
+# print()
+**Description:** Prints out a summary of the Cov_Arr. Can be used by invoking the variable name.<br/><br/>
+**Params:** No parameters required. Provided parameters will be ignored. <br/><br/>
+**Return:** None<br/><br/>
+**UI:** Prints information about the Cov_Arr to the console with all of covariates printed in order with variables printed alongside each covariate.
 
