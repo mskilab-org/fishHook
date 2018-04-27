@@ -101,12 +101,12 @@ such as H3K9me3 profile, chromhmm intervals, etc.
 data(events)
 data(targets)
 data(eligible)
-data(replication_timing_cov)
+data(replication_timing)
 
 events = events
 gene_targets = targets
 eligible = eligible
-replication_timing = replication_timing_cov
+replication_timing = replication_timing
 ```
 
 ## Create a Covariate Object
