@@ -1684,9 +1684,9 @@ FishHook = R6::R6Class('FishHook',
             targ = paste('Contains' , length(private$ptargets), "hypotheses." ,collapse = "")
             eve = paste('Contains', length(private$pevents), "events to map to hypotheses.", collapse = "")
             if(is.null(private$peligible)){
-                elig = "All regions are elgible."
+                elig = "All regions are eligible."
             } else{
-                elig = "Will map only eliglble regions."
+                elig = "Will map only eligilble regions."
             }
             if(is.null(private$pcovariates$names)){
                 covs = "No covariates will be used."
