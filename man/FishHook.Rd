@@ -31,9 +31,11 @@ will cluster in local regions as opposed to global regions. This is similar to s
 If a region in foo have a crime rate Y such that Y >>>>> X, we can say that region Y has a higher crime rate than we would expect.}
 
 \item{local_mut_density_bin}{A numeric value that will indicate the size of the genomic bins to use if use_local_mut_density = TRUE. Note that this paramter should be a few orders of
-magnitude greater than the size of your targets. e.g. if your targets are 1e5 bps long, you may want a local_mut_density_bin of 1e7 or even 1e8}
+magnitude greater than the size of your targetls
 
-\item{gennome}{A character value indicating which build of the human genome to use, by default set to hg19}
+e.g. if your targets are 1e5 bps long, you may want a local_mut_density_bin of 1e7 or even 1e8}
+
+\item{genome}{A character value indicating which build of the human genome to use, by default set to hg19}
 
 \item{mc.cores}{A numeric value that indicates the amount of computing cores to use when running fishHook. This will mainly be used during the annotation step of the analysis, or during
 initial instantiation of the object if use_local_mut_density = T}

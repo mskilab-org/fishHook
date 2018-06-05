@@ -820,7 +820,7 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
                 cat(sprintf('Subsampling ..\n'))
             }
 
-            tdt = tdt[sample(1:nrow(tdt), subsample), ]
+            tdt = tdt[sample(1:nrow(tdt), pmin(nrow(tdt), subsample)), ]
         }
 
         if (verbose){
