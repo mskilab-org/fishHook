@@ -1,4 +1,4 @@
-#############################################################################
+############################################################################
 ## Marcin Imielinski
 ## Weill Cornell Medicine  mai9037@med.cornell.edu
 ## New York Genome Center mimielinski@nygenome.org
@@ -23,7 +23,7 @@
 
 
 
-## eligible.rda  events.rda  replication_timing_cov.rda  targets.rda
+## eligible.rda  events.rda  replication_timing_cov.rda  hypotheses.rda
 
 #' Sample events
 #'
@@ -40,14 +40,14 @@
 NULL
 
 
-#' Sample targets
+#' Sample hypotheses
 #'
 #' An object of type 'GRanges' that contains 19,688 human genes
 #'
 #' Metadata columns:
 #' gene_name, inidcates the name by which this gene is refered to as. e.g. TP53
 #'
-#' @name targets
+#' @name hypotheses
 #' @docType data
 #' @keywords data
 #' @format \code{GRanges}
@@ -81,18 +81,18 @@ NULL
 #' Metadata columns:
 #' score, indicates the percent of samples that have reads mapping to that region.
 #' 
-#' @name targets
+#' @name hypotheses
 #' @docType data
 #' @keywords data
 #' @format \code{GRanges}
 NULL
 
 
-#' @name annotate.targets
+#' @name annotate.hypotheses
 #' @title title
 #' @description
 #'
-#' Takes input of GRanges targets, an optional set of "covered" intervals, and an indefinite list of covariates which can be R objects
+#' Takes input of GRanges hypotheses, an optional set of "covered" intervals, and an indefinite list of covariates which can be R objects
 #' (GRanges, ffTrack, Rle) or file paths to .rds, .bw, .bed files, and an annotated target intervals GRanges with covariates computed
 #' for each interval.   These target intervals can be further annotated with mutation counts and plugged into a generalized linear regression
 #' (or other) model downstream.
@@ -103,7 +103,7 @@ NULL
 #' interval covariates: fraction of bases overlapping feature
 #'
 #'
-#' @param targets path to bed or rds containing genomic target regions with optional target name
+#' @param hypotheses path to bed or rds containing genomic target regions with optional target name
 #' @param covered  optional path to bed or rds containing  granges object containing "covered" genomic regions (default = NULL)
 #' @param events  optional path to bed or rds containing ranges corresponding to events (ie mutations etc) (default = NULL)
 #' @param mc.cores integer info (default = 1)
@@ -114,11 +114,11 @@ NULL
 #' @param ff.chunk integer Max chunk to evaluate with fftab (default = 1e6)
 #' @param max.chunk integer gr.findoverlaps parameter (default = 1e11)
 #' @param out.path  out.path to save variable to (default = NULL)
-#' @param covariates list of lists where each internal list represents a covariate, the internal list can have elements: track, type,signature,name,pad,na.rm = na.rm,field,grep. See Cov_Arr class for descriptions of what
-#' each of these elements do. Note that track is equivalent to the 'Covariate' parameter in Cov_Arr
-#' @param maxpatientpergene Sets the maximum number of events a patient can contribute per target (default = Inf)
-#' @param ptidcol string Column where patient ID is stored
-#' @param weightEvetns boolean If TRUE, will weight events by their overlap with targets. e.g. if 10% of an event overlaps with a target
+#' @param covariates list of lists where each internal list represents a covariate, the internal list can have elements: track, type,signature,name,pad,na.rm = na.rm,field,grep. See Covariate class for descriptions of what
+#' each of these elements do. Note that track is equivalent to the 'Covariate' parameter in Covariate
+#' @param idcap Sets the maximum number of events a patient can contribute per target (default = Inf)
+#' @param idcol string Column where patient ID is stored
+#' @param weightEvetns boolean If TRUE, will weight events by their overlap with hypotheses. e.g. if 10% of an event overlaps with a target
 #' region, that target region will get assigned a score of 0.1 for that event. If false, any overlap will be given a weight of 1.
 #' @param ... paths to sequence covariates whose output names will be their argument names, and each consists of a list with (default = FALSE)
 #' $track field corresponding to a GRanges, RleList, ffTrack object (or path to rds containing that object), $type which can
@@ -135,31 +135,30 @@ NULL
 #' specifying how many positions in the given interval match the given query
 #'
 #' Interval covariates must be Granges (or paths to GRanges rds) or paths to bed files
-#' @return GRanges of input targets annotated with covariate statistics (+/- constrained to the subranges in optional argument covered)
+#' @return GRanges of input hypotheses annotated with covariate statistics (+/- constrained to the subranges in optional argument covered)
 #' @author Marcin Imielinski
-#' @export
-annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 1, na.rm = TRUE, pad = 0, verbose = TRUE, max.slice = 1e3,
-    ff.chunk = 1e6, max.chunk = 1e11, out.path = NULL, covariates = list(), maxpatientpergene = Inf, ptidcol = NULL, weightEvents = FALSE, ...)
+annotate.hypotheses = function(hypotheses, covered = NULL, events = NULL,  mc.cores = 1, na.rm = TRUE, pad = 0, verbose = TRUE, max.slice = 1e4,
+    ff.chunk = 1e6, max.chunk = 1e11, out.path = NULL, covariates = list(), idcap = Inf, idcol = NULL, weightEvents = FALSE, ...)
 {
-    if(weightEvents){
-        maxpatientpergene = NULL
+  if(weightEvents){
+        idcap = NULL
     }
 
-    if (is.character(targets)){
-        if (grepl('\\.rds$', targets[1])){
-            targets = readRDS(targets[1])
-        } else if (grepl('(\\.bed$)', targets[1])){
+    if (is.character(hypotheses)){
+        if (grepl('\\.rds$', hypotheses[1])){
+            hypotheses = readRDS(hypotheses[1])
+        } else if (grepl('(\\.bed$)', hypotheses[1])){
             require(rtracklayer)
-            targets = rtracklayer::import(targets[1], (format = "BED"))
+            hypotheses = rtracklayer::import(hypotheses[1], (format = "BED"))
         }
     }
 
-    if (length(targets)==0){
-        stop('Error: Must provide non-empty targets')
+    if (length(hypotheses)==0){
+        stop('Error: Must provide non-empty hypotheses')
     }
 
     if (!is.null(out.path)){
-        tryCatch(saveRDS(targets, paste(gsub('.rds', '', out.path), '.source.rds', sep = '')), error = function(e) warning(sprintf('Error writing to file %s', out.file)))
+        tryCatch(saveRDS(hypotheses, paste(gsub('.rds', '', out.path), '.source.rds', sep = '')), error = function(e) warning(sprintf('Error writing to file %s', out.file)))
     }
 
     COV.TYPES = c('numeric', 'sequence', 'interval')
@@ -201,18 +200,18 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
     }
 
     if (verbose){
-        cat('Overlapping with covered intervals\n')
+        fmessage('Overlapping with covered intervals')
     }
 
     if (!is.null(covered)){
-        ov = gr.findoverlaps(targets, covered, verbose = verbose, max.chunk = max.chunk, mc.cores = mc.cores)
+        ov = gr.findoverlaps(hypotheses, covered, verbose = verbose, max.chunk = max.chunk, mc.cores = mc.cores)
     } else {
-        ov = targets[, c()]
-        ov$query.id = ov$subject.id = 1:length(targets)
+        ov = hypotheses[, c()]
+        ov$query.id = ov$subject.id = 1:length(hypotheses)
     }
 
     if (verbose){
-        cat('Finished overlapping with covered intervals\n')
+        fmessage('Finished overlapping with covered intervals')
     }
 
     counts.unique = NULL
@@ -232,27 +231,32 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
                 counts = coverage(ev, weight = 1/width(ev))
                 oix = which(gr.in(ov, events))
 
-                if(!is.null(maxpatientpergene)){
+                if(!is.null(idcap)){
 
-                    if(!is.numeric(maxpatientpergene)){
-                        stop('Error: maxpatientpergene must be of type numeric')
+                    if(!is.numeric(idcap)){
+                        stop('Error: idcap must be of type numeric')
                     }
 
-                    if(!("ID" %in% colnames(values(events))) & is.null(ptidcol)){
+                    if(!("ID" %in% colnames(values(events))) & is.null(idcol)){
                         events$ID = c(1:length(events))
                     }
 
                     ev2 = gr.findoverlaps(events,ov, max.chunk = max.chunk, mc.cores = mc.cores)
 
-                    if(is.null(ptidcol)){
+                    if(is.null(idcol)){
                         ev2$ID = events$ID[ev2$query.id]
                     } else{
-                        ev2$ID = mcols(events)[,ptidcol][ev2$query.id]
+                      if (!(idcol %in% names(mcols(events))))
+                        {
+                          stop(paste('Column', idcol, 'not found in events'))
+                        }
+
+                      ev2$ID = mcols(events)[,idcol][ev2$query.id]
                     }
 
                     ev2$target.id = ov$query.id[ev2$subject.id]
                     tab = as.data.table(cbind(ev2$ID, ev2$target.id))
-                    counts.unique = tab[, dummy :=1][, .(count = sum(dummy)), keyby =.(V1, V2)][, count := pmin(maxpatientpergene, count)][, .(final_count = sum(count)), keyby = V2]
+                    counts.unique = tab[, dummy :=1][, .(count = sum(dummy)), keyby =.(V1, V2)][, count := pmin(idcap, count)][, .(final_count = sum(count)), keyby = V2]
                 }
 
             } else{
@@ -262,12 +266,12 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
             }
 
             if (verbose){
-                cat('Computing event counts\n')
+                fmessage('Computing event counts')
             }
 
             ov$count = 0
 
-            if (length(oix)>0 & is.null(maxpatientpergene)){
+            if (length(oix)>0 & is.null(idcap)){
                 ov$count[oix] = fftab(counts, ov[oix], chunksize = ff.chunk, na.rm = TRUE, mc.cores = mc.cores, verbose = verbose)$score
             }
 
@@ -276,14 +280,10 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
             }
 
             if (verbose){
-                cat('Finished counting events\n')
+                fmessage('Finished counting events')
             }
         }
     }
-
-
-
-
 
 
     for (nm in names(covariates)){
@@ -291,7 +291,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
         cov = covariates[[nm]]
 
         if (verbose){
-            cat('Starting track', nm, '\n')
+            fmessage('Starting track ', nm, '')
         }
 
         if (cov$type == 'sequence'){
@@ -301,7 +301,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
             }
 
             if (verbose){
-                cat('Starting fftab for track', nm, '\n')
+                fmessage('Starting fftab for track', nm, '')
             }
 
             if (!is.list(cov$signature)){
@@ -329,7 +329,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
             values(ov) = values(val)
 
             if (verbose){
-                cat('Finished fftab for track', nm, '\n')
+                fmessage('Finished fftab for track', nm, '')
             }
 
             if (!is.null(out.path)){
@@ -360,7 +360,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
                 if (is.na(cov$na.rm)){
 
                 }
-                new.col = data.frame(val = values(gr.val(ov + cov$pad, cov$track, cov$field, mc.cores = mc.cores, verbose = verbose,  max.slice = max.slice, max.chunk = max.chunk, mean = TRUE, na.rm = cov$na.rm))[, cov$field])
+                new.col = suppressWarnings(data.frame(val = values(gr.val(ov + cov$pad, cov$track, cov$field, mc.cores = mc.cores, verbose = verbose,  max.slice = max.slice, max.chunk = max.chunk, mean = TRUE, na.rm = cov$na.rm))[, cov$field]))
                 names(new.col) = nm
                 values(ov) = cbind(values(ov), new.col)
             }
@@ -396,7 +396,7 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
 
             cov$track = reduce(cov$track)
 
-            new.col = data.frame(val = gr.val(ov + cov$pad, cov$track[, c()], mean = FALSE, weighted = TRUE,  mc.cores = mc.cores, max.slice = max.slice, max.chunk = max.chunk, na.rm = TRUE)$value/(width(ov)+2*cov$pad))
+            new.col = suppressWarnings(data.frame(val = gr.val(ov + cov$pad, cov$track[, c()], mean = FALSE, weighted = TRUE,  mc.cores = mc.cores, max.slice = max.slice, max.chunk = max.chunk, na.rm = TRUE)$value/(width(ov)+2*cov$pad)))
             new.col$val = ifelse(is.na(new.col$val), 0, new.col$val)
             names(new.col) = nm
             values(ov) = cbind(values(ov), new.col)
@@ -430,95 +430,98 @@ annotate.targets = function(targets, covered = NULL, events = NULL,  mc.cores = 
         }
 
         ovdta =  ovdt[, eval(parse(text = cmd)), keyby = query.id]
-        values(targets) = as(as.data.frame(ovdta[list(1:length(targets)), ]), 'DataFrame')
+        values(hypotheses) = as(as.data.frame(ovdta[list(1:length(hypotheses)), ]), 'DataFrame')
 
-        if(!is.null(maxpatientpergene)){
-            targets$count = 0
-            targets$count[as.numeric(counts.unique$V2)] = counts.unique$final_count
+        if(!is.null(idcap)){
+            hypotheses$count = 0
+            hypotheses$count[as.numeric(counts.unique$V2)] = counts.unique$final_count
         }
 
     } else{
-        targets$coverage = 0
+        hypotheses$coverage = 0
     }
 
-    targets$query.id = 1:length(targets)
+    hypotheses$query.id = 1:length(hypotheses)
 
-    ix = is.na(targets$coverage)
+    ix = is.na(hypotheses$coverage)
     if (any(ix)){
-        targets$coverage[ix] = 0
-        if(!is.null(maxpatientpergene)){
-            targets$count[targets$coverage == 0] = NA
+        hypotheses$coverage[ix] = 0
+        if(!is.null(idcap)){
+            hypotheses$count[hypotheses$coverage == 0] = NA
         }
     }
     if (!is.null(out.path)){
         if (file.exists(paste(out.path, '.intermediate.rds', sep = ''))){
             system(paste('rm',  paste(out.path, '.intermediate.rds', sep = '')))  ## error catch above
         }
-        tryCatch(saveRDS(targets, out.path), error = function(e) warning(sprintf('Error writing to file %s', out.file)))
+        tryCatch(saveRDS(hypotheses, out.path), error = function(e) warning(sprintf('Error writing to file %s', out.file)))
     }
 
-    return(targets)
+
+    if (is.null(hypotheses$count))
+      hypotheses$count = ifelse(hypotheses$coverage == 0, NA, ifelse(is.null(events), NA, 0))
+    
+    return(hypotheses)
 
 }
 
 
 
 
-#' @name aggregate.targets
+#' @name aggregate.hypotheses
 #' @title title
 #' @description
 #'
-#' Gathers annotated targets across a vector "by" into meta-intervals returned as a GRangesList, and returns the
+#' Gathers annotated hypotheses across a vector "by" into meta-intervals returned as a GRangesList, and returns the
 #' aggregated statistics for these meta intervals by summing coverage and counts, and performing a weighted average of all other meta data fields
 #' (except query.id)
 #'
 #' If rolling = TRUE, will return a rolling collapse of the sorted input where "rolling" specifies the number of adjacent intervals that are aggregated in a rolling manner.
 #' (only makes sense for tiled target sets)
 #'
-#' If by = NULL and targets is a vector of path names, then aggregation will be done "sample wise" on the files, ie each .rds input will be assumed to comprise the same
+#' If by = NULL and hypotheses is a vector of path names, then aggregation will be done "sample wise" on the files, ie each .rds input will be assumed to comprise the same
 #' intervals in teh same order and aggregation will be computed coverage-weighted mean of covariates, a sum of coverage and counts, and (if present) a Fisher combined
 #' of $p values.  Covariates are inferred from the first file in the list.
 #'
-#' @param targets annotated GRanges of targets with fields $coverage, optional field, $count and additional numeric covariates, or path to .rds file of the same; path to bed or rds containing genomic target regions with optional target name
+#' @param hypotheses annotated GRanges of hypotheses with fields $coverage, optional field, $count and additional numeric covariates, or path to .rds file of the same; path to bed or rds containing genomic target regions with optional target name
 #' @param by character vector with which to split into meta-territories (default = NULL)
-#' @param fields by default all meta data fields of targets EXCEPT reserved field names $coverage, $counts, $query.id (default = NULL)
+#' @param fields by default all meta data fields of hypotheses EXCEPT reserved field names $coverage, $counts, $query.id (default = NULL)
 #' @param rolling if specified, positive integer specifying how many (genome coordinate) adjacent to aggregate in a rolling fashion; positive integer with which to performa rolling sum / weighted average WITHIN chromosomes of "rolling" ranges" --> return a granges (default = NULL)
 #' @param disjoint boolean only take disjoint bins of input (default = TRUE)
 #' @param na.rm boolean only applicable for sample wise aggregation (i.e. if by = NULL) (default = FALSE)
 #' @param FUN list only applies (for now) if by = NULL, this is a named list of functions, where each item named "nm" corresponds to an optional function of how to alternatively aggregate field "nm" per samples, for alternative aggregation of coverage and count.  This function is applied at every iteration of loading a new sample and adding to the existing set.   It is normally sum [for coverage and count] and coverage weighted mean [for all other covariates].  Alternative coverage / count aggregation functions should have two arguments (val1, val2) and all other alt covariate aggregation functions should have four arguments (val1, cov1, val2, cov2) where val1 is the accumulating vector and val2 is the new vector of values.
 #' @param verbose boolean verbose flag (default = TRUE)
-#' @return GRangesList of input targets annotated with new aggregate covariate statistics OR GRanges if rolling is specified
+#' @return GRangesList of input hypotheses annotated with new aggregate covariate statistics OR GRanges if rolling is specified
 #' @author Marcin Imielinski
 #' @import zoo
 #' @importFrom data.table setkey := data.table as.data.table
 #' @importFrom S4Vectors values values<-
 #' @importFrom GenomeInfoDb seqnames
-#' @export
-aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, disjoint = TRUE, na.rm = FALSE, FUN = list(), verbose = TRUE)
+aggregate.hypotheses = function(hypotheses, by = NULL, fields = NULL, rolling = NULL, disjoint = TRUE, na.rm = FALSE, FUN = list(), verbose = TRUE)
 {
 
     V1 = sn = st = en = keep = count = width = NULL ## NOTE fix
-    if (is.null(by) & is.character(targets)){
-        cat('Applying sample wise merging\n')
+    if (is.null(by) & is.character(hypotheses)){
+        fmessage('Applying sample wise merging')
     } else if (is.null(by) & is.null(rolling)){
-        stop('Error: argument "by" must be specified and same length as targets or "rolling" must be non NULL')
+        stop('Error: argument "by" must be specified and same length as hypotheses or "rolling" must be non NULL')
     }
 
-    if (is.null(by) & is.character(targets)){
+    if (is.null(by) & is.character(hypotheses)){
 
-        if (!all(ix <- (file.exists(targets)) & grepl('\\.rds$', targets))){
+        if (!all(ix <- (file.exists(hypotheses)) & grepl('\\.rds$', hypotheses))){
 
             warning(sprintf('Warning: %s of the  %s input files for sample wise merging either do not exist or are not .rds files. Sample wise merging (i.e. when by is null) requires .rds files of equal dimension GRanges (same intervals, same meta data column names)', sum(!ix), length(ix)))
             if (sum(ix)==0){
                 stop('No files to process')
             }
-            targets = targets[ix]
+            hypotheses = hypotheses[ix]
         }
 
-        out = readRDS(targets[1])
+        out = readRDS(hypotheses[1])
         gr = out
         if (is.null(out$coverage)){
-            stop('Coverage missing for input targets')
+            stop('Coverage missing for input hypotheses')
         }
 
 
@@ -548,17 +551,17 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
         }
 
         out$coverage = 0
-        out$numcases = length(targets)
+        out$numcases = length(hypotheses)
 
-        if (length(targets)>1)
-            for (i in 1:length(targets)){
+        if (length(hypotheses)>1)
+            for (i in 1:length(hypotheses)){
 
                 if (verbose){
-                    cat('Processing target file', targets[i], '\n')
+                    fmessage('Processing target file', hypotheses[i], '')
                 }
 
                 if (i > 1){
-                    gr = readRDS(targets[i])
+                    gr = readRDS(hypotheses[i])
                 }
 
                 if (!is.null(out$count)){
@@ -575,7 +578,7 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
                     if (cf %in% names(values(gr))){
                         val = as.numeric(values(gr)[, cf])
                     } else{
-                        warning(paste(targets[i], 'missing column', cf))
+                        warning(paste(hypotheses[i], 'missing column', cf))
                         val = NA
                     }
 
@@ -601,7 +604,7 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
                         psum = ifelse(has.val, psum - 2*log(gr$p), psum)
                         psum.df = ifelse(has.val, psum.df + 1, psum.df)
                     } else{
-                        warning(paste(targets[i], 'missing p value column, ignoring for fisher combined computation'))
+                        warning(paste(hypotheses[i], 'missing p value column, ignoring for fisher combined computation'))
                     }
                 }
 
@@ -620,52 +623,52 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
         }
 
         if (is.null(fields)){
-            fields = names(values(targets))
+            fields = names(values(hypotheses))
         }
 
-        if (any(nnum <- !(sapply(setdiff(fields, 'query.id'), function(x) class(values(targets)[, x])) %in% 'numeric'))){
+        if (any(nnum <- !(sapply(setdiff(fields, 'query.id'), function(x) class(values(hypotheses)[, x])) %in% 'numeric'))){
             warning(sprintf('%s meta data fields (%s) fit were found to be non-numeric and not aggregated', sum(nnum), paste(fields[nnum], collapse = ',')))
             fields = fields[!nnum]
         }
 
 
-        cfields = intersect(names(values(targets)), c('coverage', 'count'))
+        cfields = intersect(names(values(hypotheses)), c('coverage', 'count'))
 
         if (is.null(rolling)){
 
-            by = as.character(cbind(1:length(targets), by)[,2])
+            by = as.character(cbind(1:length(hypotheses), by)[,2])
 
             if (disjoint){
-                tmp.sn = paste(by, seqnames(targets), sep = '_')
-                tmp.dt = data.table(sn = paste(by, seqnames(targets), sep = '_'), st = start(targets), en = end(targets), ix = 1:length(targets))
+                tmp.sn = paste(by, seqnames(hypotheses), sep = '_')
+                tmp.dt = data.table(sn = paste(by, seqnames(hypotheses), sep = '_'), st = start(hypotheses), en = end(hypotheses), ix = 1:length(hypotheses))
                 setkey(tmp.dt, sn, st)
                 tmp.dt[, keep := c(TRUE, st[-1]>en[-length(st)]), by = sn]
                 setkey(tmp.dt, ix)
-                targets = targets[tmp.dt$keep, ]
+                hypotheses = hypotheses[tmp.dt$keep, ]
                 if (verbose){
-                    cat(sprintf('Removing %s non-disjoint within group intervals, keeping %s\n', prettyNum(sum(!tmp.dt[, keep]), big.mark = ','), prettyNum(sum(tmp.dt[, keep]), big.mark = ',')))
+                    fmessage(sprintf('Removing %s non-disjoint within group intervals, keeping %s', prettyNum(sum(!tmp.dt[, keep]), big.mark = ','), prettyNum(sum(tmp.dt[, keep]), big.mark = ',')))
                 }
                 by = by[tmp.dt$keep]
             }
 
             if (verbose){
-                cat('Splitting into GRangesList\n')
+                fmessage('Splitting into GRangesList')
             }
 
-            out = split(targets, by)
+            out = split(hypotheses, by)
 
             values(out)[, 'name'] = names(out)
             values(out)[, 'numintervals'] = table(by)[names(out)]
 
-            tadt = gr2dt(targets)
+            tadt = gr2dt(hypotheses)
 
             if (verbose){
-                cat('Aggregating columns \n')
+                fmessage('Aggregating columns')
             }
 
             for (f in cfields){
                 if (verbose){
-                    cat(f, '\n')
+                    fmessage(f, '')
                 }
                 values(out)[, f] = tadt[, sum(eval(parse(text=f)), na.rm = TRUE), keyby = list(by = by)][names(out), V1]
             }
@@ -680,10 +683,10 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
             }
 
             if (verbose){
-                cat('Rolling using window of', rolling, '(output will be coordinate sorted)\n')
+                fmessage('Rolling using window of', rolling, '(output will be coordinate sorted)')
             }
 
-            tadt = gr2dt(sort(targets))
+            tadt = gr2dt(sort(hypotheses))
 
             tadt[, width := as.numeric(width)]
 
@@ -724,7 +727,7 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
         for (f in fields){
 
             if (verbose){
-                cat(f, '\n')
+                fmessage(f, '')
             }
 
             if (is.null(rolling)){
@@ -741,16 +744,14 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
 }
 
 
-
-
-#' @name score.targets
+#' @name score.hypotheses
 #' @title title
 #' @description
 #'
-#' Scores targets based on covariates using Gamma-Poisson model with coverage as constant
+#' Scores hypotheses based on covariates using Gamma-Poisson model with coverage as constant
 #'
-#' @param targets annotated targets with fields $coverage, optional field, $count and additional numeric covariates
-#' @param covariates chracter vector, indicates which columns of targets contain the covariates
+#' @param hypotheses annotated hypotheses with fields $coverage, optional field, $count and additional numeric covariates
+#' @param covariates chracter vector, indicates which columns of hypotheses contain the covariates
 #' @param model fit existing model --> covariates must be present (default = NULL)
 #' @param return.model boolean info (default = FALSE)
 #' @param nb boolean If TRUE, uses negative binomial; if FALSE then use Poisson
@@ -763,42 +764,43 @@ aggregate.targets = function(targets, by = NULL, fields = NULL, rolling = NULL, 
 #' @return GRanges of scored results
 #' @author Marcin Imielinski
 #' @import GenomicRanges
-#' @export
-score.targets = function(targets, covariates = names(values(targets)), model = NULL, return.model = FALSE, nb = TRUE,
-    verbose = TRUE, iter = 200, subsample = 1e5, seed = 42, p.randomized = TRUE, classReturn = FALSE)
+score.hypotheses = function(hypotheses, covariates = names(values(hypotheses)), model = NULL, return.model = FALSE, nb = TRUE,
+    verbose = TRUE, iter = 200, subsample = 1e5, sets = NULL, seed = 42, mc.cores = 1, p.randomized = TRUE, classReturn = FALSE)
 {
+
     require(MASS)
     covariates = setdiff(covariates, c('count', 'coverage', 'query.id'))
 
-    if (any(nnin = !(covariates %in% names(values(targets))))){
+    if (any(nnin = !(covariates %in% names(values(hypotheses))))){
         stop(sprintf('Error: %s covariates (%s) missing from input data', sum(nnin), paste(covariates[nnin], collapse = ',')))
     }
 
-    if (any(nnum = !(sapply(covariates, function(x) class(values(targets)[, x])) %in% c('factor', 'numeric')))){
+    if (any(nnum = !(sapply(covariates, function(x) class(values(hypotheses)[, x])) %in% c('factor', 'numeric')))){
         warning(sprintf('%s covariates (%s) fit are non-numeric or factor, removing from model', sum(nnum), paste(covariates[nnum], collapse = ',')))
         covariates = covariates[!nnum]
     }
 
-    if (!all(c('count', 'coverage') %in% names(values(targets)))){
-        stop('Error: Targets must have count, coverage, and query.id fields populated')
+    if (!all(c('count', 'coverage') %in% names(values(hypotheses)))){
+        stop('Error: Hypotheses must have count, coverage, and query.id fields populated')
     }
 
     if (verbose){
-        cat('Setting up problem\n')
+        fmessage('Setting up problem')
     }
 
-    values(targets)$count = round(values(targets)$count)
+    values(hypotheses)$count = round(values(hypotheses)$count)
 
-    if (length(unique(values(targets)$count)) <= 1){
-        stop('Error: "score.targets" input malformed --> count does not vary!')
+    if (length(unique(values(hypotheses)$count)) <= 1){
+        stop('Error: "score.hypotheses" input malformed --> count does not vary!')
     }
 
     set.seed(seed) ## to ensure reproducibility
 
     if (is.null(model)){
 
-        tdt = as.data.table(as.data.frame(values(targets)[, c('count', 'coverage', covariates)]))
-        tdt$coverage = log(tdt$coverage)
+      tdt = as.data.table(as.data.frame(values(hypotheses)[, c('count', 'coverage', covariates)]))
+      tdt$coverage = ifelse(tdt$coverage ==0, NA, log(tdt$coverage))
+
 
         if (subsample > nrow(tdt)){
             subsample = NULL
@@ -817,14 +819,14 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
             }
 
             if (verbose){
-                cat(sprintf('Subsampling ..\n'))
+                fmessage(sprintf('Subsampling ..'))
             }
 
             tdt = tdt[sample(1:nrow(tdt), pmin(nrow(tdt), subsample)), ]
         }
 
         if (verbose){
-            cat(sprintf('Fitting model with %s data points and %s covariates\n', prettyNum(nrow(tdt), big.mark = ','), length(covariates)))
+            fmessage(sprintf('Fitting model with %s data points and %s covariates', prettyNum(nrow(tdt), big.mark = ','), length(covariates)))
         }
 
         formula = eval(parse(text = paste('count', " ~ ", paste(c('offset(1*coverage)', covariates), collapse = "+")))) ## make the formula with covariates
@@ -833,9 +835,11 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
             g = glm.nb(formula, data = as.data.frame(tdt), maxit = iter)
         } else{
             g = glm(formula, data = as.data.frame(tdt), family = poisson)
-            g$theta = 1
+            g$theta = Inf ## Poisson glm is glm.nb with infinite theta 
         }
     } else{
+      if (verbose)
+        fmessage('Scoring hypotheses against provided model without re-fitting')
         g = model
     }
 
@@ -845,10 +849,10 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
         }
     }
 
-    if (is(targets, 'GRanges')){
-        res = as.data.frame(targets)
+    if (is(hypotheses, 'GRanges')){
+        res = as.data.frame(hypotheses)
     } else{
-        res = as.data.frame(values(targets))
+        res = as.data.frame(values(hypotheses))
     }
 
     if (any(is.fact = (sapply(covariates, function(x) class(res[, x])) %in% c('factor')))){
@@ -858,7 +862,7 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
             val = res[, covariates[i]]
 
             if (verbose){
-                cat('Factorizing column', covariates[i], 'with', length(val), 'across', length(levels(val)), 'levels\n')
+                fmessage('Factorizing column', covariates[i], 'with', length(val), 'across', length(levels(val)), 'levels')
             }
 
             tmp.mat = matrix(as.numeric(rep(val, each = length(levels(val))) == levels(val)), ncol = length(levels(val)), byrow = TRUE)
@@ -885,7 +889,7 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
     }
 
     if (verbose){
-        cat('Scoring results\n')
+        fmessage('Computing p values for ', nrow(res), ' hypotheses.')
     }
 
     M = cbind(1, as.matrix(res[, c('coverage', names(coef[-1])), drop = FALSE]))
@@ -929,26 +933,93 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
         return(as.data.table(res))
     }
 
-    return(list(as.data.table(res),g))
+    setres = NULL
+    if (!is.null(sets))
+    {
+      if (is.null(names(sets)))
+        {
+          names(sets) = paste0('set_', 1:length(sets))
+        }
+
+
+      names(sets) = dedup(names(sets)) ## make sure sets are all named uniquely
+
+      setmap = data.table(names = names(sets), tmpnames = gsub('\\W', '_', paste0('set_', names(sets))))
+
+      if (any(duplicated(setmap$tmpnames)))
+        stop('Set names contain illegal special characters that cannot be resolved, please try again using only alphanumeric characters for set names')
+
+      names(sets) = copy(setmap$tmpnames)
+      setkey(setmap, tmpnames)
+
+      if (verbose)
+        fmessage('Computing p values for ', length(sets), ' hypothesis sets.')
+
+      .score.sets = function(sid, sets, res, nb = nb)
+      {
+        sets = sets[sid]
+        if (verbose>1)
+        {
+          fmessage('Scoring set(s) ', paste(names(sets), collapse = ', '))
+        }
+          ij = cbind(unlist(sets), rep(1:length(sets), elementNROWS(sets)))
+          setdata = cbind(data.frame(count = res$count, count.pred = log(res$count.pred)),
+                          as.data.frame(as.matrix(sparseMatrix(ij[,1], ij[,2], x = 1,
+                                                               dims = c(nrow(res), length(sets)),
+                                                               dimnames = list(NULL, names(sets))))))
+
+        ## make the formula with covariates
+        ## this is a model using the hypothesis specific estimate as an offset and then inferring a
+        ## set specific intercept
+          setformula = eval(parse(text = paste('count', " ~ ", paste(c('offset(count.pred)', names(sets)), collapse = "+"), '-1'))) 
+
+        ## reduce setdata to only rows (hypotheses) that belong to at least one set (speed things up)
+        setdata = setdata[rowSums(setdata[, -c(1:2), drop = FALSE])>0 & !is.na(setdata$count), ]
+        if (nb)
+          {
+            gset = tryCatch(glm.nb.fh(setformula, data = setdata, maxit = iter, theta = structure(g$theta, SE = g$SE.theta)),
+                            error = function(e) NULL)
+          } else
+          {
+            gset = glm(setformula, data = as.data.frame(setdata), family = poisson)
+          }
+
+        if (!is.null(gset))
+          {
+            tmpres = dflm(gset)[names(sets), ]
+          }
+        else
+        {
+          tmpres = data.table(name = names(sets), method = NA, p = NA, p.left = NA, p.right = NA, estimate = NA, ci.lower = NA, ci.upper = NA, effect = as.character(NA))
+        }
+        tmpres[, n := elementNROWS(sets)]
+        return(tmpres)
+
+        }
+
+      setres = rbindlist(mclapply(1:length(sets), .score.sets, sets = sets, res = res, nb = nb, mc.cores = mc.cores))
+      setres$name = setmap[.(setres$name), names] ## remap set names to original names
+      setnames(setres, 'name', 'setname')
+      setres$method = gsub('\\(.*$', '', setres$method)
+      setres$q = signif(p.adjust(setres$p, 'BH'), 2) ## compute q value
+    }
+
+    return(list(res = as.data.table(res),model = g, setres = setres))
 
 }
 
 
 
-
-
-
-
-#' @name Cov_Arr
-#' @title title
+#' @name Cov
+#' @title Cov
 #' @description
 #'
-#' Stores Covariates for passing to FishHook object constructor.
+#' function to initialize Covariates for passing to FishHook object constructor.
 #'
 #' Can also be initiated by passing a vector of multiple vectors of equal length, each representing one of the internal variable names
 #' You must also include a list containg all of the covariates (Granges, chracters, RLELists, ffTracks)
 #'
-#' Cov_Arr serves to mask the underlieing list implemenations of Covariates in the FishHook Object.
+#' Covariate serves to mask the underlieing list implemenations of Covariates in the FishHook Object.
 #' This class attempts to mimic a vector in terms of subsetting and in the future will add more vector like operations.
 #'
 #'
@@ -968,25 +1039,64 @@ score.targets = function(targets, covariates = names(values(targets)), model = N
 #' @param na.rm, logical vector that indicates whether or not to remove nas in the covariates
 #' @param grep, a chracter vector of  grep for use with sequence covariates of class ffTrack
 #' The function fftab is called during the processing of ffTrack sequence covariates grep is used to specify inexact matches (see fftab)
-#' @param cvs, a list of covariates that can include any of the covariate classes (GRanges, ffTrack, RleList, character)
-#' @return Cov_Arr object that can be passed directly to the FishHook object constructor
+#' @param data, a list of covariate data that can include any of the covariate classes (GRanges, ffTrack, RleList, character)
+#' @return Covariate object that can be passed directly to the FishHook object constructor
 #' @author Zoran Z. Gajic
 #' @import R6
 #' @export
-Cov_Arr = R6::R6Class('Cov_Arr',
+Cov = function(name = NA, data = NULL, pad = 0, type = NA, signature = NA, field = NA, na.rm = NA, grep = NA){
+  Covariate$new(name = name, data = data, pad = pad, type = type, signature = signature,
+                field = field, na.rm = na.rm, grep = grep)
+}
+ 
+#' @name Covariate
+#' @title title
+#' @description
+#'
+#' Stores Covariates for passing to FishHook object constructor.
+#'
+#' Can also be initiated by passing a vector of multiple vectors of equal length, each representing one of the internal variable names
+#' You must also include a list containg all of the covariates (Granges, chracters, RLELists, ffTracks)
+#'
+#' Covariate serves to mask the underlieing list implemenations of Covariates in the FishHook Object.
+#' This class attempts to mimic a vector in terms of subsetting and in the future will add more vector like operations.
+#'
+#'
+#' @param name character vector Contains names of the covariates to be created, this should not include the names of any Cov objects passed
+#' @param pad numeric vector Indicates the width to extend each item in the covarite. e.g. if you have a GRanges covariate with two ranges (5:10) and (20:30) with a pad of 5,
+#' These ranges wil become (0:15) and (15:35)
+#' @param type character vector Contains the types of each covariate (numeric, interval, sequencing)
+#' @param signature, see ffTrack, a vector of signatures for use with ffTrack sequence covariates
+#' fftab signature: signatures is a named list that specify what is to be tallied.  Each signature (ie list element)
+#' consist of an arbitrary length character vector specifying strings to %in% (grep = FALSE)
+#' or length 1 character vector to grepl (if grep = TRUE)
+#' or a length 1 or 2 numeric vector specifying exact value or interval to match (for numeric data)
+#' Every list element of signature will become a metadata column in the output GRanges
+#' specifying how many positions in the given interval match the given query
+#' @param field, a chracter vector for use with numeric covariates (NA otherwise) the indicates the column containing the values of that covarites.
+#' For example, if you have a covariate for replication timing and the timings are in the column 'value', the parameter field should be set to the character 'Value'
+#' @param na.rm, logical vector that indicates whether or not to remove nas in the covariates
+#' @param grep, a chracter vector of  grep for use with sequence covariates of class ffTrack
+#' The function fftab is called during the processing of ffTrack sequence covariates grep is used to specify inexact matches (see fftab)
+#' @param data, a list of covariate data that can include any of the covariate classes (GRanges, ffTrack, RleList, character)
+#' @return Covariate object that can be passed directly to the FishHook object constructor
+#' @author Zoran Z. Gajic
+#' @import R6
+#' @export
+Covariate = R6::R6Class('Covariate',
     public = list(
 
     ## See the class documentation
-    initialize = function(..., name = NA, cvs = NULL, pad = 0, type = NA, signature = NA, field = NA, na.rm = NA, grep = NA){
+    initialize = function(..., name = NA, data = NULL, pad = 0, type = NA, signature = NA, field = NA, na.rm = NA, grep = NA){
         
-        ##If cvs are valid and are a list of tracks concatenate with any premade covs
-        if(!is.null(cvs)){
-            if(class(cvs) != 'list'){
-                cvs = list(cvs)
+        ##If data are valid and are a list of tracks concatenate with any premade covs
+        if(!is.null(data)){
+            if(class(data) != 'list'){
+                data = list(data)
             }            
-            self$cvs = c(cvs)
+            self$data = c(data)
         }
-        ##Otherwise assume that no cvs are given
+        ##Otherwise assume that no data are given
         else{
             return(self)
         }
@@ -1003,13 +1113,13 @@ Cov_Arr = R6::R6Class('Cov_Arr',
     },
 
     ## Params:
-    ## ... Other Cov_Arrs to be merged into this array, note that it can be any number of Cov_Arrs
+    ## ... Other Covariates to be merged into this array, note that it can be any number of Covariates
     ## Return:
-    ## A single Cov_Arr object that contains the contents of self and all passed Cov_Arrs
+    ## A single Covariate object that contains the contents of self and all passed Covariates
     ## UI:
     ## None
     ## Notes:
-    ## This is linked to the c.Cov_Arr override and the c.Cov_Arr override should be used preferentially over this
+    ## This is linked to the c.Covariate override and the c.Covariate override should be used preferentially over this
     merge = function(...){
         return (c(self,...))
     },
@@ -1060,14 +1170,14 @@ Cov_Arr = R6::R6Class('Cov_Arr',
     },
 
     ## Params:
-    ## range, a numeric vector of the covariates to include. e.g. if the Cov_Arr contains the covariates (A,B,C) and the range is c(2:3),
-    ## this indicates you wish to get a Cov_Arr containing (B,C). NOTE THAT THIS DOES NOT RETURN A NEW COV_ARR, IT MODIFIES THE CURRENT.
+    ## range, a numeric vector of the covariates to include. e.g. if the Covariate contains the covariates (A,B,C) and the range is c(2:3),
+    ## this indicates you wish to get a Covariate containing (B,C). NOTE THAT THIS DOES NOT RETURN A NEW COV_ARR, IT MODIFIES THE CURRENT.
     ## Return:
-    ## None, this modifies the Cov_Arr on which it was called
+    ## None, this modifies the Covariate on which it was called
     ## UI:
     ## None
     ## Notes:
-    ## If you want to create a new Cov_Arr containing certain covariates, use the '[' operator, e.g. Cov_Arr[2:3]
+    ## If you want to create a new Covariate containing certain covariates, use the '[' operator, e.g. Covariate[2:3]
     subset = function(range, ...){
         
         private$pCovs = private$pCovs[range]
@@ -1083,7 +1193,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
     ## Params:
     ## No params required, included arguments will be ignored.
     ## Return:
-    ## A list of lists where each internal list corresponds to the covariate and is for use internally in the annotate.targets function
+    ## A list of lists where each internal list corresponds to the covariate and is for use internally in the annotate.hypotheses function
     ## The list representation of the covariate will contain the following variables: type, signature, pad, na.rm, field, grep
     ## UI:
     ## None
@@ -1110,10 +1220,10 @@ Cov_Arr = R6::R6Class('Cov_Arr',
     ## Return:
     ## Nothing
     ## UI:
-    ## Prints information about the Cov_Arr to the console with all of covariates printed in order with variables printed alongside each covariate
+    ## Prints information about the Covariate to the console with all of covariates printed in order with variables printed alongside each covariate
     print = function(...){
         if(length(private$pCovs) == 0){
-            cat('Empty Cov_Arr Object\n')
+            fmessage('Empty Covariate Object')
             return(NULL)
         }
         
@@ -1143,13 +1253,13 @@ Cov_Arr = R6::R6Class('Cov_Arr',
             ptype = c(),
             ## A vector of signatures for use with ffTrack, se fftab
             psignature = c(),
-            ## A character vector of field names for use with numeric covariates, see the Cov_Arr class definition for more info
+            ## A character vector of field names for use with numeric covariates, see the Covariate class definition for more info
             pfield = c(),
-            ## A numeric vector of paddings for each covariate, see the 'pad' param in Cov_Arr class definition for more info
+            ## A numeric vector of paddings for each covariate, see the 'pad' param in Covariate class definition for more info
             ppad = c(),
-            ## A logical vector for each covariate, see the 'na.rm' param in Cov_Arr class definition for more info
+            ## A logical vector for each covariate, see the 'na.rm' param in Covariate class definition for more info
             pna.rm = c(),
-            ##  A chracter vector for each covariate, see the 'grep' param in Cov_Arr class definition for more info
+            ##  A chracter vector for each covariate, see the 'grep' param in Covariate class definition for more info
             pgrep = c(),
 
             ##  Valid Covariate Types
@@ -1361,7 +1471,7 @@ Cov_Arr = R6::R6Class('Cov_Arr',
             },
 
             ##Covariate Covs
-            cvs = function(value) {
+            data = function(value) {
                 if(!missing(value)){
                     private$pCovs = value
                     return(private$pCovs)
@@ -1376,43 +1486,43 @@ Cov_Arr = R6::R6Class('Cov_Arr',
 
 
 
-#' @name c.Cov_Arr
+#' @name c.Covariate
 #' @title title
 #' @description
 #'
 #' Override the c operator for covariates so that you can merge them like a vector
 #'
-#' @param ... A series of Covariates, note all objects must be of type Cov_Arr 
-#' @return Cov_Arr object that can be passed directly into the FishHook object constructor that contains all of the Cov_Arr covariates
+#' @param ... A series of Covariates, note all objects must be of type Covariate 
+#' @return Covariate object that can be passed directly into the FishHook object constructor that contains all of the Covariate covariates
 #' Passed in the ... param
 #' @author Zoran Z. Gajic
 #' @export
-'c.Cov_Arr' = function(...){
+'c.Covariate' = function(...){
 
-    ##Ensure that all params are of type Cov_Arr
-    Cov_Arrs = list(...)
-    isc = sapply(Cov_Arrs, function(x)  class(x)[1] == 'Cov_Arr')
+    ##Ensure that all params are of type Covariate
+    Covariates = list(...)
+    isc = sapply(Covariates, function(x)  class(x)[1] == 'Covariate')
 
     if(any(!isc)){
-        stop('Error: All inputs must be of class Cov_Arr.')
+        stop('Error: All inputs must be of class Covariate.')
     }
 
     ## Merging vars of the covariates
-    names  = unlist(sapply(Cov_Arrs, function(x) x$names))
-    type  = unlist(sapply(Cov_Arrs, function(x) x$type))
-    signature  = unlist(sapply(Cov_Arrs, function(x) x$signature))
-    field  = unlist(sapply(Cov_Arrs, function(x) x$field))
-    pad  = unlist(sapply(Cov_Arrs, function(x) x$pad))
-    na.rm  = unlist(sapply(Cov_Arrs, function(x) x$na.rm))
-    grep  = unlist(sapply(Cov_Arrs, function(x) x$grep))
+    names  = unlist(sapply(Covariates, function(x) x$names))
+    type  = unlist(sapply(Covariates, function(x) x$type))
+    signature  = unlist(sapply(Covariates, function(x) x$signature))
+    field  = unlist(sapply(Covariates, function(x) x$field))
+    pad  = unlist(sapply(Covariates, function(x) x$pad))
+    na.rm  = unlist(sapply(Covariates, function(x) x$na.rm))
+    grep  = unlist(sapply(Covariates, function(x) x$grep))
 
     ## Merging Covariates
-    covs = lapply(Cov_Arrs, function(x) x$cvs)
+    covs = lapply(Covariates, function(x) x$data)
     Covs = unlist(covs, recursive = F)
 
-    ##Creating a new Cov_Arr and assigning all of the merged variables to it
-    ret = Cov_Arr$new()
-    ret$cvs = Covs
+    ##Creating a new Covariate and assigning all of the merged variables to it
+    ret = Covariate$new()
+    ret$data = Covs
     ret$names = names
     ret$type = type
     ret$signature = signature
@@ -1427,40 +1537,41 @@ Cov_Arr = R6::R6Class('Cov_Arr',
 
 
 
-#' @name [.Cov_Arr
+#' @name [.Covariate
 #' @title title
 #' @description
 #'
-#' Overrides the subset operator x[] for use with Cov_Arr to allow for vector like subsetting
+#' Overrides the subset operator x[] for use with Covariate to allow for vector like subsetting
 #'
-#' @param obj Cov_Arr This is the Cov_Arr to be subset
+#' @param obj Covariate This is the Covariate to be subset
 #' @param range vector This is the range of Covariates to return, like subsetting a vector. e.g. c(1,2,3,4,5)[3:4] == c(3,4)
-#' @return A new Cov_Arr object that contains only the Covs within the given range
+#' @return A new Covariate object that contains only the Covs within the given range
 #' @author Zoran Z. Gajic
 #' @export
-'[.Cov_Arr' = function(obj, range){
+'[.Covariate' = function(obj, range){
     ##Clone the object so we don't mess with the original
     ret = obj$clone()
-    ##Call the subset function of the Cov_Arr class that will modify the cloned Cov_Arr
+    ##Call the subset function of the Covariate class that will modify the cloned Covariate
     ret$subset(range)
     return (ret)
 }
 
 
 
-#' @name length.Cov_Arr
+#' @name length.Covariate
 #' @title title
 #' @description
 #'
-#' Overrides the length function 'length(Cov_Arr)' for use with Cov_Arr
+#' Overrides the length function 'length(Covariate)' for use with Covariate
 #'
-#' @param obj Cov_Arr object that is passed to the length function
-#' @return number of covariates contained in the Cov_Arr object as defined by length(Cov_Arr$cvs)
+#' @param obj Covariate object that is passed to the length function
+#' @return number of covariates contained in the Covariate object as defined by length(Covariate$data)
 #' @author Zoran Z. Gajic
 #' @export
-'length.Cov_Arr' = function(obj,...){
-    return(length(obj$cvs))
+'length.Covariate' = function(obj,...){
+    return(length(obj$data))
 }
+
 
 
 
@@ -1471,18 +1582,18 @@ Cov_Arr = R6::R6Class('Cov_Arr',
 #' @title title
 #' @description
 #'
-#' Stores Events, Targets, Eligible, Covariates.
+#' Stores Events, Hypotheses, Eligible, Covariates.
 #'
-#' @param targets Examples of targets are genes, enhancers, or even 1kb tiles of the genome that we can then convert into a rolling/tiled window. This param must be of class "GRanges".
+#' @param hypotheses Examples of hypotheses are genes, enhancers, or even 1kb tiles of the genome that we can then convert into a rolling/tiled window. This param must be of class "GRanges".
 #' @param events Events are the given mutational regions and must be of class "GRanges". Examples of events are SNVs (e.g. C->G) somatic copy number alterations (SCNAs), fusion events, etc.
 #' @param eligible Eligible regions are the regions of the genome that have enough statistical power to score. For example, in the case of exome sequencing where all regions are not equally
 #' represented, eligible can be a set of regions that meet an arbitrary exome coverage threshold. Another example of when to use eligibility is in the case of whole genomes,
-#' where your targets are 1kb tiles. Regions of the genome you would want to exclude in this case are highly repetative regions such as centromeres, telomeres, and satelite repeates.
+#' where your hypotheses are 1kb tiles. Regions of the genome you would want to exclude in this case are highly repetative regions such as centromeres, telomeres, and satelite repeates.
 #' This param must be of class "GRanges".
 #' @param covariates Covariates are genomic covariates that you belive will cause your given type of event (mutations, CNVs, fusions, case control samples) that are not linked to the process you are
 #' investigating (e.g. cancer drivers). In the case of cancer drivers, we are looking for regions that are mutated as part of cancer progression. As such, regions that are more suceptable to
 #' random mutagenesis such as late replicating or non-expressed region (transcription coupled repair) could become false positives. Including covariates for these biological processes will
-#' reduce thier visible effect in the final data. This param must be of type "Cov_Arr".
+#' reduce thier visible effect in the final data. This param must be of type "Covariate".
 #' @param out.path A character that will indicate a system path in which to save the results of the analysis.
 #' @param use_local_mut_density A logical that when true, creates a covariate that will represent the mutational density in the genome, whose bin size will be determined by local_mut_density_bin.
 #' This covariate can be used when you have no other covariates as a way to correct for variations in mutational rates along the genome under the assumption that driving mutations
@@ -1491,22 +1602,80 @@ Cov_Arr = R6::R6Class('Cov_Arr',
 #' @param local_mut_density_bin A numeric value that will indicate the size of the genomic bins to use if use_local_mut_density = TRUE. Note that this paramter should be a few orders of
 #' magnitude greater than the size of your targetls
 #'
-#' e.g. if your targets are 1e5 bps long, you may want a local_mut_density_bin of 1e7 or even 1e8
+#' e.g. if your hypotheses are 1e5 bps long, you may want a local_mut_density_bin of 1e7 or even 1e8
 #' @param genome A character value indicating which build of the human genome to use, by default set to hg19
 #' @param mc.cores A numeric value that indicates the amount of computing cores to use when running fishHook. This will mainly be used during the annotation step of the analysis, or during
 #' initial instantiation of the object if use_local_mut_density = T
 #' @param na.rm A logical indicating how you handle NAs in your data, mainly used in fftab and gr.val, see these function documentations for more information
-#' @param pad A numeric indicating how far each covariate range should be extended, see Cov_Arr for more information, not that this will only be used if atleast on of the
+#' @param pad A numeric indicating how far each covariate range should be extended, see Covariate for more information, not that this will only be used if atleast on of the
 #' Covariates have pad = NA
 #' @param vebose A logical indicating whether or not to print information to the console when running FishHook
 #' @param max.slice integer Max slice of intervals to evaluate with  gr.val (default = 1e3)
 #' @param ff.chunk integer Max chunk to evaluate with fftab (default = 1e6)
 #' @param max.chunk integer gr.findoverlaps parameter (default = 1e11)
-#' @param ptidcol A character, that indicates the column name containing the patient ids, this is for use in conjunction with maxpatientpergene. If max patientpergene is specified and
-#' and the column referenced by ptidcol exists, we will limit the contributions of each patient to each target to maxpatientpergene. e.g. if Patient A has 3 events in target A and Patient B
-#' has 1 event in target A, and maxpatientpergene is set to 2, with thier ID column specified, target A will have a cournt of 3, 2 coming from patient A and 1 coming from patient B
-#' @param maxpatientpergene a numeric that indicates the max number of events any given patient can contribute to a given target. for use in conjction with ptidcol. see ptidcol for more info.
-#' @param weightEvents a logical that indicates if the events should be weighted by thier overlap with the targets. e.g. if we have a SCNA spanning 0:1000 and a target spanning 500:10000, the overlap
+#' @param idcol A character, that indicates the column name containing the patient ids, this is for use in conjunction with idcap. If max patientpergene is specified and
+#' and the column referenced by idcol exists, we will limit the contributions of each patient to each target to idcap. e.g. if Patient A has 3 events in target A and Patient B
+#' has 1 event in target A, and idcap is set to 2, with thier ID column specified, target A will have a cournt of 3, 2 coming from patient A and 1 coming from patient B
+#' @param idcap a numeric that indicates the max number of events any given patient can contribute to a given target. for use in conjction with idcol. see idcol for more info.
+#' @param weightEvents a logical that indicates if the events should be weighted by thier overlap with the hypotheses. e.g. if we have a SCNA spanning 0:1000 and a target spanning 500:10000, the overlap
+#' of the SCNA and target is 500:1000 which is half of the original width of the SCNA event. thus if weightEvent = T, we will credit a count of 0.5 to the target for this SCNA. This deviates from
+#' the expected input for the gamma poisson as the gamma poisson measures whole event counts.
+#' @param nb boolean negative binomial, if false then use poisson
+#' @return FishHook object ready for annotation/scoring.
+#' @author Zoran Z. Gajic
+#' @importFrom R6 R6Class
+#' @export
+Fish = function(hypotheses = NULL, events = NULL, covariates = NULL, eligible = NULL, out.path = NULL, 
+            use_local_mut_density = FALSE, local_mut_density_bin = 1e6, genome = 'BSgenome.Hsapiens.UCSC.hg19::Hsapiens',
+            mc.cores = 1, na.rm = TRUE, pad = 0, verbose = TRUE, max.slice = 1e4, ff.chunk = 1e6, max.chunk = 1e11, idcol = NULL,
+            idcap = Inf, weightEvents = FALSE, nb = TRUE)
+{
+  FishHook$new(hypotheses = hypotheses, out.path = out.path, eligible = eligible, events = events, covariates = covariates,
+               use_local_mut_density = use_local_mut_density, local_mut_density_bin = local_mut_density_bin, genome = genome,
+               mc.cores = mc.cores, na.rm = na.rm, pad = pad, verbose = verbose, max.slice = max.slice, ff.chunk = ff.chunk, max.chunk = max.chunk, idcol = idcol,
+               idcap = idcap, weightEvents = weightEvents, nb = nb)    
+}
+
+#' @name FishHook
+#' @title title
+#' @description
+#'
+#' Stores Events, Hypotheses, Eligible, Covariates.
+#'
+#' @param hypotheses Examples of hypotheses are genes, enhancers, or even 1kb tiles of the genome that we can then convert into a rolling/tiled window. This param must be of class "GRanges".
+#' @param events Events are the given mutational regions and must be of class "GRanges". Examples of events are SNVs (e.g. C->G) somatic copy number alterations (SCNAs), fusion events, etc.
+#' @param eligible Eligible regions are the regions of the genome that have enough statistical power to score. For example, in the case of exome sequencing where all regions are not equally
+#' represented, eligible can be a set of regions that meet an arbitrary exome coverage threshold. Another example of when to use eligibility is in the case of whole genomes,
+#' where your hypotheses are 1kb tiles. Regions of the genome you would want to exclude in this case are highly repetative regions such as centromeres, telomeres, and satelite repeates.
+#' This param must be of class "GRanges".
+#' @param covariates Covariates are genomic covariates that you belive will cause your given type of event (mutations, CNVs, fusions, case control samples) that are not linked to the process you are
+#' investigating (e.g. cancer drivers). In the case of cancer drivers, we are looking for regions that are mutated as part of cancer progression. As such, regions that are more suceptable to
+#' random mutagenesis such as late replicating or non-expressed region (transcription coupled repair) could become false positives. Including covariates for these biological processes will
+#' reduce thier visible effect in the final data. This param must be of type "Covariate".
+#' @param out.path A character that will indicate a system path in which to save the results of the analysis.
+#' @param use_local_mut_density A logical that when true, creates a covariate that will represent the mutational density in the genome, whose bin size will be determined by local_mut_density_bin.
+#' This covariate can be used when you have no other covariates as a way to correct for variations in mutational rates along the genome under the assumption that driving mutations
+#' will cluster in local regions as opposed to global regions. This is similar to saying, in the town of foo, there is a crime rate of X that we will assume to be the local crime rate
+#' If a region in foo have a crime rate Y such that Y >>>>> X, we can say that region Y has a higher crime rate than we would expect.
+#' @param local_mut_density_bin A numeric value that will indicate the size of the genomic bins to use if use_local_mut_density = TRUE. Note that this paramter should be a few orders of
+#' magnitude greater than the size of your targetls
+#'
+#' e.g. if your hypotheses are 1e5 bps long, you may want a local_mut_density_bin of 1e7 or even 1e8
+#' @param genome A character value indicating which build of the human genome to use, by default set to hg19
+#' @param mc.cores A numeric value that indicates the amount of computing cores to use when running fishHook. This will mainly be used during the annotation step of the analysis, or during
+#' initial instantiation of the object if use_local_mut_density = T
+#' @param na.rm A logical indicating how you handle NAs in your data, mainly used in fftab and gr.val, see these function documentations for more information
+#' @param pad A numeric indicating how far each covariate range should be extended, see Covariate for more information, not that this will only be used if atleast on of the
+#' Covariates have pad = NA
+#' @param vebose A logical indicating whether or not to print information to the console when running FishHook
+#' @param max.slice integer Max slice of intervals to evaluate with  gr.val (default = 1e3)
+#' @param ff.chunk integer Max chunk to evaluate with fftab (default = 1e6)
+#' @param max.chunk integer gr.findoverlaps parameter (default = 1e11)
+#' @param idcol A character, that indicates the column name containing the patient ids, this is for use in conjunction with idcap. If max patientpergene is specified and
+#' and the column referenced by idcol exists, we will limit the contributions of each patient to each target to idcap. e.g. if Patient A has 3 events in target A and Patient B
+#' has 1 event in target A, and idcap is set to 2, with thier ID column specified, target A will have a cournt of 3, 2 coming from patient A and 1 coming from patient B
+#' @param idcap a numeric that indicates the max number of events any given patient can contribute to a given target. for use in conjction with idcol. see idcol for more info.
+#' @param weightEvents a logical that indicates if the events should be weighted by thier overlap with the hypotheses. e.g. if we have a SCNA spanning 0:1000 and a target spanning 500:10000, the overlap
 #' of the SCNA and target is 500:1000 which is half of the original width of the SCNA event. thus if weightEvent = T, we will credit a count of 0.5 to the target for this SCNA. This deviates from
 #' the expected input for the gamma poisson as the gamma poisson measures whole event counts.
 #' @param nb boolean negative binomial, if false then use poisson
@@ -1519,24 +1688,24 @@ FishHook = R6::R6Class('FishHook',
     public = list(
 
         ##See class documentation for params
-        initialize = function(targets = NULL, out.path = NULL, eligible = NULL, ... ,events = NULL, covariates = NULL,
+        initialize = function(hypotheses = NULL, out.path = NULL, eligible = NULL, events = NULL, covariates = NULL, ... ,
             use_local_mut_density = FALSE, local_mut_density_bin = 1e6, genome = 'BSgenome.Hsapiens.UCSC.hg19::Hsapiens',
-            mc.cores = 1, na.rm = TRUE, pad = 0, verbose = TRUE, max.slice = 1e3, ff.chunk = 1e6, max.chunk = 1e11, ptidcol = NULL,
-            maxpatientpergene = Inf, weightEvents = FALSE, nb = TRUE){
+            mc.cores = 1, na.rm = TRUE, pad = 0, verbose = TRUE, max.slice = 1e4, ff.chunk = 1e6, max.chunk = 1e11, idcol = NULL,
+            idcap = Inf, weightEvents = FALSE, nb = TRUE){
 
 
 
-            #Make sure the format of targets, events, eligible, and covarates is correct
+            #Make sure the format of hypotheses, events, eligible, and covarates is correct
 
 
-            ##Targets
-            if(!((class(targets) == 'GRanges') || class(targets) == 'character')  && !is.null(targets)){
-                stop('Error: targets must be of class GRanges or character')
+            ##Hypotheses
+            if(!((class(hypotheses) == 'GRanges') || class(hypotheses) == 'character')  && !is.null(hypotheses)){
+                stop('Error: hypotheses must be of class GRanges or character')
             }
             
-            if(class(targets) == 'character'){
-                self$targets = targets
-                targets = self$targets
+            if(class(hypotheses) == 'character'){
+                self$hypotheses = hypotheses
+                hypotheses = self$hypotheses
             }
         
         
@@ -1553,11 +1722,9 @@ FishHook = R6::R6Class('FishHook',
 
             
             ##Covariates
-            if(!(class(covariates) == 'Cov_Arr')  && !is.null(covariates)){
-                stop('Error: covariates must be of class Cov_Arr')
+            if(!(class(covariates) == 'Covariate')  && !is.null(covariates)){
+                stop('Error: covariates must be of class Covariate')
             }
-
-
             
             
              ## This next portion checks to make sure that the seqlevels are in the same format
@@ -1570,69 +1737,97 @@ FishHook = R6::R6Class('FishHook',
                 }
             }
 
-            ## gets the seqlevels and looks for chr to indicate USCS format
-            seqLevelsStatus_Targets = any(grepl('chr', GenomeInfoDb::seqlevels(targets)))
+            ## gets the seqlevels and looks for chr to indicate UCSC format
+          seqLevelsStatus_Hypotheses = any(grepl('chr', GenomeInfoDb::seqlevels(hypotheses)))
+
+          seqLevelsStatus_Events = seqLevelsStatus_Hypotheses  
+          if (!is.null(events))
             seqLevelsStatus_Events = any(grepl('chr', GenomeInfoDb::seqlevels(events)))
 
-            if(!is.null(covariates)){
-                if(any(!(seqLevelsStatus_Targets %in% seqLevelsStatus_Covariates))){
-                    warning('Warning: seqlevels of Targets and Covariates appear to be in different formats')
-                }
+          if(!is.null(covariates)){
+            if(any(!(seqLevelsStatus_Hypotheses %in% seqLevelsStatus_Covariates))){
+              warning('Warning: seqlevels of Hypotheses and Covariates appear to be in different formats')
+            }
+          }
+
+          if(!is.null(eligible)){
+            seqLevelsStatus_Eligible = any(grepl("chr", GenomeInfoDb::seqlevels(eligible)))
+            if(seqLevelsStatus_Hypotheses != seqLevelsStatus_Eligible){
+              warning('Warning: seqlevels of Hypotheses and Eligible appear to be in different formats')
+            }
+          }
+          if(seqLevelsStatus_Hypotheses != seqLevelsStatus_Events){
+            warning('Warning: seqlevels of Hypotheses and Events appear to be in different formats')
+          }
+
+          ## This next portion checks to make sure there is atleast some overlap of seqlevels i.e. some mapability
+          if (!is.null(events))
+          {
+            if(!any(GenomeInfoDb::seqlevels(hypotheses) %in% GenomeInfoDb::seqlevels(events))){
+              stop('Error: there are no seqlevels of events that match hypotheses')
+            }
+          }
+          
+          if(!is.null(eligible)){
+            if(!any(GenomeInfoDb::seqlevels(hypotheses) %in% GenomeInfoDb::seqlevels(eligible))){
+              stop('Error: there are no seqlevels of eligible that match hypotheses')
+            }
+          }
+
+          if(!is.null(covariates)){
+            if(any(!(unlist(lapply(covariates$seqlevels(),function(x) any(x %in% GenomeInfoDb::seqlevels(hypotheses))))))){
+              warning("Warning: atleast one of the covariates has no seqlevels in common with hypotheses")
+            }
+          }
+
+          ## Initializes and Validates hypotheses
+          ### MARCIN: we no longer allow hypotheses to be publicly reset, we will do this manually and check validity of hypotheses using function
+          ##          self$hypotheses = hypotheses
+          
+          if (validate_hypotheses(hypotheses))
+            private$phypotheses = hypotheses
+          
+          # Initializes and Validates out.path
+          self$out.path = out.path
+
+          private$pmc.cores = mc.cores
+          private$pna.rm = na.rm
+          private$ppad = pad
+          private$pverbose = verbose
+          private$pmax.slice = max.slice
+          private$pff.chunk = ff.chunk
+          private$pmax.chunk = max.chunk
+          private$pidcol = idcol
+          private$pidcap = idcap
+          private$pweightEvents = weightEvents
+          private$pnb = nb
+
+          ## Initializes and Validates eligible (used to be self$eligible = , but this will trigger a re-annotation so avoiding)
+          if(!(is.null(eligible))){
+            if (validate_eligible(eligible))
+              private$peligible = eligible
+          }
+
+          ## Initializes and Validates covariates
+          if(is.null(covariates)){
+            covariates = Covariate$new()
+          }
+          
+          ## Initializes and Validates events (MARCIN: will call annotate now)
+          ## remember we can have fishHook object with no events
+          if (!is.null(events))
+            {
+              self$events = events
             }
 
-            if(!is.null(eligible)){
-                seqLevelsStatus_Eligible = any(grepl("chr", GenomeInfoDb::seqlevels(eligible)))
-                if(seqLevelsStatus_Targets != seqLevelsStatus_Eligible){
-                    warning('Warning: seqlevels of Targets and Eligible appear to be in different formats')
-                }
-            }
-            if(seqLevelsStatus_Targets != seqLevelsStatus_Events){
-                warning('Warning: seqlevels of Targets and Events appear to be in different formats')
-            }
-
-            ## This next portion checks to make sure there is atleast some overlap of seqlevels i.e. some mapability
-            if(!any(GenomeInfoDb::seqlevels(targets) %in% GenomeInfoDb::seqlevels(events))){
-                stop('Error: there are no seqlevels of events that match targets')
-            }
-
-            if(!is.null(eligible)){
-                if(!any(GenomeInfoDb::seqlevels(targets) %in% GenomeInfoDb::seqlevels(eligible))){
-                    stop('Error: there are no seqlevels of eligible that match targets')
-                }
-            }
-
-            if(!is.null(covariates)){
-                if(any(!(unlist(lapply(covariates$seqlevels(),function(x) any(x %in% GenomeInfoDb::seqlevels(targets))))))){
-                    warning("Warning: atleast one of the covariates has no seqlevels in common with targets")
-                }
-            }
-
-            ## Initializes and Validates targets
-            self$targets = targets
-
-            ## Initializes and Validates out.path
-            self$out.path = out.path
-
-            ## Initializes and Validates covariates
-            if(is.null(covariates)){
-                covariates = Cov_Arr$new()
-            }
-
-            self$cvs = covariates
-
-            ## Initializes and Validates events
-            self$events = events
-
-            ## Initializes and Validates eligible
-            if(!(is.null(eligible))){
-                self$eligible = eligible
-            }
-
-            ##Creating the local mutational denisty track
-            if(use_local_mut_density){
-                Sys.setenv(DEFAULT_BSGENOME = genome)
-                bins = gr.tile(hg_seqlengths(), local_mut_density_bin)
-                f1 = FishHook$new(targets = bins, events = events, eligible = eligible)
+          ## Initializes and Validates events (MARCIN: will call annotate as well)
+          self$covariates = covariates
+                   
+          ##Creating the local mutational denisty track
+          if(use_local_mut_density){
+            Sys.setenv(DEFAULT_BSGENOME = genome)
+            bins = gr.tile(hg_seqlengths(), local_mut_density_bin)
+                f1 = FishHook$new(hypotheses = bins, events = events, eligible = eligible)
                 f1$annotate(mc.cores = mc.cores, na.rm = na.rm, verbose = verbose, max.slice = max.slice, ff.chunk = ff.chunk, max.chunk = max.chunk)
                 f1$score()
                 local_mut_density = seg2gr(f1$scores)[,'count.density']
@@ -1641,25 +1836,78 @@ FishHook = R6::R6Class('FishHook',
                 cd[is.na(cd) | cd == Inf] = avg_cd
                 local_mut_density$count.density = cd
                 if(length(private$pcovariates$toList()) == 0 ){
-                    private$pcovariates = c(Cov_Arr$new(cvs = c(local_mut_density), type = c('numeric'), name = c("Local Mutation Density"), field = c("count.density")))
+                  private$pcovariates = c(Covariate$new(data = c(local_mut_density), type = c('numeric'), name = c("Local Mutation Density"), field = c("count.density")))
                 } else{
-                    private$pcovariates = c(Cov_Arr$new(cvs = c(local_mut_density), type = c('numeric'), name = c("Local Mutation Density"), field = c("count.density")), private$pcovariates)
+                  private$pcovariates = c(Covariate$new(data = c(local_mut_density), type = c('numeric'), name = c("Local Mutation Density"), field = c("count.density")), private$pcovariates)
                 }
             }
 
+          ## private$pdata = annotate.hypotheses(hypotheses = private$phypotheses,
+          ##                                     covered = private$peligible,
+          ##                                     events = private$pevents,
+          ##                                     mc.cores = mc.cores,
+          ##                                     na.rm = na.rm,
+          ##                                     pad = pad,
+          ##                                     verbose = verbose,
+          ##                                     max.slice = max.slice,
+          ##                                     ff.chunk = ff.chunk,
+          ##                                     max.chunk = max.chunk,
+          ##                                     out.path = private$pout.path,
+          ##                                     covariates = private$pcovariates$toList(),
+          ##                                     idcol = idcol,
+          ##                                     idcap = idcap,
+          ##                                     weightEvents = weightEvents)
 
-            private$pmc.cores = mc.cores
-            private$pna.rm = na.rm
-            private$ppad = pad
-            private$pverbose = verbose
-            private$pmax.slice = max.slice
-            private$pff.chunk = ff.chunk
-            private$pmax.chunk = max.chunk
-            private$pptidcol = ptidcol
-            private$pmaxpatientpergene = maxpatientpergene
-            private$pweightEvents = weightEvents
-            private$pnb = nb
+          private$pstate = "Annotated"
         },
+
+
+        ## ## Params:
+        ## ## mc.cores, see FishHook class documentation for more info
+        ## ## na.rm, see FishHook class documentation for more info
+        ## ## pad, see FishHook class documentation for more info
+        ## ## verbose, see FishHook class documentation for more info
+        ## ## max.slice, see FishHook class documentation for more info
+        ## ## ff.chunk, see FishHook class documentation for more info
+        ## ## max.chunk, see FishHook class documentation for more info
+        ## ## idcol, see FishHook class documentation for more info
+        ## ## idcap, see FishHook class documentation for more info
+        ## ## Return:
+        ## ## None
+        ## ## UI:
+        ## ## If verbose = T, will print updates as the annotation proceeds
+        ## ## Notes:
+        ## ## This function changes the internal state of the fishHook object and sets the state to 'Annotated'
+        ## annotate = function(mc.cores = private$pmc.cores, na.rm = private$pna.rm, pad = private$ppad,
+        ##     verbose = private$pverbose, max.slice = private$pmax.slice, ff.chunk = private$pff.chunk,
+        ##     max.chunk = private$pmax.chunk, idcol = private$pidcol, idcap = private$idcap,
+        ##     weightEvents = private$pweightEvents){
+
+        ##     if(private$pstate == "Scored"){
+        ##         stop("Error: You have a scored object already created. If you want to re-run the analysis you can clear the scored and annotated objects using fish$clear()")
+        ##     }
+
+        ##     private$pdata = annotate.hypotheses(hypotheses = private$phypotheses,
+        ##         covered = private$peligible,
+        ##         events = private$pevents,
+        ##         mc.cores = mc.cores,
+        ##         na.rm = na.rm,
+        ##         pad = pad,
+        ##         verbose = verbose,
+        ##         max.slice = max.slice,
+        ##         ff.chunk = ff.chunk,
+        ##         max.chunk = max.chunk,
+        ##         out.path = private$pout.path,
+        ##         covariates = private$pcovariates$toList(),
+        ##         idcol = idcol,
+        ##         idcap = idcap,
+        ##         weightEvents = weightEvents)
+
+        ##     private$pstate = "Annotated"
+
+        ## },
+
+
 
         ## Params:
         ## x Cov calls toList on X
@@ -1681,12 +1929,12 @@ FishHook = R6::R6Class('FishHook',
         ## UI:
         ## prints a summary of the internal state of the FishHook object
         print = function(){
-            targ = paste('Contains' , length(private$ptargets), "hypotheses." ,collapse = "")
+            targ = paste('Contains' , length(private$phypotheses), "hypotheses." ,collapse = "")
             eve = paste('Contains', length(private$pevents), "events to map to hypotheses.", collapse = "")
             if(is.null(private$peligible)){
                 elig = "All regions are eligible."
             } else{
-                elig = "Will map only eligilble regions."
+                elig = "Will map only eligible regions."
             }
             if(is.null(private$pcovariates$names)){
                 covs = "No covariates will be used."
@@ -1699,64 +1947,17 @@ FishHook = R6::R6Class('FishHook',
                     covs = cov.names
                 }
             }
-            meta = paste('Targets contains', ncol(values(private$ptargets)), 'metadata columns.')
+            meta = paste('Hypotheses contains', ncol(values(private$phypotheses)), 'metadata columns.')
             state = paste('Current State:', private$pstate)
             cat(targ, eve, elig, 'Covariates:', covs, meta, state, sep = '\n', collapse = '\n')
         },
 
         ## Params:
-        ## mc.cores, see FishHook class documentation for more info
-        ## na.rm, see FishHook class documentation for more info
-        ## pad, see FishHook class documentation for more info
-        ## verbose, see FishHook class documentation for more info
-        ## max.slice, see FishHook class documentation for more info
-        ## ff.chunk, see FishHook class documentation for more info
-        ## max.chunk, see FishHook class documentation for more info
-        ## ptidcol, see FishHook class documentation for more info
-        ## maxpatientpergene, see FishHook class documentation for more info
-        ## Return:
-        ## None
-        ## UI:
-        ## If verbose = T, will print updates as the annotation proceeds
-        ## Notes:
-        ## This function changes the internal state of the fishHook object and sets the state to 'Annotated'
-        annotate = function(mc.cores = private$pmc.cores, na.rm = private$pna.rm, pad = private$ppad,
-            verbose = private$pverbose, max.slice = private$pmax.slice, ff.chunk = private$pff.chunk,
-            max.chunk = private$pmax.chunk, ptidcol = private$pptidcol, maxpatientpergene = private$maxpatientpergene,
-            weightEvents = private$pweightEvents){
-
-            if(private$pstate == "Scored"){
-                stop("Error: You have a scored object already created. If you want to re-run the analysis you can clear the scored and annotated objects using fish$clear()")
-            }
-
-            private$panno = annotate.targets(targets = private$ptargets,
-                covered = private$peligible,
-                events = private$pevents,
-                mc.cores = mc.cores,
-                na.rm = na.rm,
-                pad = pad,
-                verbose = verbose,
-                max.slice = max.slice,
-                ff.chunk = ff.chunk,
-                max.chunk = max.chunk,
-                out.path = private$pout.path,
-                covariates = private$pcovariates$toList(),
-                ptidcol = ptidcol,
-                maxpatientpergene = maxpatientpergene,
-                weightEvents = weightEvents)
-
-            private$pstate = "Annotated"
-
-        },
-
-
-
-        ## Params:
-        ## targets, a GRanges that is the output of annotate.targets. note that this is for admin degbugging and
+        ## hypotheses, a GRanges that is the output of annotate.hypotheses. note that this is for admin degbugging and
         ## should never be touched by the user unless you absoltely know exactly what you are doing and why you are doing it.
         ## by, character vector with which to split into meta-territories (default = NULL)
         ## fields, a character vector indicating which columns to be used in aggregateion by default all meta data
-        ## fields of targets EXCEPT reserved field names $coverage, $counts, $query.id (default = NULL)
+        ## fields of hypotheses EXCEPT reserved field names $coverage, $counts, $query.id (default = NULL)
         ## rolling, positive numeric (integer) specifying how many (genome coordinate) adjacent to aggregate in a rolling
         ## fashion; positive integer with which to performa rolling sum / weighted average WITHIN chromosomes of "rolling" ranges" --> return a granges (default = NULL)
         ## For example, if we cut a chromosome into 5 pieces (1,2,3,4,5) and set rolling = 3, we will get an aggregated dataset (123,234,345) as the internal value
@@ -1776,13 +1977,13 @@ FishHook = R6::R6Class('FishHook',
         ## If verbose = T, will print updates as the aggregation proceeds
         ## Notes:
         ## This function changes the internal state of the fishHook object and sets the state to 'Aggregated'
-        aggregate = function(targets = private$panno, by = NULL, fields = NULL, rolling = NULL, disjoint = TRUE, na.rm = FALSE, FUN = list(), verbose = private$pverbose){
+        aggregate = function(hypotheses = private$pdata, by = NULL, fields = NULL, rolling = NULL, disjoint = TRUE, na.rm = FALSE, FUN = list(), verbose = private$pverbose){
 
             if(private$pstate == "Initialized"){
                 self$annotate()
             }
 
-            agg = aggregate.targets(targets,
+            agg = aggregate.hypotheses(hypotheses,
                 by = by,
                 fields = fields,
                 rolling = rolling,
@@ -1799,11 +2000,81 @@ FishHook = R6::R6Class('FishHook',
         },
 
 
+      ## this function will append novel covariates from a Covariate or a fishHook object
+      ## if from a fishHook object, then it will aggregate over the $data of that object
+      ## i.e. not by doing a fresh aggregation over that fishHook objects covariates
+      merge = function(data){
+          if (is(data, 'Covariate'))
+          {
+
+            if (private$pverbose)
+            {
+              fmessage('Appending new Covariates to this fishHook object')
+            }
+
+            ## take care of any duplicated names among covariates
+            newnames = c(private$pcovariates$names, data$names)
+            if (any(duplicated(newnames)))
+            {
+              newnames = dedup(newnames)
+              if (length(private$pcovariates)>0)
+              {
+                newnames = newnames[-c(1:length(private$pcovariates$names))]
+              }
+              data$names = newnames
+            }            
+
+            tmp.pdata = annotate.hypotheses(hypotheses = private$phypotheses,
+                                            covered = private$peligible,
+                                            mc.cores = private$pmc.cores,
+                                            na.rm = private$pna.rm,
+                                            pad = private$ppad,
+                                            verbose = private$pverbose,
+                                            max.slice = private$pmax.slice,
+                                            ff.chunk = private$pff.chunk,
+                                            max.chunk = private$pmax.chunk,
+                                            out.path = private$pout.path,
+                                            covariates = data$toList(),
+                                            weightEvents = private$pweightEvents)
+            BASIC.COLS = c('count', 'coverage', 'query.id')
+
+            private$pcovariates = c(private$pcovariates, data)
+
+            values(private$pdata) = cbind(values(private$pdata),
+                                          values(tmp.pdata)[, setdiff(names(values(tmp.pdata)), BASIC.COLS), drop = FALSE])
+
+            self$clear()          
+          }
+          else if (is(data, 'FishHook')) ## in this case we will just merge new covariates from the provided fishHook objects' $data matrix
+        {
+          cov.cols = data$covariates$names
+          tmpdata = data$data[, cov.cols]
+
+          if (length(cov.cols)==0)
+          {
+            warning('Attempting to append from fishHook object with empty covariates')
+          }
+          else
+            {
+              newnames = dedup(c(private$pcovariates$names, cov.cols))
+              cov.cols = newnames[(length(private$pcovariates)+1):length(newnames)]
+              
+              names(values(tmpdata)) = cov.cols
+              
+              newdat = gr.val(self$data[, c()], tmpdata, val = cov.cols, na.rm = private$pna.rm, mc.cores = private$pmc.cores,
+                              max.slice = private$pmax.slice)
+              
+              newcovs = do.call('c', lapply(cov.cols, function(x) Covariate$new(data = tmpdata, field = x, name = x, na.rm = TRUE, type = 'numeric')))
+              private$pcovariates = c(private$pcovariates, newcovs)
+              values(private$pdata) = cbind(values(private$pdata), values(newdat))
+            }
+        }            
+        },
 
         ## Params:        
-        ## targets,  a GRanges that is the output of annotate.targets. note that this is for admin degbugging and
+        ## hypotheses,  a GRanges that is the output of annotate.hypotheses. note that this is for admin degbugging and
         ## should never be touched by the user unless you absoltely know exactly what you are doing and why you are doing it.
-        ## annotated targets with fields $coverage, optional field, $count and additional numeric covariates
+        ## annotated hypotheses with fields $coverage, optional field, $count and additional numeric covariates
         ## model, boolean if true,  fit existing model --> covariates must be present (default = NULL)
         ## nb, boolean If TRUE, uses negative binomial; if FALSE then use Poisson
         ## verbose, boolean verbose flag (default = TRUE)
@@ -1817,10 +2088,15 @@ FishHook = R6::R6Class('FishHook',
         ## If verbose = T, will print updates as the scoring proceeds
         ## Notes:
         ## This function changes the internal state of the fishHook object and sets the state to 'Scored'
-        score = function(nb = private$pnb, verbose = private$pverbose,  iter = 200, subsample = 1e5, seed = 42, p.randomize = TRUE){
+        score = function(nb = private$pnb, sets = private$psets, verbose = private$pverbose,  iter = 200, subsample = 1e5, seed = 42, p.randomize = TRUE, model = NULL){
 
             if(private$pstate == "Initialized"){
                 self$annotate()
+            }
+
+          if (is.null(private$pevents))
+            {
+              stop('fishHook object has not been provided with events, please provide events (e.g. fish$events = events) and rescore')
             }
 
             ## If we are aggregated we should score that, if we are not we should score anno
@@ -1836,31 +2112,66 @@ FishHook = R6::R6Class('FishHook',
                 targ = private$paggregated
                 covs = c()
             } else{
-                targ = private$panno
-                covs = names(values(private$panno))
+                targ = private$pdata
+                covs = names(values(private$pdata))
             }
+   
+          ## Scoring
+          score = score.hypotheses(targ,
+                                   sets = sets,
+                                   covariates = covs,
+                                   return.model = TRUE,
+                                   nb = nb,
+                                   verbose = verbose,
+                                   iter = iter,
+                                   subsample = subsample,
+                                   seed = seed,
+                                   classReturn = TRUE,
+                                   model = model,
+                                   mc.cores = private$pmc.cores,
+                                   p.randomize = p.randomize)
 
-                                        #pls
 
-            #print(targ)
+          private$pscore = score$res
+          private$pmodel = score$model
 
-            ## Scoring
-            score = score.targets(targ,
-                covariates = covs,
-                return.model = TRUE,
-                nb = nb,
-                verbose = verbose,
-                iter = iter,
-                subsample = subsample,
-                seed = seed,
-                classReturn = TRUE,
-                p.randomize = p.randomize)
+          if (!is.null(sets))
+          {
+            private$psets = sets
+            private$psetscore = score$setres
+          }
 
-            private$pscore = score[[1]]
-            private$pmodel = score[[2]]
-            private$pstate = 'Scored'
+          private$pstate = 'Scored'
+          return(self)
         },
 
+      ## subset
+      ## this subsets the intervals and hypotheses in the fishHook object
+      subset = function(i = NULL, j = NULL){
+        if (!is.null(j))
+        {
+          if (any(j>length(private$pcovariates)))
+            stop('Covariate index out of bounds when subsetting FishHook object')
+
+          BASIC.COLS = c('count', 'coverage', 'query.id')
+          private$pcovariates = private$pcovariates[j]
+          private$pdata =  private$pdata[, c(BASIC.COLS, private$pcovariates$names)]
+        }
+
+        if (!is.null(i))
+        {
+          if (any(i>length(private$phypotheses)))
+            stop('Hypothesis index out of bounds when subsetting FishHook object')
+
+          private$pdata =  private$pdata[i, ]
+          private$phypotheses = private$phypotheses[i]
+          if (!is.null(private$pscore))
+          {
+            private$pscore = private$pscore[i]
+          }
+        }
+      },
+      
         ## Params:
         ## state, a character indicating which state to revert to, e.g. if you are 'Scored' you can revert to 'Annotated', 'Initialized', an possibly 'Aggregated'
         ## however if your state is 'Initialized' you cannot revert to a 'Scored' state
@@ -1868,32 +2179,36 @@ FishHook = R6::R6Class('FishHook',
         ## none
         ## UI:
         ## None
-        ## Notes: !!==WARNING==!! This function will delete any data pertaining to steps that come after the reversion state, so if you revert a scored object to 'Initialized'
-        ## You will lose the scored data and the annotated data as well as any aggregate data
-        clear = function(state = 'Initialized'){
-            if(state == 'Initialized'){
-                private$pstate = 'Initialized'
-                private$pmodel = NULL
-                private$pscore = NULL
-                private$panno = NULL
-                private$paggregated = NULL
-                return('Clear Completed')
-            }
-            if(state == 'Annotated'){
-                private$pstate = 'Annotated'
-                private$pmodel = NULL
-                private$pscore = NULL
-                private$paggregated = NULL
-                return('Clear Completed')
-            }
-            if(state == 'Aggregated'){
-                private$pstate = 'Aggregated'
-                private$pmodel = NULL
-                private$pscore = NULL
-                return('Clear Completed')
-            }
+      clear = function(state = 'Initialized'){
+        if (private$pstate == 'Scored')
+          warning('Resetting scores since covariates re-defined, please run $score() to get updated p values')
+        private$pmodel = NULL
+        private$pstate = 'Annotated'
+        private$pscore = NULL
+        private$psetscore = NULL
 
-            return('Valid reversion state not specified. This is not a major error, just letting you know that nothing has been chaged')
+            ## if(state == 'Initialized'){
+            ##     private$pstate = 'Initialized'
+            ##     private$pmodel = NULL
+            ##     private$pscore = NULL
+            ##     private$pdata = NULL
+            ##     private$paggregated = NULL
+            ##     return('Clear Completed')
+            ## }
+            ## if(state == 'Annotated'){
+            ##     private$pstate = 'Annotated'
+            ##     private$pmodel = NULL
+            ##     private$pscore = NULL
+            ##     private$paggregated = NULL
+            ##     return('Clear Completed')
+            ## }
+            ## if(state == 'Aggregated'){
+            ##     private$pstate = 'Aggregated'
+            ##     private$pmodel = NULL
+            ##     private$pscore = NULL
+            ##     return('Clear Completed')
+            ## }
+##            return('Valid reversion state not specified. This is not a major error, just letting you know that nothing has been chaged')
         },
 
 
@@ -1910,20 +2225,22 @@ FishHook = R6::R6Class('FishHook',
         ## plotly object that can be plotted
         ## UI:
         ## None
-        qq_plot = function(plotly = TRUE, columns = NULL, annotations = NULL, key = NULL, ...){
+      qqp = function(plotly = TRUE, columns = NULL, annotations = NULL, key = NULL, ...){
+        if (is.null(self$res))
+          stop('FishHook object not yet scored, so no qq_plot available')
+
             res = self$all
 
-            if(!is.null(columns)){
-                columns = columns[columns %in% names(res)]
-                annotation_columns = lapply(columns, function(x) as.character(unlist(res[,x,with=FALSE])))
-                names(annotation_columns) = columns
-            } else{
-                annotation_columns = list()
-            }
+            if (is.null(columns))
+              columns = names(values(private$phypotheses))
+            
+            columns = columns[columns %in% names(res)]
+            annotation_columns = lapply(columns, function(x) as.character(unlist(res[,x,with=FALSE])))
+            names(annotation_columns) = columns
 
             if(is.null(annotations) & is.null(columns)){
-
-                names = res$name
+              
+              names = res$name
 
                 annotations = list(Hypothesis_ID = names,
                     Count = res$count,
@@ -1932,7 +2249,7 @@ FishHook = R6::R6Class('FishHook',
 
             }
             
-            return(qq_pval(res$p ,annotations = c(annotations,annotation_columns), gradient = list(Count = res$count), titleText = "" ,  plotly = plotly, key = key))
+            return(qqp(res$p ,annotations = c(annotations,annotation_columns), gradient = list(Count = res$count), titleText = "" ,  plotly = plotly, key = key))
 
         }
     ),
@@ -1943,7 +2260,7 @@ FishHook = R6::R6Class('FishHook',
     ## and view these variables, all internal manipulations will be done with these private variables
     private = list(
         ## Genomic Ranges Object that Indicates the Hypotheses
-        ptargets = NULL,
+        phypotheses = NULL,
 
         ## Eligible Regions, this could be things such as regions of the genome capture with
         ## whole exome sequencing or in the case of whole genome sequencing non-repetative regions
@@ -1975,43 +2292,49 @@ FishHook = R6::R6Class('FishHook',
         ##na.rm, see fishHook$annotate/fishHook$aggregate/fishHook$score for more info
         pna.rm = TRUE,
 
-        ##padding to use with the events, see annotate.targets for more info
+        ##padding to use with the events, see annotate.hypotheses for more info
         ppad = 0,
 
         ##global verbose paramter
         pverbose = TRUE,
 
-        ##see annotate.targets for more info
+        ##see annotate.hypotheses for more info
         pmax.slice = 1e3,
 
-        ##see annotate.targets for more info
+        ##see annotate.hypotheses for more info
         pff.chunk = 1e6,
 
-        ##see annotate.targets for more info
+        ##see annotate.hypotheses for more info
         pmax.chunk = 1e11,
 
-        ##see annotate.targets for more info
-        pptidcol = NULL,
+        ##see annotate.hypotheses for more info
+        pidcol = NULL,
 
-        ##see annotate.targets for more info
-        pmaxpatientpergene = Inf,
+        ##see annotate.hypotheses for more info
+        pidcap = Inf,
 
-        ##see annotate.targets for more info
+        ##see annotate.hypotheses for more info
         pweightEvents = FALSE,
 
         ##The variable containing the output of fishHook$annotate()
-        panno = NULL,
+        pdata = NULL,
 
         ##The variable containing the output of fishHook$score()
         pscore = NULL,
 
-        ##see score.targets for more info
+      ##The variable containing the output of fishHook$score()
+      psets = NULL,
+
+      ##The variable containing the output of fishHook$score()
+      psetscore = NULL,
+
+        ##see score.hypotheses for more info
         pmodel = NULL,
 
-        ##see score.targets for more info
+        ##see score.hypotheses for more info
         preturn.model = TRUE,
 
-        ##see score.targets for more info
+        ##see score.hypotheses for more info
         pnb = TRUE,
 
         ##The variable containing the output of fishHook$aggregate()
@@ -2026,20 +2349,49 @@ FishHook = R6::R6Class('FishHook',
     ## class$active = value will call the active variable function with the value = value
     active = list(
 
-        ## Covariates = cvs
-        ## Here we check to make sure that all cvs  are of class Cov_Arr
+        ## Covariates = data
+        ## Here we check to make sure that all data  are of class Covariate
         ## We then reset the object to its initialized state so as to not introduce incosistencies amongst variables
-        cvs = function(value) {
+        covariates = function(value) {
             if(!missing(value)){
-                if(!(class(value)[1] == 'Cov_Arr')  & !is.null(value)){
-                    stop('Error: covariates must be of class Cov_Arr')
+                if (!(class(value)[1] == 'Covariate')  & !is.null(value)){
+                    stop('Error: covariates must be of class Covariate')
                 }
 
-                self$clear()
+                if (private$pverbose)
+                {
+                  fmessage('Aggregating covariates over eligible subset of hypotheses')
+                }
 
                 private$pcovariates = value
 
-                return(private$pcovariate)
+
+                tmp.pdata = annotate.hypotheses(hypotheses = private$phypotheses,
+                                                covered = private$peligible,
+                                                mc.cores = private$pmc.cores,
+                                                na.rm = private$pna.rm,
+                                                pad = private$ppad,
+                                                verbose = private$pverbose,
+                                                max.slice = private$pmax.slice,
+                                                ff.chunk = private$pff.chunk,
+                                                max.chunk = private$pmax.chunk,
+                                                out.path = private$pout.path,
+                                                covariates = private$pcovariates$toList(),
+                                                weightEvents = private$pweightEvents)
+                BASIC.COLS = c('count', 'coverage', 'query.id')
+
+                if (is.null(private$pdata))
+                {
+                  private$pdata = tmp.pdata
+                }
+                else
+              {
+                private$pdata = private$pdata[, BASIC.COLS]
+                values(private$pdata) = cbind(values(private$pdata), values(tmp.pdata)[, setdiff(names(values(tmp.pdata)), BASIC.COLS), drop = FALSE])
+              }
+                self$clear()
+
+                return(private$pcovariates)
 
             } else{
                 return(private$pcovariates)
@@ -2050,14 +2402,35 @@ FishHook = R6::R6Class('FishHook',
         ## Here we check to make sure that eligible is of class GRanges
         ## We then reset the object to its initialized state so as to not introduce incosistencies amongst variables
         eligible = function(value) {
-            if(!missing(value)){
-                if((!class(value) == 'GRanges') & !is.null(value)){
-                    stop('Error: eligible must be of class GRanges')
+          if(!missing(value)){
+                if (validate_eligible(value))
+                {
+                  private$peligible = value
                 }
+
+                if (private$pverbose)
+                {
+                  fmessage('Recomputing counts and covariates over provided eligible regions')
+                }
+
+                private$pdata = annotate.hypotheses(hypotheses = private$phypotheses,
+                                                    covered = private$peligible,
+                                                    events = private$pevents,
+                                                    mc.cores = private$pmc.cores,
+                                                    na.rm = private$pna.rm,
+                                                    pad = private$ppad,
+                                                    verbose = private$pverbose,
+                                                    max.slice = private$pmax.slice,
+                                                    ff.chunk = private$pff.chunk,
+                                                    max.chunk = private$pmax.chunk,
+                                                    out.path = private$pout.path,
+                                                    covariates = private$pcovariates$toList(),
+                                                    idcol = private$pidcol,
+                                                    idcap = private$pidcap,
+                                                    weightEvents = private$pweightEvents)
 
                 self$clear()
 
-                private$peligible = value
                 return(private$peligible)
 
             } else{
@@ -2065,54 +2438,20 @@ FishHook = R6::R6Class('FishHook',
             }
         },
 
-        ## Targets
-        ## Here we check to make sure that targets is of class GRanges or a chracter path and are not NULL
+        ## Hypotheses
+        ## Here we check to make sure that hypotheses is of class GRanges or a chracter path and are not NULL
         ## We then reset the object to its initialized state so as to not introduce incosistencies amongst variables
-        targets = function(value) {
-
+        hypotheses = function(value) {
             if(!missing(value)){
-                if(!(class(value) == 'GRanges') && !(class(value) == 'character')){
-                    stop('Error: targets must be of class GRanges or character')
-                }
-
-            targets = value
-
-            ## checks to see if targets is a path & import if so
-            if (is.character(targets)){
-                if (grepl('\\.rds$', targets[1])){
-                    targets = readRDS(targets[1])
-                } else if (grepl('(\\.bed$)', targets[1])){
-                    require(rtracklayer)
-                    targets = rtracklayer::import(targets[1], (format = "BED"))
-                }
-            }
-
-            ## checks to see if target contains any data
-            if (length(targets)==0){
-                stop('Error: Must provide non-empty targets')
-            }
-
-            ## Looks for a "name" field to index/Identify targets by name
-            ## If no such field is found creates a set of indexes
-            if(is.null(targets$name)){
-                targets$name = 1:length(targets)
-            }
-
-            ## Change here when making the smart swaps
-            self$clear()
-
-            private$ptargets = targets
-
-            return(private$ptargets)
-
+              stop('Cannot reset hypotheses in existing FishHook object, please start with new object or subset this object using subsetting [] operator')    
             } else{
-                return(private$ptargets)
+                return(private$phypotheses)
             }
         },
 
         ## Events
         ## Here we check to make sure that events is of class GRanges is not NULL
-        ## We then reset the object to its initialized state so as to not introduce incosistencies amongst variables
+        ## then immediately reannotate
         events = function(value) {
             if(!missing(value)){
                 if(!(class(value) == 'GRanges')){
@@ -2123,9 +2462,35 @@ FishHook = R6::R6Class('FishHook',
                 
                 private$pevents = events
                 
-                ## Change here when making the smart swaps
+                ## update pdata
+                if (private$pverbose)
+                  {
+                    fmessage('Tallying events over eligible subsets of hypotheses')
+                  }
+
+                tmp.pdata = annotate.hypotheses(hypotheses = private$phypotheses,
+                                                events = private$pevents,
+                                                covered = private$peligible, 
+                                                mc.cores = private$pmc.cores,
+                                                verbose = private$pverbose,
+                                                max.slice = private$max.slice,
+                                                ff.chunk = private$pff.chunk,
+                                                max.chunk = private$pmax.chunk,
+                                                idcol = private$pidcol,
+                                                idcap = private$pidcap,
+                                                weightEvents = private$pweightEvents)
+
+                if (is.null(private$pdata))
+                {
+                    private$pdata = tmp.pdata
+                  }
+                else
+                  {
+                    private$pdata$count = tmp.pdata$count
+                  }
+
                 self$clear()
-                
+
                 return(private$pevents)
 
             } else{
@@ -2145,7 +2510,7 @@ FishHook = R6::R6Class('FishHook',
                 ## checks to see if out.path is able to be written to
                 ## throws a warning if unable to write
                 if (!is.null(out.path)){
-                    tryCatch(saveRDS(private$ptargets, paste(gsub('.rds', '', out.path), '.source.rds', sep = '')),
+                    tryCatch(saveRDS(private$phypotheses, paste(gsub('.rds', '', out.path), '.source.rds', sep = '')),
                         error = function(e) warning(sprintf('Error: writing to file %s', out.path)))
                 }
 
@@ -2160,34 +2525,48 @@ FishHook = R6::R6Class('FishHook',
 
         ## anno
         ## Here we check to make sure that anno is of class GRanges
-        anno = function(value) {
+        data = function(value) {
             if(!missing(value)){
                 if(!(class(value) == 'GRanges')  && !is.null(value)){
                     stop('Error: anno must be of class GRanges')
                 } else{
-                    warning('Warning: You are editing the annotated dataset generated by fishHook, if you are trying to change targets use fish$targets.')
+                    warning('You are editing the annotated dataset generated by fishHook. Only do this if you are a fishHook pro!')
                 }
 
-                private$panno = value
+                BASIC.COLS = c('count', 'coverage', 'query.id')
+                if (!all(BASIC.COLS %in% names(values(value))))
+                  stop('Provided GRanges must contain count, coverage, and query.id field, with additional <numeric> columns specifying covariate values')
+                if (!identical(private$pdata[, c()], value[, c()]))
+                  stop('Provided GRanges do not exactly match the hypotheses already present inside this fishHook object')
 
-                return(private$panno)
+                cov.cols = setdiff(names(values(value)), BASIC.COLS)
+                cov.classes = sapply(as.list(values(value))[cov.cols], class)
+                if (!all(cov.classes == 'numeric'))
+                  warning('Only <numeric> columns in provided granges can specify covariates, removing any non-numeric columns from given input')             
 
-           } else{
-                return(private$panno)
+                cov.cols = cov.cols[cov.classes=='numeric']
+                private$pcovariates = do.call('c', lapply(cov.cols, function(x) Covariate$new(data = value[, x], field = x, name = x, na.rm = TRUE, type = 'numeric')))
+                private$pdata = value[, c(BASIC.COLS, cov.cols)]
+                
+                return(private$pdata)
+
+            } else{
+                return(private$pdata)
            }
         },
 
-        ## scores
+        ## res = results
         ## Here we check to make sure that scores is of class data.table
-        scores = function(value) {
-            if(!missing(value)){
-                if(!(class(value) == 'data.table')  && !is.null(value)){
-                    stop('Error: score must be of class data.table')
-                } else{
-                    warning('Warning: You are editing the scored dataset generated by fishHook, if you are trying to change targets use fish$targets.')
-                }
+        res = function(value) {
+          if(!missing(value)){
+            stop('Scores cannot be edited, to rescore just run $score() function on object')
+                ## if(!(class(value) == 'data.table')  && !is.null(value)){
+                ##     stop('Error: score must be of class data.table')
+                ## } else{
+                ##     warning('Warning: You are editing the scored dataset generated by fishHook, if you are trying to change hypotheses use fish$hypotheses.')
+                ## }
 
-                private$pscore = value
+                ## private$pscore = value
 
                 return(private$pscore)
 
@@ -2196,21 +2575,73 @@ FishHook = R6::R6Class('FishHook',
             }
         },
 
+        ## set scores
+        ## Here we check to make sure that scores is of class data.table
+        setres = function(value) {
+          if(!missing(value)){
+            stop('Set scores cannot be edited, to rescore just run $score(sets = mysets) or $sets = mysets function on object')
+                ## if(!(class(value) == 'data.table')  && !is.null(value)){
+                ##     stop('Error: score must be of class data.table')
+                ## } else{
+                ##     warning('Warning: You are editing the scored dataset generated by fishHook, if you are trying to change hypotheses use fish$hypotheses.')
+                ## }
+
+                ## private$pscore = value
+
+                return(private$psetscore)
+
+            } else{
+                return(private$psetscore)
+            }
+        },
+
+
         ## model
-        ## !!==WARNING==!! Do not edit this variable unless you really know what you're doing
         model = function(value) {
             if(!missing(value)){
 
-                warning('Warning: You are editing the regression model generated by fishHook. Unless you know what you arere doing I would recomend reverting to a safe state using fish$clear()')
+              warning('Warning: You are editing the regression model generated by fishHook.')
 
-                private$pmodel = value
+              if (!inherits(value, 'glm'))
+                stop('Provided model must be glm model i.e. from another fishHook object')
+              
+              modelcovs = setdiff(rownames(summary(value)$coefficients), '(Intercept)')
+              
+              if (!identical(sort(modelcovs), sort(private$pcovariates$names)))
+                stop('Mismatch between the names of covariates in provided model and the covariates in this fishHook object')
 
-                return(private$pmodel)
+              private$pmodel = value
 
+              if (private$pverbose)
+              {
+                fmessage('Rescoring fishHook data using provided model')
+              }
+
+              self$score(model = private$pmodel)
+
+              return(private$pmodel)
             } else{
-                return(private$pmodel)
+              return(private$pmodel)
             }
         },
+
+
+        ## model
+        sets = function(value) {
+            if(!missing(value)){
+
+              if (!inherits(value, 'list') & !all(sapply(value, class)== 'integer'))
+                stop('Provided sets must be a (named) list of indices into hypotheses, each specifying a hypothesis set to be scored')
+              
+              private$psets = value
+              self$score(model = private$pmodel, sets = private$psets)
+
+              return(self)
+            } else{
+              return(private$psets)
+            }
+        },
+
 
         ## mc.cores
         ## Here we check to make sure that scores of of class numeric and is a positive value, it is then floored for safety
@@ -2267,8 +2698,8 @@ FishHook = R6::R6Class('FishHook',
         ## logical
         verbose = function(value) {
             if(!missing(value)){
-                if(!(class(value) == 'logical')  && !is.null(value)){
-                    stop('Error: verbose must be of class logical')
+                if(!(class(value) %in% c('numeric', 'logical', 'integer'))  && !is.null(value) && length(value)==1){
+                    stop('Error: verbose must be scalar of class logical, numeric, or integer')
                 }
 
                 private$pverbose = value
@@ -2331,37 +2762,37 @@ FishHook = R6::R6Class('FishHook',
             }
         },
 
-        ## ptidcol
+        ## idcol
         ## character
-        ptidcol = function(value) {
+        idcol = function(value) {
             if(!missing(value)){
                 if(!(class(value) == "character")  && !is.null(value)){
-                    stop('Error: ptidcol must be of class character')
+                    stop('Error: idcol must be of class character')
                 }
 
-                private$pptidcol = value
+                private$pidcol = value
 
-                return(private$pptidcol)
+                return(private$pidcol)
 
             } else{
-                return(private$pptidcol)
+                return(private$pidcol)
             }
         },
 
-        ## maxpatientpergene
+        ## idcap
         ## numeric, must be greater than 0, value is floored for safety
-        maxpatientpergene = function(value) {
+        idcap = function(value) {
             if(!missing(value)){
                 if(!(class(value) == "numeric")  && !is.null(value) && value > 0){
-                    stop("Error: maxpatientpergene must be of class numeric")
+                    stop("Error: idcap must be of class numeric")
                 }
 
-                private$pmaxpatientpergene = floor(value)
+                private$pidcap = floor(value)
 
-                return(private$pmaxpatientpergene)
+                return(private$pidcap)
 
             } else{
-                return(private$pmaxpatientpergene)
+                return(private$pidcap)
             }
         },
 
@@ -2403,9 +2834,9 @@ FishHook = R6::R6Class('FishHook',
         ## cannot be used for assigning data, can only be used for accessing a data.table containing merged scores and meta data
         all = function(value) {
             if(!missing(value)){
-                stop("Error: This is solely for accessing data. If you want to set data, use $targets")
+                stop("Error: This is solely for accessing data. If you want to set data, use $hypotheses")
             } else{
-                meta = values(private$ptargets)
+                meta = values(private$phypotheses)
                 scores = private$pscore
                 return(as.data.table(cbind(scores,meta)))
             }
@@ -2423,7 +2854,7 @@ FishHook = R6::R6Class('FishHook',
         },
 
         ## aggregated
-        ## GRangesList containing aggregated targets, you probably shouldn't be messing with this unless
+        ## GRangesList containing aggregated hypotheses, you probably shouldn't be messing with this unless
         ## you really know what you're doing
         aggregated = function(value) {
             if(!missing(value)){
@@ -2454,11 +2885,11 @@ FishHook = R6::R6Class('FishHook',
 #' Overrides the length function 'length(FishHook)' for use with FishHook 
 #'
 #' @param obj FishHook object that is passed to the length function
-#' @return length of the targets contained in the FishHook object
+#' @return length of the hypotheses contained in the FishHook object
 #' @author Zoran Z. Gajic
 #' @export
 'length.FishHook' = function(obj,...){
-    return(length(obj$targets))
+    return(length(obj$hypotheses))
 }
 
 
@@ -2471,18 +2902,18 @@ FishHook = R6::R6Class('FishHook',
 #'
 #' @param obj FishHook object that is passed to the length function
 #' @return returns a numeric vector containing the lengths of various FishHook variables in the following order:
-#' i : number of targets
+#' i : number of hypotheses
 #' j : number of  events
 #' k : number of covariates
 #' l : number of  eligible regions
 #' @author Zoran Z. Gajic
 #' @export
 'dim.FishHook' = function(obj,...){
-    length_targets = length(obj$targets)
+    length_hypotheses = length(obj$hypotheses)
     length_events = length(obj$events)
-    length_covariates = length(obj$cvs)
+    length_covariates = length(obj$data)
     length_eligible = length(obj$eligible)
-    return(c(length_targets, length_events, length_covariates, length_eligible))
+    return(c(length_hypotheses, length_events, length_covariates, length_eligible))
 }
 
 
@@ -2493,50 +2924,29 @@ FishHook = R6::R6Class('FishHook',
 #' Overrides the subset operator x[] for use with FishHook to allow for vector like subsetting, see fishHook demo for examples
 #'
 #' @param obj FishHook object This is the FishHookObject to be subset
-#' @param i vector subset targets
-#' @param j vector subset events
-#' @param k vector subset covariates
-#' @param l vector susbet eligible
-#' @return A new FishHook object that contains only the data within the given ranges
+#' @param i vector subset hypotheses
+#' @param j vector subset covariates
+#' @return A new FishHook object that contains only the given hypotheses and/or covariates
 #' @author Zoran Z. Gajic
 #' @export
-'[.FishHook' = function(obj, i, j, k, l){
-    ret = obj$clone()
-
-    ##i -> targets
-    if(!missing(i)){
-        ret$targets = ret$targets[i]
-    }
-
-    ##j -> events
-    if(!missing(j)){
-        ret$events = ret$events[j]
-    }
-
-    ##k -> cvs
-    if(!missing(k)){
-        ret$cvs = ret$cvs[k]
-    }
-
-    ##l -> eligible
-    if(!missing(l)){
-        ret$eligible = ret$eligible[l]
-    }
-    return(ret)
+'[.FishHook' = function(obj, i = NULL, j = NULL){
+  ret = obj$clone()
+  ret$subset(i, j)  
+  return(ret)
 }
 
 
 
 
 
-#' @name qq_pval
+#' @name qqp
 #' @title qq plot given input p values
 #' @description
 #'
 #' Generates R or Shiny quantile-quantile (Q-Q) plot given (minimally) an observed vector of p values, plotted their -log1 )quantiles against corresponding -log10
 #' quantiles of the uniform distribution.
 #'
-#' @param obs vector of pvalues to plot, names of obs can be intepreted as labels
+#' @param obs vector of pvalues to plot, names of obs can be intepreted as labels, alternatively a data.frame / data.table with column $p, in which case the other (non $p) columns of obs are interpreted "annotations" in the html plot
 #' @param highlight vector optional arg specifying indices of data points to highlight (i.e. color red) (default = c())
 #' @param exp numeric vector, expected distribution. if default (NULL) will plot observed against a uniform distribution
 #' Use this if you are expecting a non-uniform distribution. Must be equal in length to obs. (default = NULL)
@@ -2551,7 +2961,7 @@ FishHook = R6::R6Class('FishHook',
 #' @param max.y numeric, max value for the y axis
 #' @param label character vector, optional specifying which data points to label (obs vector has to be named, for this to work)
 #' @param plotly toggles between creating a pdf (FALSE) or an interactive html widget (TRUE)
-#' @param annotations named list of vectors containing information to present as hover text (html widget), must be in same order as obs input
+#' @param annotations data.frame, data.table, or named list of vectors containing information to present as hover text (html widget), must be in same order and length as obs input, 
 #' @param gradient named list that contains one vector that color codes points based on value, must bein same order as obs input
 #' @param titleText title for plotly (html) graph only
 #' @param subsample numeric (positive integer), number of points to use for plotting, will be taken randomly from the set of obs -> p values
@@ -2560,9 +2970,26 @@ FishHook = R6::R6Class('FishHook',
 #' @import plotly
 #' @author Marcin Imielinski, Eran Hodis, Zoran Z. Gajic
 #' @export
-qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg = 'black', pch = 18, cex = 1, conf.lines = TRUE, max = NULL, max.x = NULL,
-    max.y = NULL,  label = NULL, plotly = FALSE, annotations = list(), gradient = list(), titleText = "", subsample = NA, key = NULL,  ...)
+qqp = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg = 'black', pch = 18, cex = 1, conf.lines = TRUE, max = NULL, max.x = NULL,
+    max.y = NULL,  label = NULL, plotly = TRUE, annotations = list(), gradient = list(), titleText = "", subsample = NA, key = NULL,  ...)
 {
+
+  if (inherits(obs, 'data.frame') | inherits(obs, 'data.table') | inherits(obs, 'GenomicRanges'))
+  {
+    if (inherits(obs, 'GenomicRanges'))
+    {
+      obs = values(obs)
+    }
+
+    if (!("p" %in% colnames(obs)))
+      stop('if obs is a data.frame or data.table or GenomicRanges then it must have a column $p corresponding to p value')
+
+
+    annotations = as.list(as.data.frame(obs)[, setdiff(colnames(obs), 'p'), drop = FALSE])
+    obs = obs$p
+
+  }
+
     if(!(plotly)){
         is.exp.null = is.null(exp)
 
@@ -2716,12 +3143,15 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg
         if(length(annotations) < 1){
             hover = do.call(cbind.data.frame, list(p = obs))
         } else{
-            hover = do.call(cbind.data.frame, list(annotations, p = obs))
+            hover = cbind(as.data.frame(do.call(cbind, annotations)), data.frame(p = obs))
         }
 
         hover = as.data.table(hover)
 
+      if (!is.null(key))
+      {
         hover$key = key
+      }
 
         is.exp.null = is.null(exp)
         if (is.null(col)){
@@ -2744,7 +3174,7 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg
         } else{
             highlight = 1:length(hover$p) %in% highlight
         }
-        hover$obs = -log10(hover$p[ix1])
+        hover$obs[ix1] = -log10(hover$p[ix1])
         hover = hover[ix1]
         highlight = highlight[ix1]
         if (!is.null(exp)){
@@ -2798,8 +3228,8 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg
         if(length(gradient )!= 0){
             dat$grad = gradient[[1]][ord]
             gradient_control = TRUE
-        } else {
-            dat$grad = c()
+        } else if (!is.null(dat$grad)) {
+            dat$grad = NULL
         }
 
         dat$x = sort(exp)
@@ -2817,7 +3247,8 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg
             dat4 = dat
             dat4$obs = NULL
             dat4$x = NULL
-            dat4$y = NULL
+          dat4$y = NULL
+          if (!is.null(dat4$grad))
             dat4$grad = NULL
 
             trans = t(dat4)
@@ -2840,7 +3271,6 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg
                                yaxis = list(title = '<i>Observed -log<sub>10</sub>(P)</i>')) ]
             }
         } else{
-
             dat$ID = c(1:nrow(dat))
             dat2 = dat[ y < 2.6,]
             dat3 = as.data.frame(dat2)
@@ -2852,8 +3282,11 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg
             dat4 = dat2
             dat4$obs = NULL
             dat4$x = NULL
-            dat4$y = NULL
-            dat4$grad = NULL
+          dat4$y = NULL
+          if (!is.null(dat4$grad))
+            {
+              dat4$grad = NULL
+            }
 
 
             trans = t(dat4)
@@ -2908,3 +3341,441 @@ qq_pval = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg
     }
 }
 
+
+validate_eligible = function(value)
+{
+  if((!class(value) == 'GRanges') & !is.null(value)){
+    stop('Error: eligible must be of class GRanges')
+  }
+  return(TRUE)
+}
+
+validate_hypotheses = function(value)
+{
+  if(!(class(value) == 'GRanges') && !(class(value) == 'character')){
+    stop('Error: hypotheses must be of class GRanges or character')
+  }
+  
+  hypotheses = value
+  
+  ## checks to see if hypotheses is a path & import if so
+  if (is.character(hypotheses)){
+    if (grepl('\\.rds$', hypotheses[1])){
+      hypotheses = readRDS(hypotheses[1])
+    } else if (grepl('(\\.bed$)', hypotheses[1])){
+      require(rtracklayer)
+      hypotheses = rtracklayer::import(hypotheses[1], (format = "BED"))
+    }
+  }
+  
+  ## checks to see if target contains any data
+  if (length(hypotheses)==0){
+    stop('Error: Must provide non-empty hypotheses')
+  }
+  
+  ## Looks for a "name" field to index/Identify hypotheses by name
+  ## If no such field is found creates a set of indexes
+  if(is.null(hypotheses$name)){
+    hypotheses$name = 1:length(hypotheses)
+  }
+  
+  return(TRUE)
+}
+
+
+fmessage = function(..., pre = 'FishHook')
+  message(pre, ' ', paste0(as.character(Sys.time()), ': '), ...)
+
+
+dedup = function(x, suffix = '.')
+{
+  dup = duplicated(x);
+  udup = setdiff(unique(x[dup]), NA)
+  udup.ix = lapply(udup, function(y) which(x==y))
+  udup.suffices = lapply(udup.ix, function(y) c('', paste(suffix, 2:length(y), sep = '')))
+  out = x;
+  out[unlist(udup.ix)] = paste(out[unlist(udup.ix)], unlist(udup.suffices), sep = '');
+  return(out)
+}
+
+
+
+
+### modified glm.nb to allow setting of a (scalar or vector) theta (i.e. instead of inferring it)
+###
+glm.nb.fh = function (formula, data, weights, subset, na.action, start = NULL, 
+    etastart, mustart, control = glm.control(...), method = "glm.fit", 
+    model = TRUE, x = FALSE, y = TRUE, contrasts = NULL, ...,  theta = NULL,
+    init.theta, link = log) 
+{
+    loglik <- function(n, th, mu, y, w) sum(w * (lgamma(th + 
+        y) - lgamma(th) - lgamma(y + 1) + th * log(th) + y * 
+        log(mu + (y == 0)) - (th + y) * log(th + mu)))
+    link <- substitute(link)
+    fam0 <- if (missing(init.theta)) 
+        do.call("poisson", list(link = link))
+    else do.call("negative.binomial", list(theta = init.theta, 
+        link = link))
+    mf <- Call <- match.call()
+    m <- match(c("formula", "data", "subset", "weights", "na.action", 
+        "etastart", "mustart", "offset"), names(mf), 0)
+    mf <- mf[c(1, m)]
+    mf$drop.unused.levels <- TRUE
+    mf[[1L]] <- quote(stats::model.frame)
+    mf <- eval.parent(mf)
+    Terms <- attr(mf, "terms")
+    if (method == "model.frame") 
+        return(mf)
+    Y <- model.response(mf, "numeric")
+    X <- if (!is.empty.model(Terms)) 
+        model.matrix(Terms, mf, contrasts)
+    else matrix(, NROW(Y), 0)
+    w <- model.weights(mf)
+    if (!length(w)) 
+        w <- rep(1, nrow(mf))
+    else if (any(w < 0)) 
+        stop("negative weights not allowed")
+    offset <- model.offset(mf)
+    mustart <- model.extract(mf, "mustart")
+    etastart <- model.extract(mf, "etastart")
+    n <- length(Y)
+    if (!missing(method)) {
+        if (!exists(method, mode = "function")) 
+            stop(gettextf("unimplemented method: %s", sQuote(method)), 
+                domain = NA)
+        glm.fitter <- get(method)
+    }
+    else {
+        method <- "glm.fit"
+        glm.fitter <- stats::glm.fit
+    }
+    if (control$trace > 1) 
+      message("Initial fit:")
+
+    fit <- glm.fitter(x = X, y = Y, w = w, start = start, etastart = etastart, 
+        mustart = mustart, offset = offset, family = fam0, control = list(maxit = control$maxit, 
+            epsilon = control$epsilon, trace = control$trace > 
+                1), intercept = attr(Terms, "intercept") > 0)
+    class(fit) <- c("glm", "lm")
+    mu <- fit$fitted.values
+    if (is.null(theta))
+    {
+      th <- as.vector(theta.ml(Y, mu, sum(w), w, limit = control$maxit, 
+                               trace = control$trace > 2))
+    }
+    else
+  {
+    th = theta
+
+    if (control$trace > 1) 
+      message(gettextf("Fixing theta value to 'theta': %f", signif(th)), 
+              domain = NA)
+  }
+      
+    if (control$trace > 1) 
+        message(gettextf("Initial value for 'theta': %f", signif(th)), 
+            domain = NA)
+    fam <- do.call("negative.binomial", list(theta = th[1], link = link))
+    iter <- 0
+    d1 <- sqrt(2 * max(1, fit$df.residual))
+    d2 <- del <- 1
+    g <- fam$linkfun
+    Lm <- loglik(n, th, mu, Y, w)
+    Lm0 <- Lm + 2 * d1
+    while ((iter <- iter + 1) <= control$maxit && (abs(Lm0 - 
+        Lm)/d1 + abs(del)/d2) > control$epsilon) {
+          eta <- g(mu)
+          fit <- glm.fitter(x = X, y = Y, w = w, etastart = eta, 
+            offset = offset, family = fam, control = list(maxit = control$maxit, 
+                epsilon = control$epsilon, trace = control$trace > 
+                  1), intercept = attr(Terms, "intercept") > 
+                0)
+        t0 <- th
+        if (is.null(theta))
+        {
+          th <- theta.ml(Y, mu, sum(w), w, limit = control$maxit, 
+                         trace = control$trace > 2)
+        } else
+        {
+          th = theta
+        }
+
+        fam <- do.call("negative.binomial", list(theta = th[1],  ## we don't need all the thetas here if theta is vectorized
+                                                 link = link)) 
+
+        mu <- fit$fitted.values
+        del <- t0 - th ## this is where the vectorized theta makes a difference
+        Lm0 <- Lm
+        Lm <- loglik(n, th, mu, Y, w) ## and here - log likelihood computation
+        if (control$trace) {
+            Ls <- loglik(n, th, Y, Y, w)
+            Dev <- 2 * (Ls - Lm)
+            message(sprintf("Theta(%d) = %f, 2(Ls - Lm) = %f", 
+                iter, signif(th), signif(Dev)), domain = NA)
+        }
+    }
+    if (!is.null(attr(th, "warn"))) 
+        fit$th.warn <- attr(th, "warn")
+    if (iter > control$maxit) {
+        warning("alternation limit reached")
+        fit$th.warn <- gettext("alternation limit reached")
+    }
+    if (length(offset) && attr(Terms, "intercept")) {
+        null.deviance <- if (length(Terms)) 
+            glm.fitter(X[, "(Intercept)", drop = FALSE], Y, w, 
+                offset = offset, family = fam, control = list(maxit = control$maxit, 
+                  epsilon = control$epsilon, trace = control$trace > 
+                    1), intercept = TRUE)$deviance
+        else fit$deviance
+        fit$null.deviance <- null.deviance
+    }
+    class(fit) <- c("negbin", "glm", "lm")
+    fit$terms <- Terms
+    fit$formula <- as.vector(attr(Terms, "formula"))
+    Call$init.theta <- signif(as.vector(th), 10)
+    Call$link <- link
+    fit$call <- Call
+    if (model) 
+        fit$model <- mf
+    fit$na.action <- attr(mf, "na.action")
+    if (x) 
+        fit$x <- X
+    if (!y) 
+        fit$y <- NULL
+    fit$theta <- as.vector(th)
+    fit$SE.theta <- attr(th, "SE")
+    fit$twologlik <- as.vector(2 * Lm)
+    fit$aic <- -fit$twologlik + 2 * fit$rank + 2
+    fit$contrasts <- attr(X, "contrasts")
+    fit$xlevels <- .getXlevels(Terms, mf)
+    fit$method <- method
+    fit$control <- control
+    fit$offset <- offset
+    fit
+}
+
+#' @title dflm
+#' @description
+#'
+#' Formats lm, glm, or fisher.test outputs into readable data.table
+#'
+dflm = function(x, last = FALSE, nm = '')
+{
+  if (is.null(x))
+    out = data.frame(name = nm, method = as.character(NA), p = as.numeric(NA), estimate = as.numeric(NA), ci.lower = as.numeric(NA),  ci.upper = as.numeric(NA), effect = as.character(NA))
+  else if ('lm' %in% class(x))
+  {
+
+    coef = as.data.frame(summary(x)$coefficients)
+    colnames(coef) = c('estimate', 'se', 'stat', 'p')
+    if (last)
+      coef = coef[nrow(coef), ]
+    coef$ci.lower = coef$estimate - 1.96*coef$se
+    coef$ci.upper = coef$estimate + 1.96*coef$se
+
+
+    if (summary(x)$family$link %in% c('log', 'logit'))
+    {
+      coef$estimate = exp(coef$estimate)
+      coef$ci.upper= exp(coef$ci.upper)
+      coef$ci.lower= exp(coef$ci.lower)
+    }
+    if (!last)
+      nm = paste(nm, rownames(coef))
+    out = data.frame(name = nm, method = summary(x)$family$family, p = signif(coef$p, 3),
+                     p.right = pnorm(summary(x)$coefficients[,3], lower = FALSE),
+                     p.left = pnorm(summary(x)$coefficients[,3], lower = TRUE), estimate = coef$estimate, ci.lower = coef$ci.lower, ci.upper = coef$ci.upper, effect = paste(signif(coef$estimate, 3), ' [',  signif(coef$ci.lower,3),'-', signif(coef$ci.upper, 3), ']', sep = ''))
+  }
+  else
+  {
+    out = data.frame(name = nm, method = x$method, p = signif(x$p.value, 3), estimate = x$estimate, ci.lower = x$conf.int[1], ci.upper = x$conf.int[2], effect = paste(signif(x$estimate, 3), ' [',  signif(x$conf.int[1],3),'-', signif(x$conf.int[2], 3), ']', sep = ''))
+  }
+
+  out$effect = as.character(out$effect)
+  out$name = gsub('\\s+$', '', gsub('^\\s+', '', as.character(out$name)))
+  out$method = as.character(out$method)
+  out$p.twosided = out$p
+  out$p = out$p.right
+  out$p.right = NULL
+  rownames(out) = NULL
+  out = as.data.table(out)
+  setkey(out, 'name')
+  return(out)
+}
+
+
+
+#' @name score
+#' @title score 1 or more fishHook models
+#' @description
+#'
+#' Scores a set of K (>1) fishHook models defined over <identical> hypothesis sets.
+#' Each model k in K represents a background model over a (disjoin) collection of event sets.
+#'
+#' In practice, each event set k could represent a different variant types (eg indels, SV, SNVs) that each
+#' have a separate fit (captured in model k) with respect to a set of covariates.
+#' Each event set k could also represent
+#' patient (or patient set) specific background models, e.g. colon cancer vs breast cancer,
+#' or a combination of patient set and variant type (e.g. indels in lung adenocarcinoma, SVs in breast
+#' cancer).
+#'
+#' The goal is of score() is to combine all the input models / data and derive a hypothesis
+#' specific p value for the mutational enrichment (or depletion).
+#'
+#' Since each input model k has already computed an expected value e_ik for each hypothesis i,
+#' we can integrate these models through a second glm which uses this e_ik as an offset,
+#' and computes a hypothesis (or hypothesis set) specific intercept.  The value of
+#' this intercept and associated p value will represent the mutational enrichment (or depletion)
+#' of that hypothesis interval (or hypothesis interval set) from all the various input
+#' datasets.
+#' 
+#' @param ...  fishHook models with <identical> hypotheses
+#' @param sets  named list of integers indexing the hypotheses in the input models
+#' 
+#' @return data.table of hypotheses
+#' @export
+#' @author Marcin Imielinski
+score = function(..., sets = NULL, mc.cores = NULL, iter = 200, verbose = NULL, ignore.theta = FALSE)
+{
+  models = list(...)
+
+  if (length(models)<1)
+  {
+    stop('Need at least one fishHook model to score, preferably two or more')
+  }
+
+
+  hypotheses = models[[1]]$hypotheses
+  nb = models[[1]]$nb
+
+  if (length(models)==1)
+  {
+    if (is.null(sets))
+        warning('Applying alternative (slower) Wald-test test for scoring a single model, for better performance with single model scoring using the $score method')
+#      models[[1]]$score
+#      return(models[[1]]$res)
+    }
+  else
+  {
+    for (j in 2:length(models))
+    {
+      if (!identical(models[[j]]$hypotheses, hypotheses))
+        stop('Model hypotheses must be identical for all input fishHook models')
+
+      if (!identical(models[[j]]$nb, nb))
+        stop('Models must all be Poisson or Negative-binomial')
+    }
+  }
+
+  if (is.null(mc.cores))
+    {
+      mc.cores = models[[1]]$mc.cores
+    }
+
+
+  if (is.null(verbose))
+    {
+      verbose = models[[1]]$verbose
+    }
+
+  if (is.null(sets))
+  {
+    sets = split(1:length(models[[1]]$hypotheses), paste0('set_', 1:length(models[[1]]$hypotheses)))
+    
+    setinfo = cbind(data.table(id = names(sets)), as.data.table(models[[1]]$hypotheses))
+    names(sets) = copy(setinfo$id)
+    setkey(setinfo, id)
+  }
+  else
+  {
+    if (is.null(names(sets)))
+    {
+      names(sets) = paste0('set_', 1:length(sets))
+    }
+
+    names(sets) = dedup(names(sets)) ## make sure sets are all named uniquely
+    setinfo = data.table(id = gsub('\\W', '_', paste0('set_', names(sets))), name = names(sets))
+    if (any(duplicated(setinfo$id)))
+      stop('Set names contain illegal special characters that cannot be resolved, please try again using only alphanumeric characters for set names')
+    names(sets) = copy(setinfo$id)
+    setkey(setinfo, id)
+  }  
+
+  ## collect all results from all models
+  res = rbindlist(mclapply(1:length(models), function(i)
+  {
+    mod = models[[i]]
+    if (is.null(mod$res))
+    {
+      fmessage('Rescoring model ', i)
+      mod$score(sets = NULL)
+    }
+    res = mod$res
+    res[, model.id := i]
+    res
+  }))
+
+  if (verbose)
+  {
+    fmessage('Scoring ', length(models), ' models with ', length(hypotheses), ' hypotheses and ', length(sets), ' hypothesis sets ')
+  }
+
+  if (nb)
+    {
+      thetas = structure(sapply(models, function(x) x$model$theta), SE.theta = sapply(models, function(x) x$model$SE.theta))
+    }
+
+
+  .score.sets = function(sid, sets, res, nb = nb)
+  {
+    sets = sets[sid]
+    if (verbose>1)
+    {
+      fmessage('Scoring set(s) ', paste(names(sets), collapse = ', '))
+    }
+
+    tmpres = merge(cbind(query.id = unlist(sets), set.id = rep(names(sets), elementNROWS(sets))), res)
+    setdata = cbind(data.frame(count = tmpres$count, count.pred = log(tmpres$count.pred)),
+                          as.data.frame(as.matrix(sparseMatrix(1:nrow(tmpres), match(tmpres$set.id, names(sets)), x = 1,
+                                                               dims = c(nrow(tmpres), length(sets)),
+                                                               dimnames = list(NULL, names(sets))))))
+    
+    ## make the formula with covariates
+    ## this is a model using the hypothesis specific estimate as an offset and then inferring a
+    ## set specific intercept
+    setformula = eval(parse(text = paste('count', " ~ ", paste(c('offset(count.pred)', names(sets)), collapse = "+"), '-1'))) 
+    if (nb)
+    {
+      if (!ignore.theta)
+        {
+          thetas = structure(thetas[tmpres$model.id], SE = attr(thetas, 'SE')[tmpres$model.id])  ## note that each model has a different theta, so we will be taking this into account, via modded glm.nb.fh
+        }
+      gset = tryCatch(glm.nb.fh(setformula, data = setdata, maxit = iter, theta = thetas),
+                      error = function(e) NULL)
+    } else
+    {
+      gset = glm(setformula, data = as.data.frame(setdata), family = poisson)
+    }
+ 
+   if (!is.null(gset))
+    {
+      tmpres = dflm(gset)[names(sets), ]
+    }
+    else
+    {
+      tmpres = data.table(name = names(sets), method = NA, p = NA, p.right = NA, p.left = NA, estimate = NA, ci.lower = NA, ci.upper = NA, effect = as.character(NA))
+    }
+
+    tmpres[, n := elementNROWS(sets)]
+
+    return(tmpres)
+
+  }
+
+  setres = rbindlist(mclapply(1:length(sets), .score.sets, sets = sets, res = res, nb = nb, mc.cores = mc.cores))
+  setnames(setres, 'name', 'id')
+  setres = merge(setinfo, setres, by = 'id')[, -1, with = FALSE]
+  setres$method = gsub('\\(.*$', '', setres$method)
+  setres$q = signif(p.adjust(setres$p, 'BH'), 2) ## compute q value
+  return(setres)
+}

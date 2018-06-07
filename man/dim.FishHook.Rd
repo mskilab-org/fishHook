@@ -11,7 +11,7 @@
 }
 \value{
 returns a numeric vector containing the lengths of various FishHook variables in the following order:
-i : number of targets
+i : number of hypotheses
 j : number of  events
 k : number of covariates
 l : number of  eligible regions

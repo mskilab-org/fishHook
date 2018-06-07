@@ -4,21 +4,17 @@
 \alias{[.FishHook}
 \title{title}
 \usage{
-\method{[}{FishHook}(obj, i, j, k, l)
+\method{[}{FishHook}(obj, i = NULL, j = NULL)
 }
 \arguments{
 \item{obj}{FishHook object This is the FishHookObject to be subset}
 
-\item{i}{vector subset targets}
+\item{i}{vector subset hypotheses}
 
-\item{j}{vector subset events}
-
-\item{k}{vector subset covariates}
-
-\item{l}{vector susbet eligible}
+\item{j}{vector subset covariates}
 }
 \value{
-A new FishHook object that contains only the data within the given ranges
+A new FishHook object that contains only the given hypotheses and/or covariates
 }
 \description{
 Overrides the subset operator x[] for use with FishHook to allow for vector like subsetting, see fishHook demo for examples

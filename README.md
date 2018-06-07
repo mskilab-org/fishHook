@@ -1,12 +1,21 @@
 [![Build Status](https://travis-ci.org/mskilab/fishHook.svg?branch=master)](https://travis-ci.org/mskilab/fishHook)
 [![codecov.io](https://img.shields.io/codecov/c/github/mskilab/fishHook.svg)](https://codecov.io/github/mskilab/fishHook?branch=master)
 
+![alt
+text](https://github.com/mskilab/fishHook/raw/master/src/common/images/fishhook.png
+"FishHook")
+
+
 fishHook
 ======
 
 R package for applying Gamma-Poisson regression to identify statistical enrichment or depletion of somatic mutations in regions after correcting for genomic covariates.
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
+
+![alt
+text](https://github.com/mskilab/fishHook/raw/master/src/common/images/dreams.png
+"FishHook")
 
 # Table of Contents:
 -----------

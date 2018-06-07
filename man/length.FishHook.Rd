@@ -10,7 +10,7 @@
 \item{obj}{FishHook object that is passed to the length function}
 }
 \value{
-length of the targets contained in the FishHook object
+length of the hypotheses contained in the FishHook object
 }
 \description{
 Overrides the length function 'length(FishHook)' for use with FishHook
