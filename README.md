@@ -68,14 +68,12 @@ See Documentation
 
 
 
-
-
 <div id="attributions"/>
 
 Attributions
 ------------
 > Marcin Imielinski - Assistant Professor, Weill-Cornell Medical College. Core Member, New York Genome Center.
-
+> Zoran Gajic - Undergraduate Research Assistant, Rutgers University, Weill Cornell Medicine, New York Genome Center.
 
 
 <div id="tldr"/>
