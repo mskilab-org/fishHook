@@ -2,8 +2,7 @@
 [![codecov.io](https://img.shields.io/codecov/c/github/mskilab/fishHook.svg)](https://codecov.io/github/mskilab/fishHook?branch=master)
 
 ![alt
-text](images/fishhook.png | width = 400
-"FishHook")
+text](images/fishhook.png | width = 400)
 
 
 fishHook
