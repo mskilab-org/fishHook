@@ -117,31 +117,24 @@ eligible = eligible
 replication_timing = replication_timing
 ```
 
-## Create a Covariate Object
+### Create a Covariate Object
 
 
 ```R
-cov = Cov_Arr$new(cvs = replication_timing, name = 'rept', type = 'numeric', field = 'score')
+cov = Cov(data = replication_timing, name = 'rept', type = 'numeric', field = 'score')
 ```
 
-## Instantiate The FishHook object
+### Instantiate The FishHook object
 
 
 
 ```R
-fish = FishHook$new(targets = gene_targets, events = mutational_events, eligible = eligible, covariates = cov)
+fish = Fish(hypotheses = gene_targets, events = mutational_events, eligible = eligible, covariates = cov)
 fish
 ```
 
-## Annotate the Targets with the Covariates and Mutational Information
 
-
-```R
-fish$annotate(verbose = F)
-fish
-```
-
-## Build a Gamma Poisson Model of Background Mutational Density and Covariates and Score Your Targets
+### Fit a Gamma Poisson Model of Background Mutational Density and Covariates and Score Your Hypotheses
 
 
 ```R
@@ -149,14 +142,12 @@ fish$score()
 fish
 ```
 
-## Statistical Validation of Results with QQ-Plots
+### Statistical Validation of Results with QQ-Plots
 
 
 ```R
-plot <- fish$qq_plot(plotly = F)
+plot <- fish$qqp(plotly = F)
 ```
-
-
 
 
 
