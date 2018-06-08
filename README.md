@@ -1326,7 +1326,7 @@ which regression will be performed.
 **Description:** signature is for use with ffTrack and is a list of named lists that specifies what is to be tallied. Each signature (list element) consists of an arbitrary length character vector specifying strings to match if grep == FALSE. Signature can also be a length 1 character vector to grepl (if grep = TRUE) or a length 1 or 2 numeric vector specifying exact value or interval to match (for numeric data).
 <br/>
 **Return:** list <br/>
-**Setable:** Yes <br/>
+***Setable:** Yes <br/>
 **Set Conditions:** None<br/>
 **Set Results:** The variable is set to the value provided<br/>
 **Default:** NA
