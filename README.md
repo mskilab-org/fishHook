@@ -2,7 +2,7 @@
 [![codecov.io](https://img.shields.io/codecov/c/github/mskilab/fishHook.svg)](https://codecov.io/github/mskilab/fishHook?branch=master)
 
 ![alt
-text](images/fishhook.png
+text](images/fishhook.png | width = 400
 "FishHook")
 
 
@@ -12,10 +12,6 @@ fishHook
 R package for applying Gamma-Poisson regression to identify statistical enrichment or depletion of somatic mutations in regions after correcting for genomic covariates.
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
-
-![alt
-text](images/qqdreams.jpg
-"FishHook")
 
 # Table of Contents:
 -----------
@@ -78,9 +74,13 @@ Attributions
 > Marcin Imielinski - Assistant Professor, Weill-Cornell Medical College. Core Member, New York Genome Center.
 
 
+![alt
+text](images/qqdreams.jpg | width = 500
+"FishHook")
 
 
 <div id="tldr"/>
+
 
 TL;DR
 -----------
