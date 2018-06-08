@@ -1,9 +1,8 @@
 [![Build Status](https://travis-ci.org/mskilab/fishHook.svg?branch=master)](https://travis-ci.org/mskilab/fishHook)
 [![codecov.io](https://img.shields.io/codecov/c/github/mskilab/fishHook.svg)](https://codecov.io/github/mskilab/fishHook?branch=master)
 
-<p align="center">
+
 <img src="images/fishhook.png" width = "500">
-</p>
 
 fishHook
 ======
