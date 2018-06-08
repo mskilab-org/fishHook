@@ -344,21 +344,16 @@ fish$eligible
       seqinfo: 25 sequences from an unspecified genome
 
 
-### Annotating the FishHook Object
-To begin, we will need to count how many events fall into each target region (gene). We call this process annotation and it can be done as follows. Note that we use verbose=F so as to limit console output. This process should take from a few seconds up to a minute.
-
-
-```R
-fish$annotate(verbose = F)
-```
-
-### Note that the State of our FishHook Object is now "Annotated"
-You can access the annotation information with the anno variable.
-
+### Instantiating the FishHook Object
+Upon instantiation, fishHook will calculate many events fall into the eligible
+subset of each hypothesis interval (e.g. gene) and what is the average value of covarites
+within the eligible subset of that interval.  You can query the results of this
+using the $data accessor, which returns a GRanges representing the data matrix
+on which regression will eventually be run. 
 
 ```R
 fish
-fish$anno
+fish$data
 ```
 
 
@@ -443,28 +438,13 @@ fish$score()
       -------
       seqinfo: 25 sequences from an unspecified genome; no seqlengths
 
-
-    Loading required package: MASS
-    
-    Attaching package: ‘MASS’
-    
-    The following object is masked from ‘package:plotly’:
-    
-        select
-    
-    The following object is masked from ‘package:VariantAnnotation’:
-    
-        select
-    
-
-
     Setting up problem
     Fitting model with 18,418 data points and 0 covariates
     Scoring results
 
 
 ### Note that the State of our FishHook Object is now "Scored"
-You can access the results of the run by accessing the '$res' variable of the fishHook
+You can access the results of the scored object by accessing the '$res' variable of the fishHook
 object.  This will return a data.table with one row per input hypothesis. 
 
 ```R
@@ -523,32 +503,34 @@ fish$res[1:10]
 
 
 ### Visualizing The Data
-Manually inspecting the raw data from the scores field in the fish object is possible, but not ideal. To solve this issue, we can utilize a qqplot that will plot the observed distribution of p values versus the expected (uniform) distribution of p values. Significant hits will be ones that vary greatly from the expected.
+Q-Q plots are essential for determining goodness of fit of the model.  A Q-Q
+plot of observed vs expected -log_10(P) values with significant deviation from
+x = y suggests model mis-specification. This can be due to unaccounted 
+mutational covariates (e.g. chromatin marks) or inadequate statistical power 
+in the data (e.g. too many hypotheses, not enough patients or mutations). 
 
 
 ```R
-plot <- fish$qq_plot(plotly = F)
+plot <- fish$qqp(plotly = F)
 
 ```
-
 
 
 ![](images/standard_plot_noplotly.png)
 
 ### Visualizing the Data cont.
-The above plot is functional but static. Lets say we want to annotate the hover text of each point with its corresponding target's metadata. To do that we can create an interactive plot by setting 'plotly = T' (default) and using the 'columns' param in the 'qq_plot()' function. Note that you can specify any column that is present in the 'all' output. You can also provide your own vectors through the 'annotations' parameter. P value will be included in all graphs created but count, effectsize, hypothesisID and q values will only be added by default if no annotations are specified by the user.
+For more interactive and noverable qq plots, set 'plotly = T' (default) when
+running $qqp().  This will generate qq plots that allow you to inspect top hits
+and their associated meta data. 
 
 
 ```R
 fish$all[1:10]
 
 "Column Annotations"
-plot1 <- fish$qq_plot(columns = c("gene_name"))
+plot1 <- fish$qqp()
 plot1
 
-"Novel Annotations"
-plot2 <- fish$qq_plot(columns = c("gene_name"), annotations = list(test = c("testing", "123")))
-plot2
 ```
 
 <table>
@@ -927,7 +909,7 @@ fish
 
 fish$annotate(mc.cores = 3,verbose = F)
 fish$score()
-plot <- fish$qq_plot(columns = c('gene_name','count','q'))
+plot <- fish$qqp()
 plot
 
 ```
@@ -1326,7 +1308,7 @@ which regression will be performed.
 **Description:** signature is for use with ffTrack and is a list of named lists that specifies what is to be tallied. Each signature (list element) consists of an arbitrary length character vector specifying strings to match if grep == FALSE. Signature can also be a length 1 character vector to grepl (if grep = TRUE) or a length 1 or 2 numeric vector specifying exact value or interval to match (for numeric data).
 <br/>
 **Return:** list <br/>
-***Setable:** Yes <br/>
+**Setable:** Yes <br/>
 **Set Conditions:** None<br/>
 **Set Results:** The variable is set to the value provided<br/>
 **Default:** NA
