@@ -1,8 +1,9 @@
 [![Build Status](https://travis-ci.org/mskilab/fishHook.svg?branch=master)](https://travis-ci.org/mskilab/fishHook)
 [![codecov.io](https://img.shields.io/codecov/c/github/mskilab/fishHook.svg)](https://codecov.io/github/mskilab/fishHook?branch=master)
 
-<img src="images/fishhook.png" width = "500" align = "center">
-
+<p align="center">
+<img src="images/fishhook.png" width = "500">
+</p>
 
 fishHook
 ======
@@ -56,7 +57,9 @@ Installation
   ````
 
 
-<img src="images/qqdreams.jpg" width = "700" align = "center">
+<p align="center">
+<img src="images/qqdreams.jpg" width = "700">
+</p>
 
 <div id="rdocs"/>
 
