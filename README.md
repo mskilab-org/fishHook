@@ -7,7 +7,10 @@
 fishHook
 ======
 
-R package for applying Gamma-Poisson regression to identify statistical enrichment or depletion of somatic mutations in regions after correcting for genomic covariates.
+R package for applying Gamma-Poisson regression to identify statistical
+enrichment or depletion of somatic mutations in arbitrary (sets of) genomic
+intervals after correcting for genomic  covariates, e.g. replication timing,
+sequence context, chromatin state.
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
 
@@ -53,7 +56,7 @@ Installation
   ````
 
 
-
+<img src="images/qqdreams.jpg" width = "700">
 
 <div id="rdocs"/>
 
@@ -71,10 +74,6 @@ Attributions
 ------------
 > Marcin Imielinski - Assistant Professor, Weill-Cornell Medical College. Core Member, New York Genome Center.
 
-
-![alt
-text](images/qqdreams.jpg | width = 500
-"FishHook")
 
 
 <div id="tldr"/>
