@@ -1,8 +1,7 @@
 [![Build Status](https://travis-ci.org/mskilab/fishHook.svg?branch=master)](https://travis-ci.org/mskilab/fishHook)
 [![codecov.io](https://img.shields.io/codecov/c/github/mskilab/fishHook.svg)](https://codecov.io/github/mskilab/fishHook?branch=master)
 
-![alt
-text](images/fishhook.png | width = 400)
+![](images/fishhook.png=250x)
 
 
 fishHook
