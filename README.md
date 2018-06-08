@@ -85,14 +85,14 @@ TL;DR
 -----------
 
 
-## Load the fishHook Package
+### Load the fishHook Package
 
 
 ```R
 library(fishHook)
 ```
 
-##  Load in Your Data
+###  Load in Your Data
 **mutational_events** is a GRanges containing mutations (e.g. snvs/indels or SCNAs)
 
 **targets** is a GRanges containing the start and ends of each gene and some metadata.
@@ -153,14 +153,14 @@ Demo
 -----------
 
 
-## Load the Required Packages
+### Load the Required Packages
 
 
 ```R
 library(fishHook)
 ```
 
-## Now we will need some data
+### Now we will need some data
 fishHook utilizes Gamma-Poisson regression to nominate regions enriched in mutation from sequencing and/or microarray data. To do this we take a set of genomic targets, and test each one against the hypothesis that they have a background level of mutational burden. In this first example we use genes as our targets and exome data as the mutational events. Since exome sequencing tends to exhibit strong sequencing bias, we to include this information in our analysis by indicating sufficiently covered regions in the variable eligible.
 
 
@@ -190,7 +190,7 @@ events
       seqinfo: 23 sequences from an unspecified genome; no seqlengths
 
 
-## Gene Targets 
+### Gene Targets 
 
 Our hypotheses are stored in a GRanges object called "targets", Hypotheses are 
 regions of the genome that we are testing for mutational enrichment above
@@ -223,7 +223,7 @@ targets
       seqinfo: 25 sequences from an unspecified genome; no seqlengths
 
 
-## Eligible
+### Eligible
 
 
 ```R
@@ -250,7 +250,7 @@ eligible
       seqinfo: 25 sequences from an unspecified genome
 
 
-## The FishHook Object
+### The FishHook Object
 All of the data manipulations are handled by the fishHook object. You can initialize it as follows. 
 
 
@@ -271,7 +271,7 @@ fish
 
 
 
-## Points about the FishHook Object
+### Points about the FishHook Object
 The FishHook object will take various states during our analysis. You can view the current state from the print output of the fish object or by accessing it directly via fish$state.
 All provided variables can be accessed in this manner.
 
@@ -344,7 +344,7 @@ fish$eligible
       seqinfo: 25 sequences from an unspecified genome
 
 
-## Annotating the FishHook Object
+### Annotating the FishHook Object
 To begin, we will need to count how many events fall into each target region (gene). We call this process annotation and it can be done as follows. Note that we use verbose=F so as to limit console output. This process should take from a few seconds up to a minute.
 
 
@@ -352,7 +352,7 @@ To begin, we will need to count how many events fall into each target region (ge
 fish$annotate(verbose = F)
 ```
 
-## Note that the State of our FishHook Object is now "Annotated"
+### Note that the State of our FishHook Object is now "Annotated"
 You can access the annotation information with the anno variable.
 
 
@@ -405,7 +405,7 @@ fish$anno
       seqinfo: 25 sequences from an unspecified genome; no seqlengths
 
 
-## Scoring the Targets
+### Scoring the Targets
 Now that we have determined the mutational burden (count) at each target, we can create a model of background mutations to and test against. Note that because we are using the targets (genes) as their own controls, there is an assumption that a majority of the targets will follow the null hypothesis. 
 
 
@@ -463,7 +463,7 @@ fish$score()
     Scoring results
 
 
-## Note that the State of our FishHook Object is now "Scored"
+### Note that the State of our FishHook Object is now "Scored"
 You can access the results of the run by accessing the '$res' variable of the fishHook
 object.  This will return a data.table with one row per input hypothesis. 
 
@@ -522,7 +522,7 @@ fish$res[1:10]
 
 
 
-## Visualizing The Data
+### Visualizing The Data
 Manually inspecting the raw data from the scores field in the fish object is possible, but not ideal. To solve this issue, we can utilize a qqplot that will plot the observed distribution of p values versus the expected (uniform) distribution of p values. Significant hits will be ones that vary greatly from the expected.
 
 
@@ -535,7 +535,7 @@ plot <- fish$qq_plot(plotly = F)
 
 ![](images/standard_plot_noplotly.png)
 
-## Visualizing the Data cont.
+### Visualizing the Data cont.
 The above plot is functional but static. Lets say we want to annotate the hover text of each point with its corresponding target's metadata. To do that we can create an interactive plot by setting 'plotly = T' (default) and using the 'columns' param in the 'qq_plot()' function. Note that you can specify any column that is present in the 'all' output. You can also provide your own vectors through the 'annotations' parameter. P value will be included in all graphs created but count, effectsize, hypothesisID and q values will only be added by default if no annotations are specified by the user.
 
 
@@ -581,7 +581,7 @@ plot2
 
 
 
-## Covariates
+### Covariates
 Mutational hotspots can be caused by various biological phenomena that are unrelated to cancer. For example, replication timing, transcription state, chromatin state and sequence context can all play a role in mutagenic processes. We refer to these biological factors that influence mutation as 'covariates'. FishHook has its own object for instantiating covariates, but first lets load up the replication timing covariate as a Genomic Ranges object. It contains a 'score' for each region of the genome.
 
 
@@ -610,7 +610,7 @@ replication_timing
       seqinfo: 25 sequences from an unspecified genome
 
 
-## Creating Covariates
+### Creating Covariates
 **The following information is required when creating covariates:**
 
 data: This is "meat" of the covariate, which can either be a GRanges object,
@@ -649,7 +649,7 @@ rept
 
 
 
-## Covariate Manipulations:
+### Covariate Manipulations:
 
 Covariates are vectorized, concatentable via c() operation, subsettable, and
 reorderable.  You can instantiate length>1 Covariates using list / vector
@@ -762,7 +762,7 @@ rept
 
 
 
-## Accessing Covariate Fields
+### Accessing Covariate Fields
 Covariate fields such as type are stored as vectors and can be accessed from the Covariate object. Note that they will be of the same length as the list of covariates (accessible with covs$cvs)
 
 
@@ -822,7 +822,7 @@ rep3$signature
 
 
 
-## Multiple Covariates
+### Multiple Covariates
 In the case where you want to create multiple covariates, you can pass a list of covariate tracks
 to the cvs argument and a vector of correct type to the other arguments.
 
@@ -852,7 +852,7 @@ multi_cov
 
 
 
-## fishHook Analysis using Covariates
+### fishHook Analysis using Covariates
 The only change required to use covariates is to pass them as an argument to the FishHook class constructor. Note that annotating the covariates takes some extra time. You can speed this part up by using mc.cores (set number of cores) or with parameters we will cover in the next section.
 
 
@@ -915,7 +915,7 @@ plot
 
 
 
-## fishHook Analysis using Covariates (cont.)
+### fishHook Analysis using Covariates (cont.)
 Covariates rely on our prior knowledge about mutational processes. However, there are likely factors that influence mutations that are not known or it might be impossible for us to define a covariate for them. However, all of the mutational evidence is present in the mutational landscape (events) and as such we can create a covariate from our events that we will call local mutational density. This is a covariate that will model the local mutational landscape and is larger in size than the target. This covariate will allow us to test if a given gene has a greater mutational burden than its local (2D) environment. We can use the flag 'use_local_mut_density' for this. The bin for this covariate be specified using 'local_mut_density_bin' and is by default set to 1e6. 
 
 
@@ -1016,7 +1016,7 @@ plot
 
 <div id="fishhook_ops"/>
 
-## FishHook Extras: Subsetting
+### FishHook Extras: Subsetting
 The fishHook object can be subset in the following way: 
 
     fish[i,j,k,l] 
@@ -1447,7 +1447,7 @@ x = FishHook$new(...)<br/><br/>
 # Covariate
 -----------
 
-## initialize()
+### initialize()
 **Description:** Initializes the Covariate Object. Can be called with: <br/><br/>
 x = Covariate$new(...)<br/><br/>
 **Params:** <br/>
