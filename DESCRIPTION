@@ -15,6 +15,7 @@ Depends:
     data.table (>= 1.9),
 Imports:
     MASS,
+    Matrix,
     rtracklayer (>= 1.26),
     zoo,
     GenomeInfoDb,

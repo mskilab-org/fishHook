@@ -291,7 +291,7 @@ annotate.hypotheses = function(hypotheses, covered = NULL, events = NULL,  mc.co
         cov = covariates[[nm]]
 
         if (verbose){
-            fmessage('Starting track ', nm, '')
+            fmessage('Annotating track ', nm, '')
         }
 
         if (cov$type == 'sequence'){
@@ -360,7 +360,7 @@ annotate.hypotheses = function(hypotheses, covered = NULL, events = NULL,  mc.co
                 if (is.na(cov$na.rm)){
 
                 }
-                new.col = suppressWarnings(data.frame(val = values(gr.val(ov + cov$pad, cov$track, cov$field, mc.cores = mc.cores, verbose = verbose,  max.slice = max.slice, max.chunk = max.chunk, mean = TRUE, na.rm = cov$na.rm))[, cov$field]))
+                new.col = suppressWarnings(data.frame(val = values(gr.val(ov + cov$pad, cov$track, cov$field, mc.cores = mc.cores, verbose = verbose>1,  max.slice = max.slice, max.chunk = max.chunk, mean = TRUE, na.rm = cov$na.rm))[, cov$field]))
                 names(new.col) = nm
                 values(ov) = cbind(values(ov), new.col)
             }
@@ -499,7 +499,6 @@ annotate.hypotheses = function(hypotheses, covered = NULL, events = NULL,  mc.co
 #' @importFrom GenomeInfoDb seqnames
 aggregate.hypotheses = function(hypotheses, by = NULL, fields = NULL, rolling = NULL, disjoint = TRUE, na.rm = FALSE, FUN = list(), verbose = TRUE)
 {
-
     V1 = sn = st = en = keep = count = width = NULL ## NOTE fix
     if (is.null(by) & is.character(hypotheses)){
         fmessage('Applying sample wise merging')
@@ -920,13 +919,13 @@ score.hypotheses = function(hypotheses, covariates = names(values(hypotheses)), 
         res$p = signif(pval, 2)
     }
 
-    res$q = signif(p.adjust(res$p, 'BH'), 2)
+    res$fdr = signif(p.adjust(res$p, 'BH'), 2)
     if (nb){
        res$p.neg = signif(pnbinom(res$count, mu = res$count.pred, size = g$theta, lower.tail = T), 2)
     } else{
         res$p.neg = signif(ppois(res$count, lambda = res$count.pred, lower.tail = T), 2)
     }
-    res$q.neg = signif(p.adjust(res$p.neg, 'BH'), 2)
+    res$fdr.neg = signif(p.adjust(res$p.neg, 'BH'), 2)
     res$effectsize = log2(res$count / res$count.pred)
 
     if(!(classReturn)){
@@ -958,20 +957,26 @@ score.hypotheses = function(hypotheses, covariates = names(values(hypotheses)), 
       .score.sets = function(sid, sets, res, nb = nb)
       {
         sets = sets[sid]
+        if (all(elementNROWS(sets))==0)
+          return(data.table(name = names(sets), method = as.numeric(NA), p = as.numeric(NA), p.left = as.numeric(NA), p.right = as.numeric(NA), estimate = as.numeric(NA), ci.lower = as.numeric(NA), ci.upper = as.numeric(NA), effect = as.character(NA), n = 0))
+
         if (verbose>1)
         {
           fmessage('Scoring set(s) ', paste(names(sets), collapse = ', '))
         }
-          ij = cbind(unlist(sets), rep(1:length(sets), elementNROWS(sets)))
-          setdata = cbind(data.frame(count = res$count, count.pred = log(res$count.pred)),
-                          as.data.frame(as.matrix(sparseMatrix(ij[,1], ij[,2], x = 1,
-                                                               dims = c(nrow(res), length(sets)),
-                                                               dimnames = list(NULL, names(sets))))))
+        ij = cbind(unlist(sets), rep(1:length(sets), elementNROWS(sets)))
 
+        tmpres = merge(cbind(query.id = unlist(sets), set.id = rep(names(sets), elementNROWS(sets))), res)
+        setdata = cbind(data.frame(count = tmpres$count, count.pred = log(tmpres$count.pred)),
+                        as.data.frame(as.matrix(Matrix::sparseMatrix(1:nrow(tmpres), match(tmpres$set.id, names(sets)), x = 1,
+                                                             dims = c(nrow(tmpres), length(sets)),
+                                                             dimnames = list(NULL, names(sets))))))
+        
+        
         ## make the formula with covariates
         ## this is a model using the hypothesis specific estimate as an offset and then inferring a
         ## set specific intercept
-          setformula = eval(parse(text = paste('count', " ~ ", paste(c('offset(count.pred)', names(sets)), collapse = "+"), '-1'))) 
+        setformula = eval(parse(text = paste('count', " ~ ", paste(c('offset(count.pred)', names(sets)), collapse = "+"), '-1'))) 
 
         ## reduce setdata to only rows (hypotheses) that belong to at least one set (speed things up)
         setdata = setdata[rowSums(setdata[, -c(1:2), drop = FALSE])>0 & !is.na(setdata$count), ]
@@ -990,7 +995,8 @@ score.hypotheses = function(hypotheses, covariates = names(values(hypotheses)), 
           }
         else
         {
-          tmpres = data.table(name = names(sets), method = NA, p = NA, p.left = NA, p.right = NA, estimate = NA, ci.lower = NA, ci.upper = NA, effect = as.character(NA))
+          tmpres = data.table(name = names(sets), method = as.numeric(NA), p = as.numeric(NA), p.left = as.numeric(NA), p.right = as.numeric(NA), estimate = as.numeric(NA), ci.lower = as.numeric(NA), ci.upper = as.numeric(NA), effect = as.character(NA))
+                              
         }
         tmpres[, n := elementNROWS(sets)]
         return(tmpres)
@@ -1001,7 +1007,7 @@ score.hypotheses = function(hypotheses, covariates = names(values(hypotheses)), 
       setres$name = setmap[.(setres$name), names] ## remap set names to original names
       setnames(setres, 'name', 'setname')
       setres$method = gsub('\\(.*$', '', setres$method)
-      setres$q = signif(p.adjust(setres$p, 'BH'), 2) ## compute q value
+      setres$fdr = signif(p.adjust(setres$p, 'BH'), 2) ## compute q value
     }
 
     return(list(res = as.data.table(res),model = g, setres = setres))
@@ -1044,7 +1050,8 @@ score.hypotheses = function(hypotheses, covariates = names(values(hypotheses)), 
 #' @author Zoran Z. Gajic
 #' @import R6
 #' @export
-Cov = function(name = NA, data = NULL, pad = 0, type = NA, signature = NA, field = NA, na.rm = NA, grep = NA){
+Cov = function(name = as.character(NA), data = NULL, pad = 0, type = as.character(NA),
+               signature = as.character(NA), field = as.character(NA), na.rm = NA, grep = NA){
   Covariate$new(name = name, data = data, pad = pad, type = type, signature = signature,
                 field = field, na.rm = na.rm, grep = grep)
 }
@@ -1087,20 +1094,14 @@ Covariate = R6::R6Class('Covariate',
     public = list(
 
     ## See the class documentation
-    initialize = function(..., name = NA, data = NULL, pad = 0, type = NA, signature = NA, field = NA, na.rm = NA, grep = NA){
-        
-        ##If data are valid and are a list of tracks concatenate with any premade covs
-        if(!is.null(data)){
-            if(class(data) != 'list'){
-                data = list(data)
-            }            
-            self$data = c(data)
-        }
-        ##Otherwise assume that no data are given
-        else{
-            return(self)
-        }
-        
+      initialize = function(data = NULL, field = as.character(NA), name = as.character(NA),
+                            pad = 0, type = 'numeric', signature = as.character(NA),
+                            na.rm = as.logical(NA), grep = as.logical(NA)){
+
+      ##If data are valid and are a list of tracks concatenate with any premade covs
+      if(is.null(data))
+      {
+        self$data = NULL
         self$names = name
         self$type = type
         self$signature = signature
@@ -1108,8 +1109,78 @@ Covariate = R6::R6Class('Covariate',
         self$pad = pad
         self$na.rm = na.rm
         self$grep = grep
-            
+        return()
+                                        #        stop('No data provided to Covariate instantiation.  Data must be provided as GRanges, filepath to supported UCSC format (.bed, .bw, .bigWig), or path to .rds file of GRanges.')
+      }
 
+      if(class(data) != 'list'){
+        data = list(data)
+      }            
+
+      ## replicate params and data if necessary
+      params = data.table(id = 1:length(data), field = field, name = name, pad = pad, type = type, signature = signature, na.rm = na.rm, grep = grep)
+
+      if (length(data)==1 & nrow(params)>1)
+        data = rep(data, nrow(params))
+
+      self$data = data
+
+      params$dclasses = sapply(self$data, class)
+
+      if (any(ix <<- params$dclasses == 'character'))
+      {
+        if (any(iix <<- !file.exists(unlist(self$data[ix]))))
+        {
+          stop(sprintf('Some covariate files not found:\n%s', paste(unlist(self$data[ix][iix]), collapse = ',')))
+        }
+      }
+
+      ## for any GRanges data that are provided where there is more than one metadata
+      ## column, there should be a field given, otherwise we complain
+      dmeta = NULL
+      if (any(ix <<- params$dclasses != 'character'))
+      {
+        dmeta = lapply(self$data[ix], function(x) names(values(x)))
+      }
+      
+      ## we require field to be specified if GRanges have more than one metadata column, otherwise
+      ## ambiguous
+      if (length(dmeta)>0)
+        {
+          ## check to make sure that fields actually exist in the provided GRanges arguments
+          found = mapply(params$field[ix], dmeta, FUN = function(x,y) ifelse(is.na(x), NA, x %in% y))
+
+          if (any(!found, na.rm = TRUE))
+          {
+            stop('Some provided fields not found in their corresponding GRanges, please check arguments')
+          }
+        }                
+
+      if (na.ix <<- any(is.na(params$name)))
+      {
+        params[na.ix, name := ifelse(!is.na(field), field, paste0('Covariate', id))]
+        params[, name := dedup(name)]       
+      }
+
+      ## label any type = NA covariates for which a field has not been specified
+      ## as NA by default
+      if (any(na.ix <<- !is.na(params$field) & is.na(params$type)))
+      {
+        params[na.ix, type := 'numeric']
+      }
+
+      if (any(na.ix <<- is.na(params$field) & is.na(params$type)))
+      {
+        params[na.ix, type := 'interval']
+      }
+
+      self$names = params$name
+      self$type = params$type
+      self$signature = params$signature
+      self$field = params$field
+      self$pad = params$pad
+      self$na.rm = params$na.rm
+      self$grep = params$grep            
     },
 
     ## Params:
@@ -1521,15 +1592,7 @@ Covariate = R6::R6Class('Covariate',
     Covs = unlist(covs, recursive = F)
 
     ##Creating a new Covariate and assigning all of the merged variables to it
-    ret = Covariate$new()
-    ret$data = Covs
-    ret$names = names
-    ret$type = type
-    ret$signature = signature
-    ret$field = field
-    ret$pad = pad
-    ret$na.rm = na.rm
-    ret$grep = grep
+    ret = Covariate$new(data = Covs, name = names, type = type, signature = signature, field = field, pad = pad, na.rm = na.rm, grep = grep)
 
     return(ret)
 }
@@ -1688,15 +1751,14 @@ FishHook = R6::R6Class('FishHook',
     public = list(
 
         ##See class documentation for params
-        initialize = function(hypotheses = NULL, out.path = NULL, eligible = NULL, events = NULL, covariates = NULL, ... ,
+        initialize = function(hypotheses, eligible = NULL, events = NULL, covariates = NULL, out.path = NULL, ... ,
             use_local_mut_density = FALSE, local_mut_density_bin = 1e6, genome = 'BSgenome.Hsapiens.UCSC.hg19::Hsapiens',
             mc.cores = 1, na.rm = TRUE, pad = 0, verbose = TRUE, max.slice = 1e4, ff.chunk = 1e6, max.chunk = 1e11, idcol = NULL,
             idcap = Inf, weightEvents = FALSE, nb = TRUE){
 
-
-
             #Make sure the format of hypotheses, events, eligible, and covarates is correct
-
+          if (is.null(hypotheses))
+            stop('Hypotheses must be defined')
 
             ##Hypotheses
             if(!((class(hypotheses) == 'GRanges') || class(hypotheses) == 'character')  && !is.null(hypotheses)){
@@ -1934,7 +1996,7 @@ FishHook = R6::R6Class('FishHook',
             if(is.null(private$peligible)){
                 elig = "All regions are eligible."
             } else{
-                elig = "Will map only eligible regions."
+                elig = sprintf("Spanning %s MB of eligible territory.", round(sum(as.numeric(width(private$peligible)))/1e6, 2))
             }
             if(is.null(private$pcovariates$names)){
                 covs = "No covariates will be used."
@@ -2142,7 +2204,6 @@ FishHook = R6::R6Class('FishHook',
           }
 
           private$pstate = 'Scored'
-          return(self)
         },
 
       ## subset
@@ -2152,6 +2213,13 @@ FishHook = R6::R6Class('FishHook',
         {
           if (any(j>length(private$pcovariates)))
             stop('Covariate index out of bounds when subsetting FishHook object')
+
+          if (is.character(j))
+          {
+            j = match(j, private$pcovariates$names)
+            if (any(is.na(j)))
+                stop('some of the provided column indices were not found among covariate names')
+          }
 
           BASIC.COLS = c('count', 'coverage', 'query.id')
           private$pcovariates = private$pcovariates[j]
@@ -2245,11 +2313,11 @@ FishHook = R6::R6Class('FishHook',
                 annotations = list(Hypothesis_ID = names,
                     Count = res$count,
                     Effectsize = round(res$effectsize,2),
-                    q = res$q)
+                    fdr = res$fdr)
 
             }
             
-            return(qqp(res$p ,annotations = c(annotations,annotation_columns), gradient = list(Count = res$count), titleText = "" ,  plotly = plotly, key = key))
+            return(qqp(res$p ,annotations = c(annotations,annotation_columns), bottomrighttext = paste0('alpha =', round(self$model$theta,2)), gradient = list(Count = res$count), titleText = "" ,  plotly = plotly, key = key))
 
         }
     ),
@@ -2557,7 +2625,7 @@ FishHook = R6::R6Class('FishHook',
 
         ## res = results
         ## Here we check to make sure that scores is of class data.table
-        res = function(value) {
+      res = function(value) {
           if(!missing(value)){
             stop('Scores cannot be edited, to rescore just run $score() function on object')
                 ## if(!(class(value) == 'data.table')  && !is.null(value)){
@@ -2566,14 +2634,34 @@ FishHook = R6::R6Class('FishHook',
                 ##     warning('Warning: You are editing the scored dataset generated by fishHook, if you are trying to change hypotheses use fish$hypotheses.')
                 ## }
 
-                ## private$pscore = value
+            ## private$pscore = value
+            return(cbind(as.data.table(private$phypotheses), private$pscore[, 6:ncol(private$pscore)]))
+          } else{
+            if (is.null(private$pscore))
+              stop('Model has not yet been scored, please run $score() and then retrieve results via $res')
 
-                return(private$pscore)
 
-            } else{
-                return(private$pscore)
+            nms = names(private$pscore)[6:ncol(private$pscore)]
+
+            return(cbind(as.data.table(private$phypotheses), private$pscore[, .(p, fdr, count, effectsize = round(effectsize,2), count.pred = signif(count.pred,3), count.density = signif(count.density,3), count.pred.density = signif(count.pred.density,3), p.neg, fdr.neg)]))
+            }
+      },
+
+      ## all
+        ## cannot be used for assigning data, can only be used for accessing a data.table containing merged scores and meta data
+      all = function(value) {
+        if(!missing(value)){
+          stop('Error: This is solely for accessing results, only $eligible, $hypotheses, and $events can be set inside fishHook object.')
+        } else{
+            nms = names(private$pscore)[6:ncol(private$pscore)]
+
+            nms.out = intersect(c('p', 'fdr', 'effectsize', 'count', 'count.pred', 'count.density', 'count.pred.density'), nms)
+            nms = union(nms.out, nms)
+
+            return(cbind(as.data.table(private$phypotheses), private$pscore[, nms, with = FALSE]))
             }
         },
+
 
         ## set scores
         ## Here we check to make sure that scores is of class data.table
@@ -2590,8 +2678,13 @@ FishHook = R6::R6Class('FishHook',
 
                 return(private$psetscore)
 
-            } else{
-                return(private$psetscore)
+          } else{
+
+            if (is.null(private$psetscore))
+              stop('Sets results have not yet been generated, please set sets (via $sets = ) and/or run $score() to get set results')
+
+              return(private$psetscore[, .(setname, p = signif(p, 3), fdr, effect, estimate = signif(estimate, 3), p.left = signif(p.left, 3),
+                                           p.twosided = signif(as.numeric(p.twosided),3))])
             }
         },
 
@@ -2830,18 +2923,6 @@ FishHook = R6::R6Class('FishHook',
             }
         },
 
-        ## all
-        ## cannot be used for assigning data, can only be used for accessing a data.table containing merged scores and meta data
-        all = function(value) {
-            if(!missing(value)){
-                stop("Error: This is solely for accessing data. If you want to set data, use $hypotheses")
-            } else{
-                meta = values(private$phypotheses)
-                scores = private$pscore
-                return(as.data.table(cbind(scores,meta)))
-            }
-        },
-
         ## state
         ## for accessing the state of the fishHook object, see fishHook$clear() for more information
         ## This active variable cannot be used for assignment, if you want to change the state use fishHook$clear()
@@ -2939,6 +3020,7 @@ FishHook = R6::R6Class('FishHook',
 
 
 
+
 #' @name qqp
 #' @title qq plot given input p values
 #' @description
@@ -2970,7 +3052,7 @@ FishHook = R6::R6Class('FishHook',
 #' @import plotly
 #' @author Marcin Imielinski, Eran Hodis, Zoran Z. Gajic
 #' @export
-qqp = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg = 'black', pch = 18, cex = 1, conf.lines = TRUE, max = NULL, max.x = NULL,
+qqp = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg = 'black', pch = 18, cex = 1, conf.lines = TRUE, max = NULL, max.x = NULL, bottomrighttext = NULL,
     max.y = NULL,  label = NULL, plotly = TRUE, annotations = list(), gradient = list(), titleText = "", subsample = NA, key = NULL,  ...)
 {
 
@@ -2989,6 +3071,9 @@ qqp = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg = '
     obs = obs$p
 
   }
+
+  if (!is.null(bottomrighttext))
+    bottomrighttext = paste0(bottomrighttext, '\n')
 
     if(!(plotly)){
         is.exp.null = is.null(exp)
@@ -3137,7 +3222,7 @@ qqp = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg = '
         lambda = lm(y ~ x-1, dat)$coefficients;
 
         lines(x=c(0, max.x), y = c(0, lambda*max.y), col = 'red', lty = 2, lwd = lwd);
-        legend('bottomright', sprintf('lambda=\n %.2f', lambda), text.col = 'red', bty = 'n')
+        legend('bottomright', sprintf('%slambda=\n %.2f', bottomrighttext, lambda), text.col = 'red', bty = 'n')
     } else{
 
         if(length(annotations) < 1){
@@ -3329,8 +3414,8 @@ qqp = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg = '
                 list(type = 'line', line = list(color = 'red'), x0 = 0, x1 = max, xref = 'x', y0 = 0, y1 = lambda_max, yref = 'y')),
             annotations = list(
                 x = (0.9 * max),
-                y = (0.03 * max),
-                text = paste('lambda =', sprintf('%.2f', signif(lambda,3)), collapse = ' '),
+                y = (0.09 * max),
+                text = paste(bottomrighttext, 'lambda =', sprintf('%.2f', signif(lambda,3)), collapse = ' '),
                 font = list(color = 'red', size = 20),
                 showarrow = FALSE,
                 xref = 'x',
@@ -3594,7 +3679,7 @@ dflm = function(x, last = FALSE, nm = '')
   out$effect = as.character(out$effect)
   out$name = gsub('\\s+$', '', gsub('^\\s+', '', as.character(out$name)))
   out$method = as.character(out$method)
-  out$p.twosided = out$p
+  out$p.twosided = as.numeric(out$p)
   out$p = out$p.right
   out$p.right = NULL
   rownames(out) = NULL
@@ -3736,7 +3821,7 @@ score = function(..., sets = NULL, mc.cores = NULL, iter = 200, verbose = NULL, 
 
     tmpres = merge(cbind(query.id = unlist(sets), set.id = rep(names(sets), elementNROWS(sets))), res)
     setdata = cbind(data.frame(count = tmpres$count, count.pred = log(tmpres$count.pred)),
-                          as.data.frame(as.matrix(sparseMatrix(1:nrow(tmpres), match(tmpres$set.id, names(sets)), x = 1,
+                          as.data.frame(as.matrix(Matrix::sparseMatrix(1:nrow(tmpres), match(tmpres$set.id, names(sets)), x = 1,
                                                                dims = c(nrow(tmpres), length(sets)),
                                                                dimnames = list(NULL, names(sets))))))
     
@@ -3763,7 +3848,8 @@ score = function(..., sets = NULL, mc.cores = NULL, iter = 200, verbose = NULL, 
     }
     else
     {
-      tmpres = data.table(name = names(sets), method = NA, p = NA, p.right = NA, p.left = NA, estimate = NA, ci.lower = NA, ci.upper = NA, effect = as.character(NA))
+      tmpres = data.table(name = names(sets), method = NA, p = as.numeric(NA), p.right = as.numeric(NA), p.left = as.numeric(NA), estimate = as.numeric(NA), ci.lower = as.numeric(NA), ci.upper = as.numeric(NA), effect = as.character(NA))
+
     }
 
     tmpres[, n := elementNROWS(sets)]
@@ -3776,6 +3862,6 @@ score = function(..., sets = NULL, mc.cores = NULL, iter = 200, verbose = NULL, 
   setnames(setres, 'name', 'id')
   setres = merge(setinfo, setres, by = 'id')[, -1, with = FALSE]
   setres$method = gsub('\\(.*$', '', setres$method)
-  setres$q = signif(p.adjust(setres$p, 'BH'), 2) ## compute q value
+  setres$fdr = signif(p.adjust(setres$p, 'BH'), 2) ## compute q value
   return(setres)
 }
