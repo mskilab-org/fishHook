@@ -54,11 +54,11 @@ Installation
 Documentation 
 ------------
 
-[fishHook Tutorial](http://htmlpreview.github.io/?http://github.com/mskilab/fishHook/blob/master/docs/tutorial.html)
+[fishHook Tutorial](http://htmlpreview.github.io/?http://github.com/mskilab/fishHook/blob/marcin/docs/tutorial.html)
 
-[fishHook developer reference](http://htmlpreview.github.io/?http://github.com/mskilab/fishHook/blob/master/docs/reference.md)
+[fishHook developer reference](http://htmlpreview.github.io/?http://github.com/mskilab/fishHook/blob/marcin/docs/reference.md)
 
-[R Documentation](https://raw.githubusercontent.com/mskilab/fishHook/master/fishHook.pdf)
+[R Documentation](https://raw.githubusercontent.com/mskilab/fishHook/marcin/fishHook.pdf)
 
 
 <div id="attributions"/>
