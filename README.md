@@ -58,8 +58,11 @@ Documentation
 
 [fishHook developer reference](docs/reference.md)
 
+<!--
+
 [R Documentation](https://raw.githubusercontent.com/mskilab/fishHook/marcin/fishHook.pdf)
 
+-->
 
 <div id="attributions"/>
 

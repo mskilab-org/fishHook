@@ -932,7 +932,8 @@ score.hypotheses = function(hypotheses, covariates = names(values(hypotheses)), 
         return(as.data.table(res))
     }
 
-    setres = NULL
+  setres = NULL
+  res$query.id = 1:nrow(res)
     if (!is.null(sets))
     {
       if (is.null(names(sets)))
@@ -964,9 +965,17 @@ score.hypotheses = function(hypotheses, covariates = names(values(hypotheses)), 
         {
           fmessage('Scoring set(s) ', paste(names(sets), collapse = ', '))
         }
+
         ij = cbind(unlist(sets), rep(1:length(sets), elementNROWS(sets)))
 
+        
         tmpres = merge(cbind(query.id = unlist(sets), set.id = rep(names(sets), elementNROWS(sets))), res)
+
+        if (nrow(tmpres)==0)
+          {
+            return(data.table(name = names(sets), method = as.numeric(NA), p = as.numeric(NA), p.left = as.numeric(NA), p.right = as.numeric(NA), estimate = as.numeric(NA), ci.lower = as.numeric(NA), ci.upper = as.numeric(NA), effect = as.character(NA), n = 0))
+          }
+
         setdata = cbind(data.frame(count = tmpres$count, count.pred = log(tmpres$count.pred)),
                         as.data.frame(as.matrix(Matrix::sparseMatrix(1:nrow(tmpres), match(tmpres$set.id, names(sets)), x = 1,
                                                              dims = c(nrow(tmpres), length(sets)),
@@ -1050,8 +1059,8 @@ score.hypotheses = function(hypotheses, covariates = names(values(hypotheses)), 
 #' @author Zoran Z. Gajic
 #' @import R6
 #' @export
-Cov = function(name = as.character(NA), data = NULL, pad = 0, type = as.character(NA),
-               signature = as.character(NA), field = as.character(NA), na.rm = NA, grep = NA){
+Cov = function(data = NULL, field = as.character(NA), name = as.character(NA), pad = 0, type = as.character(NA),
+               signature = as.character(NA), na.rm = NA, grep = NA){
   Covariate$new(name = name, data = data, pad = pad, type = type, signature = signature,
                 field = field, na.rm = na.rm, grep = grep)
 }
@@ -1093,94 +1102,109 @@ Cov = function(name = as.character(NA), data = NULL, pad = 0, type = as.characte
 Covariate = R6::R6Class('Covariate',
     public = list(
 
-    ## See the class documentation
+      ## See the class documentation
       initialize = function(data = NULL, field = as.character(NA), name = as.character(NA),
                             pad = 0, type = 'numeric', signature = as.character(NA),
                             na.rm = as.logical(NA), grep = as.logical(NA)){
 
-      ##If data are valid and are a list of tracks concatenate with any premade covs
-      if(is.null(data))
-      {
-        self$data = NULL
-        self$names = name
-        self$type = type
-        self$signature = signature
-        self$field = field
-        self$pad = pad
-        self$na.rm = na.rm
-        self$grep = grep
-        return()
-                                        #        stop('No data provided to Covariate instantiation.  Data must be provided as GRanges, filepath to supported UCSC format (.bed, .bw, .bigWig), or path to .rds file of GRanges.')
-      }
-
-      if(class(data) != 'list'){
-        data = list(data)
-      }            
-
-      ## replicate params and data if necessary
-      params = data.table(id = 1:length(data), field = field, name = name, pad = pad, type = type, signature = signature, na.rm = na.rm, grep = grep)
-
-      if (length(data)==1 & nrow(params)>1)
-        data = rep(data, nrow(params))
-
-      self$data = data
-
-      params$dclasses = sapply(self$data, class)
-
-      if (any(ix <<- params$dclasses == 'character'))
-      {
-        if (any(iix <<- !file.exists(unlist(self$data[ix]))))
+        ##If data are valid and are a list of tracks concatenate with any premade covs
+        if(is.null(data))
         {
-          stop(sprintf('Some covariate files not found:\n%s', paste(unlist(self$data[ix][iix]), collapse = ',')))
+          self$data = NULL
+          self$names = name
+          self$type = type
+          self$signature = signature
+          self$field = field
+          self$pad = pad
+          self$na.rm = na.rm
+          self$grep = grep
+          return()
+                                        #        stop('No data provided to Covariate instantiation.  Data must be provided as GRanges, filepath to supported UCSC format (.bed, .bw, .bigWig), or path to .rds file of GRanges.')
         }
-      }
 
-      ## for any GRanges data that are provided where there is more than one metadata
-      ## column, there should be a field given, otherwise we complain
-      dmeta = NULL
-      if (any(ix <<- params$dclasses != 'character'))
-      {
-        dmeta = lapply(self$data[ix], function(x) names(values(x)))
-      }
-      
-      ## we require field to be specified if GRanges have more than one metadata column, otherwise
-      ## ambiguous
-      if (length(dmeta)>0)
+        if(class(data) != 'list'){
+          data = list(data)
+        }            
+
+        ## replicate params and data if necessary
+        params = data.table(id = 1:length(data), field = field, name = name, pad = pad, type = type, signature = signature, na.rm = na.rm, grep = grep)
+
+        if (length(data)==1 & nrow(params)>1)
+          data = rep(data, nrow(params))
+
+        self$data = data
+
+        params$dclasses = sapply(self$data, class)
+
+        if (any(ix <<- params$dclasses == 'character'))
+        {
+          if (any(iix <<- !file.exists(unlist(self$data[ix]))))
+          {
+            stop(sprintf('Some covariate files not found:\n%s', paste(unlist(self$data[ix][iix]), collapse = ',')))
+          }
+        }
+
+        ## for any GRanges data that are provided where there is more than one metadata
+        ## column, there should be a field given, otherwise we complain
+        dmeta = NULL
+        if (any(ix <<- params$dclasses != 'character'))
+        {
+          dmeta = lapply(self$data[ix], function(x) names(values(x)))
+        }
+        
+        ## we require field to be specified if GRanges have more than one metadata column, otherwise
+        ## ambiguous
+        if (length(dmeta)>0)
         {
           ## check to make sure that fields actually exist in the provided GRanges arguments
           found = mapply(params$field[ix], dmeta, FUN = function(x,y) ifelse(is.na(x), NA, x %in% y))
 
           if (any(!found, na.rm = TRUE))
           {
-            stop('Some provided fields not found in their corresponding GRanges, please check arguments')
+            stop('Some provided Covariate fields not found in their corresponding GRanges metadata, please check arguments')
           }
         }                
 
-      if (na.ix <<- any(is.na(params$name)))
-      {
-        params[na.ix, name := ifelse(!is.na(field), field, paste0('Covariate', id))]
-        params[, name := dedup(name)]       
-      }
+        if (na.ix <<- any(is.na(params$name)))
+        {
+          params[na.ix, name := ifelse(!is.na(field), field, paste0('Covariate', id))]
+          params[, name := dedup(name)]       
+        }
 
-      ## label any type = NA covariates for which a field has not been specified
-      ## as NA by default
-      if (any(na.ix <<- !is.na(params$field) & is.na(params$type)))
-      {
-        params[na.ix, type := 'numeric']
-      }
+        ## label any type = NA covariates for which a field has not been specified
+        ## as NA by default
+        if (any(na.ix <<- !is.na(params$field) & is.na(params$type)))
+        {
+          params[na.ix, type := 'numeric']
+        }
 
-      if (any(na.ix <<- is.na(params$field) & is.na(params$type)))
-      {
-        params[na.ix, type := 'interval']
-      }
+        if (any(na.ix <<- is.na(params$field) & is.na(params$type)))
+        {
+          params[na.ix, type := 'interval']
+        }
 
-      self$names = params$name
-      self$type = params$type
-      self$signature = params$signature
-      self$field = params$field
-      self$pad = params$pad
-      self$na.rm = params$na.rm
-      self$grep = params$grep            
+        ## check names to make sure not malformed, i.e. shouldn't start with number or contain spaces or special
+        ## characters
+
+        if (any(iix <<- grepl('\\W', params$name)))
+        {
+          warning('Replacing spaces and special characters with "_" in Covariate names')
+          params$names[iix] = gsub('\\W+', '_', params$name[iix])
+        }
+
+        if (any(iix <<- duplicated(params$name)))
+        {
+          warning('Deduping covariate names')
+          params$names = dedup(params$names)
+        }
+
+        self$names = params$name
+        self$type = params$type
+        self$signature = params$signature
+        self$field = params$field
+        self$pad = params$pad
+        self$na.rm = params$na.rm
+        self$grep = params$grep            
     },
 
     ## Params:
@@ -1357,24 +1381,30 @@ Covariate = R6::R6Class('Covariate',
 
                 if(!missing(value)){
 
-                    if(!is.character(value) && !all(is.na(value)) ){
-                        stop('Error: names must be of class character')
-                    }
+                  if(!is.character(value) && !all(is.na(value)) ){
+                    stop('Error: names must be of class character')
+                  }
 
-                    if(length(value) != length(private$pCovs) & length(private$pCovs) %% length(value) != 0){
-                        stop('Error: Length of names must be of length equal to the number of Covariates or a divisor of number of covariates.')
-                    }
+                  if(length(value) != length(private$pCovs) & length(private$pCovs) %% length(value) != 0){
+                    stop('Error: Length of names must be of length equal to the number of Covariates or a divisor of number of covariates.')
+                  }
 
-                    if(length(private$pCovs) / length(value) != 1){
-                        private$pnames = rep(value, length(private$pCovs)/length(value))
-                       return(private$pnames)
-                    }
-
-                    private$pnames = value
+                  if(length(private$pCovs) / length(value) != 1){
+                    private$pnames = rep(value, length(private$pCovs)/length(value))
                     return(private$pnames)
+                  }
+
+                  if (any(iix <<- grepl('\\W', value)))
+                  {
+                    warning('Replacing spaces and special characters with "_" in provided Covariate names')
+                    value[iix] = gsub('\\W+', '_', value[iix])
+                  }
+
+                  private$pnames = value
+                  return(private$pnames)
 
                 } else{
-                    return(private$pnames)
+                  return(private$pnames)
                 }
             },
 
@@ -1612,11 +1642,50 @@ Covariate = R6::R6Class('Covariate',
 #' @author Zoran Z. Gajic
 #' @export
 '[.Covariate' = function(obj, range){
-    ##Clone the object so we don't mess with the original
-    ret = obj$clone()
+  if (any(is.na(range)))
+    stop('NA in subscripts not allowed')
+
+  if (any(range>length(obj)))
+    stop('Subscript out of bounds')
+
+  ##Clone the object so we don't mess with the original
+  ret = obj$clone()
+  ##Call the subset function of the Covariate class that will modify the cloned Covariate
+  ret$subset(range)
+  return (ret)
+}
+
+
+#' @name names.Covariate
+#' @title title
+#' @description
+#'
+#' Overrides the names function for Covariate object
+#'
+#' @param obj Covariate This is the Covariate whose names we are extracting' 
+#' @return names of covariates
+#' @author Zoran Z. Gajic
+#' @export
+'names.Covariate' = function(x){
     ##Call the subset function of the Covariate class that will modify the cloned Covariate
-    ret$subset(range)
-    return (ret)
+    return (x$names)
+}
+
+
+
+#' @name names.FishHook
+#' @title title
+#' @description
+#'
+#' Overrides the names function for FishHook object, i.e. the names of its covariates
+#'
+#' @param obj FishHook This is the FishHook whose names we are extracting
+#' @return names of covariates
+#' @author Zoran Z. Gajic
+#' @export
+'names.FishHook' = function(x){
+    ##Call the subset function of the Covariate class that will modify the cloned Covariate
+    return (x$covariates$names)
 }
 
 
@@ -2235,7 +2304,32 @@ FishHook = R6::R6Class('FishHook',
           private$phypotheses = private$phypotheses[i]
           if (!is.null(private$pscore))
           {
+            warning('Resetting hypothesis scores since object has been subsettted, please run $score() to get updated p values')
             private$pscore = private$pscore[i]
+          }
+
+          if (!is.null(private$psets))
+          {
+            map = data.table(old = i, new  = 1:length(i))
+            setkey(map, old)
+            setsdt = data.table(sid = factor(rep(names(sets), elementNROWS(sets))), ix = unlist(sets))
+            setsdt$newix = map[.(setsdt$ix), new]
+            setsdt = setsdt[!is.na(newix), ]
+            if (nrow(setsdt)>0)
+            {
+              newsets = split(setsdt$newix, setsdt$sid)[names(private$psets)]
+              names(newsets) = names(private$psets)
+              private$psets = newsets
+            }
+            else
+            {
+              newsets = rep(list(as.integer(c())), length(sets))
+              names(newsets) = names(private$psets)
+              private$psets = newsets
+            }
+      
+            warning('Resetting set scores since object has been subsettted, please run $score() to get updated set level p values')
+            private$psetscore = NULL
           }
         }
       },
@@ -2446,7 +2540,12 @@ FishHook = R6::R6Class('FishHook',
                                                 out.path = private$pout.path,
                                                 covariates = private$pcovariates$toList(),
                                                 weightEvents = private$pweightEvents)
+
                 BASIC.COLS = c('count', 'coverage', 'query.id')
+                other.cols = setdiff(names(values(tmp.pdata)), BASIC.COLS)
+
+                ix = match(other.cols, names(values(tmp.pdata)))
+                names(values(tmp.pdata))[ix] = value$names
 
                 if (is.null(private$pdata))
                 {
@@ -2984,17 +3083,13 @@ FishHook = R6::R6Class('FishHook',
 #' @param obj FishHook object that is passed to the length function
 #' @return returns a numeric vector containing the lengths of various FishHook variables in the following order:
 #' i : number of hypotheses
-#' j : number of  events
-#' k : number of covariates
-#' l : number of  eligible regions
+#' j : number of covariates
 #' @author Zoran Z. Gajic
 #' @export
 'dim.FishHook' = function(obj,...){
     length_hypotheses = length(obj$hypotheses)
-    length_events = length(obj$events)
-    length_covariates = length(obj$data)
-    length_eligible = length(obj$eligible)
-    return(c(length_hypotheses, length_events, length_covariates, length_eligible))
+    length_covariates = length(obj$data)    
+    return(c(length_hypotheses, length_covariates))
 }
 
 

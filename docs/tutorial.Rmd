@@ -10,19 +10,36 @@ output:
 
 ```{r echo=FALSE}
 knitr::opts_chunk$set(collapse = TRUE)
+
 ```
 
+<style type="text/css">
+body, td {
+   font-size: 16px;
+}
+pre code, pre, code {
+  font-size: 12px;
+  color: rgb(20, 20, 20);
+  white-space: pre !important;
+  overflow-x: scroll !important;
+  word-break: keep-all !important;
+  word-wrap: initial !important;
+}
+</style>
 
-# Introduction
+## Introduction
 
-The **fishHook** R package enables agile statistical exploration of coding and
+The **fishHook** R package enables agile statistical analysis of coding and
 non-coding mutational recurrence in cancer through generalized linear modeling (GLM)
-of heterogenous neutral somatic mutation rates along the genome. **fishHook**
-can be applied to the analysis of genes, enhancers, promoters, genomic tiles, or
-any arbitrary "hypothesis set" (defined by the user as a set of genomic
-intervals or `GRanges`), as well as complex sets of the above (e.g. genes sets representing pathways, enhancers sets known to interact with a target gene).  The core of the fishHook approach is to enable nomination of loci following the correction of known covariates of neutral mutation, including chromatin state, replication timing, and nucleotide context. The goal of fishHook is to identify cancer "drivers", i.e. loci that are under positive somatic selection through the application of an accurate null / background model whose application yields straight Q-Q plots.
+of somatic mutation densities and their heterogeneity along the genome. **fishHook**
+can be applied to the analysis of any collection of genomic intervals (e.g. genes, enhancers, promoters, genomic tiles) or
+complex sets of intervals (e.g. genes sets representing pathways, enhancers sets known to interact with a target gene).  The FishHook 
+package is integrated with `GenomicRanges` and `data.table` packages, allowing incroporation into bioinformatics / genomic data science workflows
+in the `R/Bioconductor` ecosystem. 
 
-Though we provide many pre-computed covariates, the key power of fishHook is to empower the user to add custom covariates and (more broadly) provide a framework for generation of custom models, e.g. fitting variant- and tumor-type specific linear models and then integrating deviations from these models to nominate loci (or sets of loci) that deviate from the NULL.  
+The core of the fishHook framework is to enable nomination of loci following the correction of known covariates of neutral mutation, e.g. chromatin state, replication timing, and nucleotide context. The goal of fishHook is to identify *cancer drivers*, i.e. loci that are under positive somatic selection and accumulate mutations above "background".  This analysis hinges on the application of a correct null / background model that yields straight Q-Q plots.
+
+Though we provide many pre-computed covariates, the key power of fishHook is to empower the user to add custom covariates and (more broadly) provide a framework for the generation and fitting of custom models to nominate loci, e.g. modeling variant- and tumor-type specific background mutational processes.  
 
 Please include this citation if you use fishHook: [Imielinski, Guo, Meyerson *Cell.* 2017 Jan 26;168(3):460-472](https://www.sciencedirect.com/science/article/pii/S009286741631741X?via%3Dihub)
 
@@ -35,7 +52,6 @@ adenocarcinoma mutation data. Additional packages like `gTrack` and
 ```{r message=FALSE, warning=FALSE}
 library(fishHook)    
 library(gTrack)
-library(plotly)
 library(rtracklayer)
 ```
 
@@ -48,9 +64,10 @@ Read in the mutation data and additional tracks that we will use in this analysi
 mutations = dt2gr(fread('http://mskilab.com/fishHook/hg19/luad.maf'))
 
 ## GENCODE v19 genes these are our "hypotheses"
-genes = gr.sub(import('http://mskilab.com/fishHook/hg19/gencode.v19.genes.gtf')) %Q% (gene_type == 'protein_coding') %Q% (level<3)
+genes = gr.sub(import('http://mskilab.com/fishHook/hg19/gencode.v19.genes.gtf')) # rtracklayer::import reads gtf and gr.sub replaces chr
+genes = genes %Q% (gene_type == 'protein_coding') %Q% (level<3)  # %Q% is a gUtils subsetting operator for GRanges
 
-## protein coding cds definitions
+## protein coding CDS definitions
 cds = readRDS(gzcon(file('http://mskilab.com/fishHook/hg19/gencode.v19.cds.rds')))
 
 ## bigWig file of fractional coverage of hg19 positions by Agilent exome
@@ -67,13 +84,12 @@ head(mutations[, c('Tumor_Sample_Barcode', 'Variant_Type', 'Variant_Classificati
 ### Instantiate FishHook object from events and eligible territory
 
 First we define the "eligible territory".  This is a key component of all
-somatic mutational recurrence analyses, since not all of the genome is covered
-by most sequencing assays. For example in a whole exome sequencing dataset, less
+somatic mutational recurrence analyses, since much of the genome is *not covered*
+in sequencing studies. For example, in a whole exome sequencing dataset, less
 than 2% of the genome is reliably captured. In a targeted sequencing panel, this
 fraction will be even smaller.  Even in whole genome sequencing using Illumina
 short reads, only a subset (70%) of the genome is reliably callable ([Heng Li
-*Bioinformatics* 2014 Oct 15;30(20):2843–51](https://academic.oup.com/bioinformatics/article/30/20/2843/2422145))
-
+*Bioinformatics* 2014 Oct 15;30(20):2843–8751](https://academic.oup.com/bioinformatics/article/30/20/2843/2422145))
 
 
 Eligible territory coverage will influence the  "denominator" of our recurrence analysis, i.e. the number of positions in each hypothesis interval where a mutation *could have possibly been detected*.  If we do not take eligible territory into account we will mis-estimate the background mutation rate in a given region.
@@ -83,7 +99,8 @@ portion of cds (protein coding) bases that are captured in at least 95% of whole
 exomes, which represents about 26MB of genome.
 
 ```{r}
-eligible = reduce(intersect(exomecov %Q% which(score>0.95), cds, ignore.strand = TRUE))
+eligible = exomecov %Q% which(score>0.95) # %Q% is a gUtils operator for subsetting on GRanges metadata
+eligible = reduce(intersect(eligible, cds, ignore.strand = TRUE)) # we intersect and reduce / collapse our prelim eligible intervals with CDS boundaries
 
 ```
 We define "events" as nonsynonymous mutations.  In this simple model, we will lump together SNVs (of
@@ -91,16 +108,15 @@ different flavors), and indels (of different flavors).  (We discuss more complex
 models that subdivide mutation types later in the tutorial).
 
 ```{r}
-events = mutations %Q% (Variant_Classification != 'Silent')
+events = mutations %Q% (Variant_Classification != 'Silent') 
 
 ```
-Now that we have loaded our `hypotheses` (genes), `events`, and `eligible`, we are ready to
-create and analyze a basic `FishHook` object.   Instantiation of the object will
-involve counting how many 
-events are in the eligible portion of each hypothesis interval.  We provide the
-"idcol" parameter so that each tumor sample (as defined by the
-"Tumor_Sample_Barcode" column in this events GRanges) can only provide at most
-one event to the counts in each interval.
+Now that we have loaded our `hypotheses` (i.e. genes), `events`, and `eligible`, we are ready to
+create and analyze a basic `FishHook` object.   Under the hood, object creation triggers 
+counting of how many events are in the eligible portion of each hypothesis interval.  We provide the
+`idcol` parameter so that each tumor sample (as defined by the
+`Tumor_Sample_Barcode` column in the `events` `GRanges`) will provide *at  most
+one event* to the counts of each interval.
 
 
 ```{r message = FALSE}
@@ -111,7 +127,7 @@ fish = Fish(hypotheses = genes[, 'gene_name'], events = events, eligible = eligi
 fish
 ```
 
-### Run basic FishHook model without covariates
+### Run basic model without covariates
 
 We can `score` this basic `FishHook` object, i.e. compute p values for every
 hypothesis, using a simple glm that models a uniform mutation density along the
@@ -136,8 +152,7 @@ c("striped", "hover", "condensed", "responsive")) %>%
 p = fish$qqp()
 p
 ```
-
-You will notice that this Q-Q plot appears curved and inflated, though its slope
+<br>You will notice that this Q-Q plot appears curved and inflated, though its slope
 (`lambda`) is reasonably near 1.  The low `alpha` value (MLE of the alpha parameter
                                                      of the Gamma distribution),
 suggests that the GLM is detecting additional variance 
@@ -167,7 +182,8 @@ specifying field `score`.
 ## converted to rds via rtracklayer::import
 reptimedata = readRDS(gzcon(file('http://mskilab.com/fishHook/hg19/RT_NHEK_Keratinocytes_Int92817591_hg19.rds')))
 
-reptime = Cov(data = reptimedata, field = 'score')
+## instantiate covariate around 'score' field, name the Covariate "replication timing"
+reptime = Cov(data = reptimedata, field = 'score', name = 'ReplicationTiming') 
 
 ```
 
@@ -182,7 +198,7 @@ columns of an input GRanges.  As a result, `contextcov` will be length 2
 
 ```{r}
 context = readRDS(gzcon(file('http://mskilab.com/fishHook/hg19/nucleotide.context.rds')))
-gc = Cov(data = context, field = c('C', 'G'))
+gc = Cov(data = context, field = c('C', 'G')) ## instantiate Covariate around G and C fields
 
 ```
 
@@ -195,8 +211,9 @@ field.
 
 ```{r}
 ### data cached from https://egg2.wustl.edu/roadmap/data/byFileType/chromhmmSegmentations/ChmmModels/coreMarks/jointModel/final/E114_15_coreMarks_mnemonics.bed.gz
-hetchromdata = gr.sub(import('http://mskilab.com/fishHook/hg19/E114_15_coreMarks_mnemonics.bed.gz'), 'chr', '') %Q% (name %in% c('8_ZNF/Rpts', '9_Het', '15_Quies'))
-hetchrom = Cov(hetchromdata, name = 'Heterochromatin')
+chromhmm = gr.sub(import('http://mskilab.com/fishHook/hg19/E114_15_coreMarks_mnemonics.bed.gz'), 'chr', '') ## import from bed then gUtils::gr.sub to strip 'chr' identifier
+hetchromdata = chromhmm %Q% (name %in% c('8_ZNF/Rpts', '9_Het', '15_Quies')) # %Q% is gUtils operator for subsetting on GRanges metadata, in this case selecting for heterochromatic regions
+hetchrom = Cov(hetchromdata, name = 'Heterochromatin') ## instantiate interval covariate
 ```
 
 We now add these covariates to the model. For type `numeric` covariates, e.g. replication
@@ -206,6 +223,7 @@ This annotation is the most computationally intensive and slowest aspect of
 fishHook analyses, though occurs within a few seconds for this small number of covariates.
 
 ```{r message=TRUE}
+## note how we can concatenate Covariate objects with c() operator
 fish$covariates = c(reptime, gc, hetchrom)
 
 ```
@@ -220,63 +238,107 @@ biologically implicated in lung adenocarcinoma tumorigenesis.
 
 ```{r eval=FALSE}
 fish$score()
-fish$res[order(p)[fdr<0.1, ]
+fish$res[fdr<0.25, ][order(p), ]
 fish$qqp()
 ```
 ```{r echo=FALSE,message=FALSE}
 fish$score()
-fish$res[order(p), ][fdr<0.1, ] %>% kable() %>%  kable_styling(bootstrap_options =
+fish$res[order(p), ][fdr<0.25, ] %>% kable() %>%  kable_styling(bootstrap_options =
 c("striped", "hover", "condensed", "responsive")) %>%
     scroll_box(width = "100%", height = "200px")
 p = fish$qqp()
 p
 ```
-
+<br>
 Note that this model is still quite rudimentary (e.g. we have lumped together
  SNVs and indels, we have not substratified SNVs by mutational context, we have
 employed very few covariates) but we still get a reasonable gene list and minimal
 statistical inflation. 
 
+### Merge additional covariates
 
-We can inspect the parameters of this model see which features it's using.  We
-can see from the estimate and Pr(|>z|) that replication timing is significantly
-negatively correlated and heterochromatin is significantly positively correlated
-with mutational density (as expected).
+We may notice that some of the significantly mutated genes are not known to 
+be expressed in lung adenocarcinoma tissues.  We also know that genes that 
+are more highly expressed in a given tissue have lower mutation rates.  
+To account for this we can use gene expression as both a filter and a covariate
+in the model. 
 
-```{r size="tiny"}
-summary(fish$model)
 
+```{r}
+## load GRanges of lung adenocarcinoma average gene experssion
+exprdata = readRDS(gzcon(file('http://mskilab.com/fishHook/hg19/lung.expr.rds'))) 
+
+# log transform expression values
+exprdata$log.tpm = log10(exprdata$tpm+0.01) 
+
+## create Covariate for log gene expression, using log.tpm field in the exprdata object
+expr = Cov(exprdata, field = 'log.tpm', name = 'LungExpression') 
+
+## merge / append this new covariate into the FishHook object
+fish$merge(expr) 
 ```
 
-### Analyze truncating mutations and pathways
+### Subset the FishHook object
 
-We can run a similar analysis but choosing only truncating mutations (by
-subsetting the mutation GRanges). Scoring this new model, we obtain a different mutation list, 
-containing likely candidate drivers with enrichment of frameshift, nonsense, or
-nonstop indels and SNVs.  This includes genes like *ARID1A*, *RBM10*,  and *SETD2*.
+Now that we've merged in this model we can use the subsetting feature of fishHook
+model.  The dimension of the fish object is hypotheses by covariates.  You can
+use the `[` operator to subset on either of these dimensions.  We will use this functionality 
+to subset the object to contain only genes that are expressed >10 TPM in lung, and then re-score this subsetted
+model.  To subset, we use the `fish$data` object which is a `data.table` of all 
+all of the covariate data, with one row per hypothesis. 
+
+```{r}
+fish = fish[which(fish$data$LungExpression>1), ] ## subset for high lung expression
+```
+
+```{r echo=FALSE}
+fish
+```
+This object now contains 8765 hypotheses (i.e. genes), which we can rescore to obtain p values and FDRs. 
+
 
 ```{r eval=FALSE}
-## replace events with new subset of mutations
-fish$events = mutations %Q% 
-                 (grepl('(Frame_Shift_)|(Nonsense)|(OutOfFrame)|(Nonstop)', Variant_Classification))
-
-## re-score model and inspect results
-fish$score() 
-head(fish$res[order(p), ])
+fish$score()
+fish$res[fdr<0.25, ][order(p), ]
 fish$qqp()
 ```
-
-```{r echo=FALSE,message=FALSE,warning=FALSE}
-fish$events = mutations %Q% (grepl('(Frame_Shift_)|(Nonsense)|(OutOfFrame)|(Nonstop)', Variant_Classification))
+```{r echo=FALSE,message=FALSE}
 fish$score()
-head(fish$res[order(p), ]) %>% kable() %>%  kable_styling(bootstrap_options =
+fish$res[order(p), ][fdr<0.25, ] %>% kable() %>%  kable_styling(bootstrap_options =
 c("striped", "hover", "condensed", "responsive")) %>%
     scroll_box(width = "100%", height = "200px")
 p = fish$qqp()
 p
 ```
 
-Read in and parse reactome pathways  as list of gene symbols.
+<br>
+To inspect the parameters of this model and see which features it is using, we
+can employ the`$model`accessor:
+
+```{r size="tiny"}
+summary(fish$model)
+```
+
+We can see from the `Estimate` and `Pr(|>z|)` columns of the `Coefficients` table that replication timing and lung gene expression are significantly
+negatively correlated and heterochromatin is significantly positively correlated
+with mutational density (as expected).  However, this table shows that `G` and `C` content are not significantly correlated with 
+mutation density.  We can use the column subsetting function to remove these covariates and rescore to see how the results change. 
+
+
+```{r}
+fish2 = fish[, -c(2:3)] ## remove the 2nd and 3rd covariates ('G', 'C')
+fish2$score() ## rescore
+
+## check if our new top genes are identical to the previous - they are
+identical(fish2$res[fdr<0.25, sort(gene_name)], fish$res[fdr<0.25, sort(gene_name)])
+```
+The results are identical with and without `G` and `C`  covariates.  This urther suggests that these covariates are not necessary in the model and can likely be excluded.
+
+
+<br>
+### Analyze Reactome pathways
+
+Read in and parse reactome pathways into list of gene symbols, then match against genes in our model.
 
 ```{r}
 ## parse Reactome pathways from .gmt format
@@ -292,16 +354,21 @@ Here is what the pathways and sets look like:
 
 ```{r}
 head(pathways[1:2])
+
 head(sets[1:2])
 ```
+<br>
+The list `sets` contains integer vectors that index `fish$hypotheses`.
+
+To run a set analysis, we just set the `$sets` variable in the `FishHook` object.
+This triggers scoring of hypothesis *sets* (in this case gene
+sets). The results of the set analysis are shown in $setres variable. 
 
 The set analysis is a bit more computationally intensive.  We can speed things up
-through parallelization (setting `fish$mc.cores = 5)`.  When we set the sets variable to a particular
-value, this will trigger automatic scoring of hypothesis sets (in this case gene
-sets). The results are shown in $setres variable. 
+through parallelization (setting `fish$mc.cores = 5).
 
 
-```{r eval=FALSE,echo=FALSE}
+```{r eval=FALSE,echo=TRUE}
 fish$mc.cores = 5
 
 ## this triggers scoring of gene sets using covariate corrected model
@@ -319,24 +386,109 @@ c("striped", "hover", "condensed", "responsive")) %>%
     scroll_box(width = "100%", height = "200px")
 
 ```
-
+<br>
 Examining the results table, we can see that most of the significant pathways appear
 related to *TP53*. Indeed, if we inspect the hypotheses (i.e. genes) contributing to
 these these gene sets, we will see that they are dominated by *TP53* and 1-2
 additional genes. For example:
 
 ```{r eval=FALSE}
-fish$res[sets[[fish$setres[order(p), ][fdr<0.1,  ][3, setname]]], ][order(p), ]
+## pick a set 
+mysetname = fish$setres[order(p)[1], setname]
+
+## use sets list to index fish results, sorting by p value
+fish$res[fish$sets[[mysetname]], ][order(p), ]
 ```
 
 ```{r echo=FALSE,message=FALSE,warning=FALSE}
-fish$res[sets[[fish$setres[order(p), ][fdr<0.1,  ][3, setname]]], ][order(p),
+fish$res[sets[[fish$setres[order(p), ][fdr<0.1,  ][1, setname]]], ][order(p),
 ][, p:= as.character(p)] %>% kable() %>%  kable_styling(bootstrap_options =
 c("striped", "hover", "condensed", "responsive")) %>%
     scroll_box(width = "100%", height = "200px")
 ```
 
-
+<br>
 This is a common challenge with pathway analysis of
 mutations, since many cancer pathways are usually driven by a single "celebrity"
-gene.
+gene. 
+
+We can dig a little deeper to identify significant gene sets that do not have
+`TP53`. Here is one approach
+
+```{r eval = FALSE}
+## these are gene sets with TP53
+has.tp53 = sapply(fish$sets, function(x) any(fish$hypotheses$gene_name[x] %in% 'TP53'))
+
+## we subset on gene sets that do not have TP53
+head(fish$setres[!has.tp53, ][order(p), ])
+```
+
+```{r echo=FALSE,message=FALSE,warning=FALSE}
+has.tp53 = sapply(fish$sets, function(x) any(fish$hypotheses$gene_name[x] %in% 'TP53'))
+
+head(fish$setres[!has.tp53, ][order(p), ][, p:= as.character(p)]) %>% kable() %>%  kable_styling(bootstrap_options =
+c("striped", "hover", "condensed", "responsive")) %>%
+    scroll_box(width = "100%", height = "200px")
+```
+
+<br>
+These sets appear interesting and are related to  additional biological processes known 
+to be important, such EGFR signaling.  The top gene set "Extracellular matrix organization" appears interesting, because it is 
+not obviously associated with known mutational driver pathways in lung
+adenocarcinoma.  Let's examine genes contributing to this top gene set:
+
+```{r eval = FALSE}
+## take the top non-TP53 associated gene set 
+mysetname = fish$setres[!has.tp53, ][order(p)[1], setname]
+
+## use sets list to pull the individual hypothesis results for members of this set
+head(fish$res[fish$sets[[mysetname]], ][order(p), ])
+```
+
+```{r echo=FALSE,message=FALSE,warning=FALSE}
+## take the top non-TP53 associated gene set 
+mysetname = fish$setres[!has.tp53, ][order(p)[1], setname]
+
+## use sets list to pull the individual hypothesis results for members of this set
+head(fish$res[fish$sets[[mysetname]], ][order(p), ][, p:= as.character(p)])  %>% kable() %>%  kable_styling(bootstrap_options =
+c("striped", "hover", "condensed", "responsive")) %>%
+    scroll_box(width = "100%", height = "200px")
+
+```
+<br>
+Interesting! This significant gene set is composed of extracellular matrix genes
+(*COL5A2*, *ITGAL*) that are not significant on their own.  This constitutes a
+true pathway level hit. 
+
+
+### Analyze truncating mutations 
+
+We can run a similar analysis but choosing only truncating mutations (by
+subsetting the mutation GRanges). Scoring this new model, we obtain a different mutation list, 
+containing likely candidate drivers with enrichment of frameshift, nonsense, or
+nonstop indels and SNVs.  
+
+```{r eval=FALSE}
+## replace events with new subset of mutations (using %Q% subsetting operator from gUtils)
+fish$events = mutations %Q% 
+   (grepl('(Frame_Shift_)|(Nonsense)|(OutOfFrame)|(Nonstop)', Variant_Classification))
+
+## re-score model and inspect results
+fish$score() 
+fish$res[order(p), ][fdr<0.25, ]
+fish$qqp()
+```
+
+```{r echo=FALSE,message=FALSE,warning=FALSE}
+fish$events = mutations %Q% (grepl('(Frame_Shift_)|(Nonsense)|(OutOfFrame)|(Nonstop)', Variant_Classification))
+fish$score()
+fish$res[order(p), ][fdr<0.25, ] %>% kable() %>%  kable_styling(bootstrap_options =
+c("striped", "hover", "condensed", "responsive")) %>%
+    scroll_box(width = "100%", height = "200px")
+p = fish$qqp()
+p
+```
+
+Though *TP53*, *RBM10*, *SETD2*, and *ARID1A* are well known targets of truncating mutations in lung adenocarcinoma, 
+[*IL32*](https://www.genecards.org/cgi-bin/carddisp.pl?gene=IL32), [*TRIB1*](https://www.genecards.org/cgi-bin/carddisp.pl?gene=IL32), [*SUN1*](https://www.genecards.org/cgi-bin/carddisp.pl?gene=IL32) are interesting candidates that have not previously
+been associated with lung adenocarcinoma. 
