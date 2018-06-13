@@ -12,9 +12,7 @@
 \value{
 returns a numeric vector containing the lengths of various FishHook variables in the following order:
 i : number of hypotheses
-j : number of  events
-k : number of covariates
-l : number of  eligible regions
+j : number of covariates
 }
 \description{
 Overrides the dim function 'dim(FishHook)' for use with FishHook

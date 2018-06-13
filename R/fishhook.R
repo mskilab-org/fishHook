@@ -682,7 +682,7 @@ aggregate.hypotheses = function(hypotheses, by = NULL, fields = NULL, rolling = 
             }
 
             if (verbose){
-                fmessage('Rolling using window of', rolling, '(output will be coordinate sorted)')
+                fmessage('Rolling using window of ', rolling, ' (output will be coordinate sorted)')
             }
 
             tadt = gr2dt(sort(hypotheses))
@@ -691,19 +691,23 @@ aggregate.hypotheses = function(hypotheses, by = NULL, fields = NULL, rolling = 
 
             tadt = tadt[seqnames %in% c(seq(22), "X")]
 
-            if ('count' %in% cfields ) {
-                print("rolling count")
+          if ('count' %in% cfields ) {
+
+            if (verbose)
+              {
+                fmessage("Computing rolling count")
+              }
                 out = tadt[, list(
-                    count = rollapply(count, rolling, sum, na.rm = TRUE, fill = NA),
-                    start = rollapply(start, rolling, min, fill = NA),
-                    end = rollapply(end, rolling, max, fill = NA),
-                    coverage = rollapply(coverage, rolling, sum, fill = NA)
+                    count = zoo::rollapply(count, rolling, sum, na.rm = TRUE, fill = NA),
+                    start = zoo::rollapply(start, rolling, min, fill = NA),
+                    end = zoo::rollapply(end, rolling, max, fill = NA),
+                    coverage = zoo::rollapply(coverage, rolling, sum, fill = NA)
                 ), by = seqnames]
             } else {
                 out = tadt[, list(
-                    start = rollapply(start, rolling, min, fill = NA),
-                    end = rollapply(end, rolling, max, fill = NA),
-                    coverage = rollapply(coverage, rolling, sum, fill = NA)
+                    start = zoo::rollapply(start, rolling, min, fill = NA),
+                    end = zoo::rollapply(end, rolling, max, fill = NA),
+                    coverage = zoo::rollapply(coverage, rolling, sum, fill = NA)
                 ), by = seqnames]
             }
             nna.ix = !is.na(out$start)
@@ -716,7 +720,7 @@ aggregate.hypotheses = function(hypotheses, by = NULL, fields = NULL, rolling = 
 
             ## rolling weighted average, used below
             .rwa = function(v, w){
-                rollapply(v*w, rolling, sum, na.rm = TRUE, fill = NA)/rollapply(w*as.numeric(!is.na(v)), rolling, sum, na.rm = TRUE, fill = NA)
+                zoo::rollapply(v*w, rolling, sum, na.rm = TRUE, fill = NA)/zoo::rollapply(w*as.numeric(!is.na(v)), rolling, sum, na.rm = TRUE, fill = NA)
             }
 
         }
@@ -1192,11 +1196,14 @@ Covariate = R6::R6Class('Covariate',
           params$names[iix] = gsub('\\W+', '_', params$name[iix])
         }
 
-        if (any(iix <<- duplicated(params$name)))
-        {
-          warning('Deduping covariate names')
-          params$names = dedup(params$names)
-        }
+        if (!is.null(params$name))
+          {
+            if (any(iix <<- duplicated(params$name)))
+            {
+              warning('Deduping covariate names')
+              params$name = dedup(params$name)
+            }
+          }
 
         self$names = params$name
         self$type = params$type
@@ -1609,20 +1616,20 @@ Covariate = R6::R6Class('Covariate',
     }
 
     ## Merging vars of the covariates
-    names  = unlist(sapply(Covariates, function(x) x$names))
-    type  = unlist(sapply(Covariates, function(x) x$type))
-    signature  = unlist(sapply(Covariates, function(x) x$signature))
-    field  = unlist(sapply(Covariates, function(x) x$field))
-    pad  = unlist(sapply(Covariates, function(x) x$pad))
-    na.rm  = unlist(sapply(Covariates, function(x) x$na.rm))
-    grep  = unlist(sapply(Covariates, function(x) x$grep))
-
-    ## Merging Covariates
-    covs = lapply(Covariates, function(x) x$data)
-    Covs = unlist(covs, recursive = F)
-
-    ##Creating a new Covariate and assigning all of the merged variables to it
-    ret = Covariate$new(data = Covs, name = names, type = type, signature = signature, field = field, pad = pad, na.rm = na.rm, grep = grep)
+  names  = unlist(lapply(Covariates, function(x) x$names))
+  type  = unlist(lapply(Covariates, function(x) x$type))
+  signature  = unlist(lapply(Covariates, function(x) x$signature))
+  field  = unlist(lapply(Covariates, function(x) x$field))
+  pad  = unlist(lapply(Covariates, function(x) x$pad))
+  na.rm  = unlist(lapply(Covariates, function(x) x$na.rm))
+  grep  = unlist(lapply(Covariates, function(x) x$grep))
+  
+  ## Merging Covariates
+  covs = lapply(Covariates, function(x) x$data)
+  Covs = unlist(covs, recursive = F)
+  
+  ##Creating a new Covariate and assigning all of the merged variables to it
+  ret = Covariate$new(data = Covs, name = names, type = type, signature = signature, field = field, pad = pad, na.rm = na.rm, grep = grep)
 
     return(ret)
 }
@@ -1820,7 +1827,7 @@ FishHook = R6::R6Class('FishHook',
     public = list(
 
         ##See class documentation for params
-        initialize = function(hypotheses, eligible = NULL, events = NULL, covariates = NULL, out.path = NULL, ... ,
+        initialize = function(hypotheses, eligible = NULL, events = NULL, covariates = NULL, out.path = NULL, 
             use_local_mut_density = FALSE, local_mut_density_bin = 1e6, genome = 'BSgenome.Hsapiens.UCSC.hg19::Hsapiens',
             mc.cores = 1, na.rm = TRUE, pad = 0, verbose = TRUE, max.slice = 1e4, ff.chunk = 1e6, max.chunk = 1e11, idcol = NULL,
             idcap = Inf, weightEvents = FALSE, nb = TRUE){
@@ -1958,10 +1965,9 @@ FishHook = R6::R6Class('FishHook',
           if(use_local_mut_density){
             Sys.setenv(DEFAULT_BSGENOME = genome)
             bins = gr.tile(hg_seqlengths(), local_mut_density_bin)
-                f1 = FishHook$new(hypotheses = bins, events = events, eligible = eligible)
-                f1$annotate(mc.cores = mc.cores, na.rm = na.rm, verbose = verbose, max.slice = max.slice, ff.chunk = ff.chunk, max.chunk = max.chunk)
+                f1 = FishHook$new(hypotheses = bins, events = events, eligible = eligible, mc.cores = mc.cores, na.rm = na.rm, verbose = verbose, max.slice = max.slice, ff.chunk = ff.chunk, max.chunk = max.chunk)
                 f1$score()
-                local_mut_density = seg2gr(f1$scores)[,'count.density']
+                local_mut_density = seg2gr(f1$res)[,'count.density']
                 cd = local_mut_density$count.density
                 avg_cd = mean(cd, na.rm = T)
                 cd[is.na(cd) | cd == Inf] = avg_cd
@@ -2312,7 +2318,7 @@ FishHook = R6::R6Class('FishHook',
           {
             map = data.table(old = i, new  = 1:length(i))
             setkey(map, old)
-            setsdt = data.table(sid = factor(rep(names(sets), elementNROWS(sets))), ix = unlist(sets))
+            setsdt = data.table(sid = factor(rep(names(private$psets), elementNROWS(private$psets))), ix = unlist(private$psets))
             setsdt$newix = map[.(setsdt$ix), new]
             setsdt = setsdt[!is.na(newix), ]
             if (nrow(setsdt)>0)
@@ -2825,6 +2831,10 @@ FishHook = R6::R6Class('FishHook',
               if (!inherits(value, 'list') & !all(sapply(value, class)== 'integer'))
                 stop('Provided sets must be a (named) list of indices into hypotheses, each specifying a hypothesis set to be scored')
               
+              if (any(sapply(value, max, na.rm = TRUE)>length(self$hypotheses)))
+                stop('Indices out of bounds for at least one of the provided sets')
+
+              
               private$psets = value
               self$score(model = private$pmodel, sets = private$psets)
 
@@ -2962,7 +2972,15 @@ FishHook = R6::R6Class('FishHook',
                     stop('Error: idcol must be of class character')
                 }
 
+                if (!(value %in% names(values(events))))
+                {
+                  stop('Provided idcol does not exist as metadata column in $events')
+                }
+
                 private$pidcol = value
+
+                ## re-annotate events
+                self$events = self$events
 
                 return(private$pidcol)
 
@@ -2975,11 +2993,14 @@ FishHook = R6::R6Class('FishHook',
         ## numeric, must be greater than 0, value is floored for safety
         idcap = function(value) {
             if(!missing(value)){
-                if(!(class(value) == "numeric")  && !is.null(value) && value > 0){
-                    stop("Error: idcap must be of class numeric")
+                if(!(class(value) == "numeric" | class(value) == 'integer')  && !is.null(value) && value > 0){
+                    stop("Error: idcap must be of class numeric and non-negative")
                 }
 
                 private$pidcap = floor(value)
+
+                ## re-annotate events
+                self$events = self$events
 
                 return(private$pidcap)
 
@@ -2997,6 +3018,8 @@ FishHook = R6::R6Class('FishHook',
                 }
 
                 private$pweightEvents = value
+
+                self$events = self$events
 
                 return(private$pweightEvents)
 
@@ -3037,18 +3060,12 @@ FishHook = R6::R6Class('FishHook',
         ## GRangesList containing aggregated hypotheses, you probably shouldn't be messing with this unless
         ## you really know what you're doing
         aggregated = function(value) {
-            if(!missing(value)){
-                if(!(class(value) == "GRangesList" || class(value) == "GRanges")  && !is.null(value)){
-                    stop('Error: aggregated must be of class GRangesList')
-                } else{
-                    warning('Warning: You are editing the aggregated dataset generated by fishHook, goodluck!')
-                }
+          if(!missing(value)){
+            stop('Aggregated cannot be set, can only be modified through $aggregate() method')
 
-                private$paggregated = value
-
-                return(private$paggregated)
-
-            } else{
+            return(private$paggregated)
+            
+          } else{
                 return(private$paggregated)
             }
         }
@@ -3088,7 +3105,7 @@ FishHook = R6::R6Class('FishHook',
 #' @export
 'dim.FishHook' = function(obj,...){
     length_hypotheses = length(obj$hypotheses)
-    length_covariates = length(obj$data)    
+    length_covariates = length(obj$covariates)    
     return(c(length_hypotheses, length_covariates))
 }
 
@@ -3317,6 +3334,8 @@ qqp = function(obs, highlight = c(), exp = NULL, lwd = 1, col = NULL, col.bg = '
         lambda = lm(y ~ x-1, dat)$coefficients;
 
         lines(x=c(0, max.x), y = c(0, lambda*max.y), col = 'red', lty = 2, lwd = lwd);
+        if (is.null(bottomrighttext))
+          bottomrighttext = ''
         legend('bottomright', sprintf('%slambda=\n %.2f', bottomrighttext, lambda), text.col = 'red', bty = 'n')
     } else{
 
@@ -3811,7 +3830,10 @@ dflm = function(x, last = FALSE, nm = '')
 #' 
 #' @param ...  fishHook models with <identical> hypotheses
 #' @param sets  named list of integers indexing the hypotheses in the input models
-#' 
+#' @param mc.cores integer number of cores to use
+#' @param iter integer max number of iteration of glm.nb to run
+#' @param verbose  logical flag of whether to run verbose, default will inherit from underlying fishHook models
+#' @param ignore.theta logical flag of whether to ignore.theta and just recompute per hypothesis (not recommended)
 #' @return data.table of hypotheses
 #' @export
 #' @author Marcin Imielinski
@@ -3892,6 +3914,7 @@ score = function(..., sets = NULL, mc.cores = NULL, iter = 200, verbose = NULL, 
     }
     res = mod$res
     res[, model.id := i]
+    res[, query.id := 1:.N]
     res
   }))
 
@@ -3948,7 +3971,7 @@ score = function(..., sets = NULL, mc.cores = NULL, iter = 200, verbose = NULL, 
     }
 
     tmpres[, n := elementNROWS(sets)]
-
+    
     return(tmpres)
 
   }

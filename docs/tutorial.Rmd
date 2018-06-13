@@ -29,19 +29,22 @@ pre code, pre, code {
 
 ## Introduction
 
-The **fishHook** R package enables agile statistical analysis of coding and
+The `fishHook` R package enables agile statistical analysis of coding and
 non-coding mutational recurrence in cancer through generalized linear modeling (GLM)
-of somatic mutation densities and their heterogeneity along the genome. **fishHook**
+of somatic mutation densities and their heterogeneity along the genome. `fishHook`
 can be applied to the analysis of any collection of genomic intervals (e.g. genes, enhancers, promoters, genomic tiles) or
-complex sets of intervals (e.g. genes sets representing pathways, enhancers sets known to interact with a target gene).  The FishHook 
-package is integrated with `GenomicRanges` and `data.table` packages, allowing incroporation into bioinformatics / genomic data science workflows
-in the `R/Bioconductor` ecosystem. 
+complex sets of intervals (e.g. genes sets representing pathways, enhancer sets known to interact with a gene).  The `fishHook`
+package is integrated with `GenomicRanges` and `data.table` packages, allowing easy incorporation into bioinformatics workflows
+that employ the `R/Bioconductor` ecosystem. 
 
-The core of the fishHook framework is to enable nomination of loci following the correction of known covariates of neutral mutation, e.g. chromatin state, replication timing, and nucleotide context. The goal of fishHook is to identify *cancer drivers*, i.e. loci that are under positive somatic selection and accumulate mutations above "background".  This analysis hinges on the application of a correct null / background model that yields straight Q-Q plots.
+The core of the fishHook framework is to enable nomination of loci following the correction of known covariates of neutral mutation, e.g. chromatin state, replication timing, and nucleotide context. The goal of fishHook is to identify *cancer drivers*, i.e. loci that are under positive somatic selection and accumulate mutations above "background".  This analysis hinges on the application of a correct null / background model, i.e. one that yields near-uniform Q-Q plots for P value distributions. 
 
-Though we provide many pre-computed covariates, the key power of fishHook is to empower the user to add custom covariates and (more broadly) provide a framework for the generation and fitting of custom models to nominate loci, e.g. modeling variant- and tumor-type specific background mutational processes.  
+Though we provide pre-computed covariates and a "black box" command-line tool that applies several generic exome and whole genome analyses, 
+the key power of `fishHook` lies in its customizability.  This includes the ability to easily incorporate custom covariates and provide a framework for the generation and fitting of bespoke models to nominate loci, e.g. modeling variant- and tumor-type specific background mutational processes. 
 
-Please include this citation if you use fishHook: [Imielinski, Guo, Meyerson *Cell.* 2017 Jan 26;168(3):460-472](https://www.sciencedirect.com/science/article/pii/S009286741631741X?via%3Dihub)
+For installation instructions, please visit the [FishHook github page](https://github.com/mskilab/fishHook).
+
+Please include this citation if you use fishHook in your work: [Imielinski, Guo, Meyerson *Cell.* 2017 Jan 26;168(3):460-472](https://www.sciencedirect.com/science/article/pii/S009286741631741X?via%3Dihub).  
 
 ## Driver discovery in cancer whole exomes
 
@@ -55,13 +58,20 @@ library(gTrack)
 library(rtracklayer)
 ```
 
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(kableExtra)    
+library(magrittr)
+library(tidyr)
+```
+
+
 ### Read in data
 
 Read in the mutation data and additional tracks that we will use in this analysis.
 
 ```{r warning = FALSE}
 ## mutation calls cached from public GDAC Broad firehose https://bit.ly/2sFxWY6
-mutations = dt2gr(fread('http://mskilab.com/fishHook/hg19/luad.maf'))
+mutations = dt2gr(fread('http://mskilab.com/fishHook/hg19/luad.maf')) ## using data.table::fread to read maf and gUtils::dt2gr to convert to GRanges
 
 ## GENCODE v19 genes these are our "hypotheses"
 genes = gr.sub(import('http://mskilab.com/fishHook/hg19/gencode.v19.genes.gtf')) # rtracklayer::import reads gtf and gr.sub replaces chr
@@ -88,15 +98,15 @@ somatic mutational recurrence analyses, since much of the genome is *not covered
 in sequencing studies. For example, in a whole exome sequencing dataset, less
 than 2% of the genome is reliably captured. In a targeted sequencing panel, this
 fraction will be even smaller.  Even in whole genome sequencing using Illumina
-short reads, only a subset (70%) of the genome is reliably callable ([Heng Li
-*Bioinformatics* 2014 Oct 15;30(20):2843–8751](https://academic.oup.com/bioinformatics/article/30/20/2843/2422145))
+short reads, only a subset (70%) of the genome is reliably callable ([Li
+*Bioinformatics* 2014 Oct 15;30(20):2843–8751](https://academic.oup.com/bioinformatics/article/30/20/2843/2422145)).
 
 
 Eligible territory coverage will influence the  "denominator" of our recurrence analysis, i.e. the number of positions in each hypothesis interval where a mutation *could have possibly been detected*.  If we do not take eligible territory into account we will mis-estimate the background mutation rate in a given region.
 
 To define eligible territory for this whole exome analysis, we will choose the
 portion of cds (protein coding) bases that are captured in at least 95% of whole
-exomes, which represents about 26MB of genome.
+exomes, which represents about 24MB of genome.
 
 ```{r}
 eligible = exomecov %Q% which(score>0.95) # %Q% is a gUtils operator for subsetting on GRanges metadata
@@ -135,7 +145,7 @@ genome, i.e. the glm fits only an intercept and applies no covariates (after
 correcting for the number of eligible bases in each interval).  
 
 The `$res` field of the `FishHook` contains a `data.table` of scoring results.
-`$res` has one row per input hypothesis, with p values, FDRs, and additional interval
+`$res` has one row per input hypothesis, with P values, FDRs, and additional interval
 annotations provided with the `hypotheses` `GRanges`.
 
 ```{r eval=FALSE}
@@ -259,9 +269,9 @@ statistical inflation.
 
 We may notice that some of the significantly mutated genes are not known to 
 be expressed in lung adenocarcinoma tissues.  We also know that genes that 
-are more highly expressed in a given tissue have lower mutation rates.  
-To account for this we can use gene expression as both a filter and a covariate
-in the model. 
+are more highly expressed in a given tissue have lower mutation rates.  We want to merge
+in gene expression into the model, but not start from scratch (i.e. create a new model).
+We can do this using the `$merge` function. 
 
 
 ```{r}
@@ -276,16 +286,21 @@ expr = Cov(exprdata, field = 'log.tpm', name = 'LungExpression')
 
 ## merge / append this new covariate into the FishHook object
 fish$merge(expr) 
+
+## look at the $data field to see the new merged covariate data as an additional column
+head(fish$data)
 ```
 
 ### Subset the FishHook object
 
-Now that we've merged in this model we can use the subsetting feature of fishHook
-model.  The dimension of the fish object is hypotheses by covariates.  You can
-use the `[` operator to subset on either of these dimensions.  We will use this functionality 
-to subset the object to contain only genes that are expressed >10 TPM in lung, and then re-score this subsetted
-model.  To subset, we use the `fish$data` object which is a `data.table` of all 
-all of the covariate data, with one row per hypothesis. 
+Now that we've merged gene expression into this model, we would like to apply it both as a covariate and as a gene filter.
+We would like to exclude from the analysis genes that are known to have poor expression in lung adenocarcinoma tissue, because these
+genes are unlikely to harbor driver alterations. 
+
+The dimension of the fish object is hypotheses by covariates.  
+To subset rows (i.e. hypotheses) from this model we can use the subsetting feature of the FishHook object via the `[` operator.  
+We will use this functionality to apply a strict "expression filter" and keep only genes that are expressed >10 TPM in lung adenocarcinoma.
+We will then re-score this subsetted model.  
 
 ```{r}
 fish = fish[which(fish$data$LungExpression>1), ] ## subset for high lung expression
@@ -294,7 +309,7 @@ fish = fish[which(fish$data$LungExpression>1), ] ## subset for high lung express
 ```{r echo=FALSE}
 fish
 ```
-This object now contains 8765 hypotheses (i.e. genes), which we can rescore to obtain p values and FDRs. 
+This object now contains 8765 hypotheses (i.e. genes), which we can rescore to obtain P values and FDRs. 
 
 
 ```{r eval=FALSE}
@@ -332,10 +347,9 @@ fish2$score() ## rescore
 ## check if our new top genes are identical to the previous - they are
 identical(fish2$res[fdr<0.25, sort(gene_name)], fish$res[fdr<0.25, sort(gene_name)])
 ```
-The results are identical with and without `G` and `C`  covariates.  This urther suggests that these covariates are not necessary in the model and can likely be excluded.
+The results are identical with and without `G` and `C`  covariates.  This further suggests that these covariates are not necessary in the model and can likely be excluded.
 
 
-<br>
 ### Analyze Reactome pathways
 
 Read in and parse reactome pathways into list of gene symbols, then match against genes in our model.
@@ -413,7 +427,7 @@ mutations, since many cancer pathways are usually driven by a single "celebrity"
 gene. 
 
 We can dig a little deeper to identify significant gene sets that do not have
-`TP53`. Here is one approach
+*TP53* . Here is one approach
 
 ```{r eval = FALSE}
 ## these are gene sets with TP53
