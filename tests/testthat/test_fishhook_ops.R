@@ -6,7 +6,7 @@ Sys.setenv(DEFAULT_BSGENOME = 'BSgenome.Hsapiens.UCSC.hg19::Hsapiens')
 
 ## hypotheses BED
 #hypothesesbed = system.file("extdata", "targets.bed", package = 'fishHook')
-hypothesesbed = 'targets.bed'
+hypothesesbed = system.file("data", "targets.bed", package = 'fishHook')
 
 ## Sample Covariate
 #replication_timing = readRDS(system.file("extdata", "covariate.rds", package = 'fishHook'))
