@@ -5,3 +5,4 @@
 _build*
 *.Rproj*
 .Rproj.user
+!.travis.yml
