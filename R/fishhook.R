@@ -3983,3 +3983,158 @@ score = function(..., sets = NULL, mc.cores = NULL, iter = 200, verbose = NULL, 
   setres$fdr = signif(p.adjust(setres$p, 'BH'), 2) ## compute q value
   return(setres)
 }
+
+
+#' @name fftab
+#' @title Tabulate data in Rle
+#' @description
+#'
+#' Tabulates data in ffTrack file across a set of interavls (GRanges)
+#' by counting the number of positions matching a given "signature" or
+#' applying FUN to aggregate data.  Returns the input GRanges populated with one or more meta data columns
+#' of counts or averages.
+#'
+#' Similar to gr.val in gUtils
+#'
+#' ff can be an ffTrack but also an RleList from same genome as intervals.
+#'
+#' returns a GRanges with additional columns for metadata counts
+#'
+#' @param ff  ffTrack or RleList to pull data from
+#' @param intervals intervals
+#' @param signatures Signatures is a named list that specify what is to be tallied.  Each signature (ie list element)
+#' consist of an arbitrary length character vector specifying strings to %in% (grep = FALSE)
+#' or length 1 character vector to grepl (if grep = TRUE)
+#' or a length 1 or 2 numeric vector specifying exact value or interval to match (for numeric data)
+#'
+#' Every list element of signature will become a metadata column in the output GRanges
+#' specifying how many positions in the given interval match the given query
+#' @param FUN function to aggregate with (default is sum)
+#' @param grep logical flag (default FALSE), if TRUE will treat the strings in signature as inputs to grep (instead of exact matches if FALSE)
+#' @param mc.cores how many cores (default 1)
+#' @param chunksize chunk of FF to bring into memory (i.e. the width of interval), decrease if memory becomes an issue
+#' @param verbose logical flag
+#' @param na.rm logical flag whether to remove na during aggregation.
+#' @importFrom data.table rbindlist data.table setkey :=
+#' @importFrom gUtils gr.sub seg2gr gr.stripstrand si2gr rle.query gr.fix gr.chr gr.tile grl.unlist gr.findoverlaps gr.dice hg_seqlengths
+fftab = function(ff, intervals, signatures = NULL, FUN = sum, grep = FALSE, mc.cores = 1, chunksize = 1e6, verbose = TRUE, na.rm = TRUE)
+    {
+
+    id = ix = NULL ## NOTE fix
+        if (!is(ff, 'ffTrack') & !is(ff, 'RleList'))
+            stop('Input ff should be ffTrack or RleList\n')
+
+        if (length(intervals)==0)
+            stop('Must provide non empty interavl input as GRanges')
+
+        if (!is.null(signatures))
+            {
+                if (!is.list(signatures))
+                    stop('Signatures must be a named list of arbitrary length character or length 1 or 2 numeric vectors')
+
+                if (is.null(names(signatures)))
+                    names(signatures) = paste('sig', 1:length(signatures), sep = '')
+
+                check = sapply(signatures, function(x)
+                    {
+                        if (is.numeric(x))
+                            return(length(x)>=1 & length(x)<=2)
+                        if (is.character(x))
+                            if (grep)
+                                return(length(x)==1)
+                        return(TRUE)
+                    })
+
+                if (!all(check))
+                    stop('signatures input is malformed, should be either length 1 or 2 numeric, length 1 character (if grep = TRUE), or atbitrary length character otherwise)')
+
+            }
+        else
+            signatures = list(score = numeric()) ## we are just scoring bases
+
+
+        ## generate command that will be executed at each access
+        cmd = paste('list(', paste(sapply(names(signatures), function(x)
+            {
+                sig = signatures[[x]]
+                if (is.numeric(sig))
+                    {
+                                if (length(sig)==0)
+                                    cmd = sprintf('%s = FUN(dat, na.rm = na.rm)', x)
+                                else if (length(sig)==1)
+                                    cmd = sprintf('%s = FUN(dat == %s, na.rm = na.rm)', x, sig[1])
+                                else
+                                    cmd = sprintf('%s = FUN(dat > %s & dat< %s, na.rm = na.rm)', x, sig[1], sig[2])
+                            }
+                else
+                    if (grep)
+                        cmd = sprintf('%s = FUN(grepl("%s", dat), na.rm = na.rm) ', x, sig[1])
+                    else
+                        cmd = paste(x, '= FUN(dat %in%',
+                            paste('c(', paste("\"", sig, "\"", sep = '', collapse = ','), '), na.rm = na.rm)', sep = ''))
+                    }), collapse = ', ', sep = ''), ')', sep = '')
+
+        val = values(intervals)
+        intervals$ix = 1:length(intervals)
+
+        if (verbose)
+            cat('Made command\n')
+        ## sorting will hopefully make data access more efficient
+        gr = sort(intervals[, 'ix'])
+
+        if (verbose)
+            cat('Sorted intervals\n')
+        ## tailor the chunking to the size of the individual segments
+        gr$chunk.id = ceiling(cumsum(as.numeric(width(gr)))/chunksize)
+        gr$num = 1:length(gr)
+
+        ## get down to business
+        chunks = split(1:length(gr), gr$chunk.id)
+        if (verbose)
+            cat('Split intervals\n')
+
+        out = rbindlist(parallel::mclapply(chunks, function(ix)
+            {
+                chunk = gr[ix]
+                if (verbose)
+                    cat(sprintf('Intervals %s to %s of %s, total width %s, starting\n', chunk$num[1], chunk$num[length(chunk)], length(gr), sum(width(chunk))))
+
+                if (is(ff, 'ffTrack'))
+                    tmp = data.table(
+                        dat = ff[chunk],
+                        id = rep(1:length(chunk), width(chunk))
+                    )
+                else ## also can handle rle data
+                    tmp = data.table(
+                        dat = as.numeric(rle.query(ff, chunk)),
+                        id = rep(1:length(chunk), width(chunk))
+                    )
+
+                setkey(tmp, id)
+
+                if (verbose)
+                    cat(sprintf('Intervals %s to %s of %s: read in ff data\n', chunk$num[1], chunk$num[length(chunk)], length(gr)))
+
+                tab = tmp[, eval(parse(text=cmd)), keyby = id]
+
+                if (verbose)
+                    cat(sprintf('Intervals %s to %s of %s: tabulated\n', chunk$num[1], chunk$num[length(chunk)], length(gr)))
+
+                ix = chunk$ix
+                out = tab[1:length(chunk), ]
+                out$id = NULL
+                out$ix = ix
+                if (verbose)
+                    cat(sprintf('Intervals %s to %s of %s: FINISHED\n', chunk$num[1], chunk$num[length(chunk)], length(gr)))
+
+                return(out)
+            }, mc.cores = mc.cores))
+
+        setkey(out, ix)
+        out = as.data.frame(out[list(1:length(intervals)), ])
+#        out = as.data.frame(out)[order(out$ix),]
+        out$ix = NULL
+        values(intervals) = cbind(val, out)
+        return(intervals)
+    }
+

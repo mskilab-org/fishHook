@@ -31,14 +31,7 @@ Installation
   devtools::install_github('mskilab/gUtils')
   ````
 
-
-3. Install ffTrack
-
-  ```
-  devtools::install_github('mskilab/ffTrack')
-  ````
-
-4. Install fishHook
+3. Install fishHook
 
   ```
   devtools::install_github('mskilab/fishHook')
