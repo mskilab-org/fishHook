@@ -16,12 +16,16 @@ r_packages:
     - devtools
     - testthat
 
+bioc_packages:
+    - GenomicRanges
+    - rtracklayer
+
+r_github_packages:
+    - mskilab/gUtils
+
 before_install:
     - curl -OL http://raw.github.com/craigcitro/r-travis/master/scripts/travis-tool.sh
     - chmod 755 ./travis-tool.sh
-
-install:
-  - R -e "devtools::install_github('mskilab/gUtils')"
 
 script:
   - ./travis-tool.sh run_tests
