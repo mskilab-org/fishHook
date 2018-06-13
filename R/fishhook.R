@@ -3985,6 +3985,8 @@ score = function(..., sets = NULL, mc.cores = NULL, iter = 200, verbose = NULL, 
 }
 
 
+
+
 #' @name fftab
 #' @title Tabulate data in Rle
 #' @description
