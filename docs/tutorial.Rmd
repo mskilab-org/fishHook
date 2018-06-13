@@ -42,9 +42,10 @@ The core of the fishHook framework is to enable nomination of loci following the
 Though we provide pre-computed covariates and a "black box" command-line tool that applies several generic exome and whole genome analyses, 
 the key power of `fishHook` lies in its customizability.  This includes the ability to easily incorporate custom covariates and provide a framework for the generation and fitting of bespoke models to nominate loci, e.g. modeling variant- and tumor-type specific background mutational processes. 
 
-For installation instructions, please visit the [FishHook github page](https://github.com/mskilab/fishHook).
+For installation instructions, please visit the [FishHook github page](https://github.com/mskilab/fishHook). For background, it may help to have some familiarity with [`data.table`](https://cran.r-project.org/web/packages/data.table/vignettes/datatable-intro.html), [`GenomicRanges`](https://www.bioconductor.org/packages/3.7/bioc/vignettes/GenomicRanges/inst/doc/GenomicRangesIntroduction.pdf), and [`gUtils`](https://github.com/mskilab/gUtils) packages.
 
-Please include this citation if you use fishHook in your work: [Imielinski, Guo, Meyerson *Cell.* 2017 Jan 26;168(3):460-472](https://www.sciencedirect.com/science/article/pii/S009286741631741X?via%3Dihub).  
+If you use fishHook in your work, please cite: 
+[Imielinski, Guo, Meyerson. *Cell.* 2017 Jan 26;168(3):460-472](https://www.sciencedirect.com/science/article/pii/S009286741631741X?via%3Dihub).  
 
 ## Driver discovery in cancer whole exomes
 
@@ -145,8 +146,9 @@ genome, i.e. the glm fits only an intercept and applies no covariates (after
 correcting for the number of eligible bases in each interval).  
 
 The `$res` field of the `FishHook` contains a `data.table` of scoring results.
-`$res` has one row per input hypothesis, with P values, FDRs, and additional interval
-annotations provided with the `hypotheses` `GRanges`.
+`$res` has one row per input hypothesis, with P values, FDRs, effect sizes (fold enrichment
+above background), observed and predicted event counts and densities, and additional interval
+annotations provided by the user in the `hypotheses` `GRanges`.
 
 ```{r eval=FALSE}
 fish$score()
@@ -156,7 +158,7 @@ fish$qqp()
 
 ```{r echo=FALSE,message=FALSE}
 fish$score()
-head(fish$res[order(p), ]) %>% kable() %>%  kable_styling(bootstrap_options =
+head(fish$res[order(p), ][, p:= as.character(p)]) %>% kable() %>%  kable_styling(bootstrap_options =
 c("striped", "hover", "condensed", "responsive")) %>%
     scroll_box(width = "100%", height = "200px")
 p = fish$qqp()
@@ -198,13 +200,13 @@ reptime = Cov(data = reptimedata, field = 'score', name = 'ReplicationTiming')
 ```
 
 Below, `context` is a `GRanges` object with 98 columns representing tri, di, and mononucleotide context counts in the
-hg19 genome.  Code for computing context (e.g. for another genome) is provided *here*.
+hg19 genome.  Code for computing context (e.g. for another genome) is provided [*here*](http://lmgtfy.com/?q=under+construction).
 
 We instantiate a numeric `Covariate` object from `context`, choosing only two of the
 columns here to take into account G and C content.  Note that the covariate object
 can be vectorized (concatenated, subsetted) and instantiated around several
 columns of an input GRanges.  As a result, `contextcov` will be length 2
-(representing G and C nucleotides fraction).
+(representing G and C nucleotide fraction).
 
 ```{r}
 context = readRDS(gzcon(file('http://mskilab.com/fishHook/hg19/nucleotide.context.rds')))
@@ -238,7 +240,7 @@ fish$covariates = c(reptime, gc, hetchrom)
 
 ```
 
-Now that we've added covariates, we can rescore `fish` and compute p values.  Looking at these
+Now that we've added covariates, we can re-score `fish` and compute p values.  Looking at these
 results, we immediately see an improvement in `lambda` (closer to one) and `alpha`
 (increased), and the nominated gene list (no more olfactory receptors, We
 see also a reasonable number of significant (fdr<0.1) genes
@@ -253,7 +255,7 @@ fish$qqp()
 ```
 ```{r echo=FALSE,message=FALSE}
 fish$score()
-fish$res[order(p), ][fdr<0.25, ] %>% kable() %>%  kable_styling(bootstrap_options =
+fish$res[order(p), ][fdr<0.25, ][, p:= as.character(p)] %>% kable() %>%  kable_styling(bootstrap_options =
 c("striped", "hover", "condensed", "responsive")) %>%
     scroll_box(width = "100%", height = "200px")
 p = fish$qqp()
@@ -309,7 +311,7 @@ fish = fish[which(fish$data$LungExpression>1), ] ## subset for high lung express
 ```{r echo=FALSE}
 fish
 ```
-This object now contains 8765 hypotheses (i.e. genes), which we can rescore to obtain P values and FDRs. 
+This object now contains 8765 hypotheses (i.e. genes), which we can re-score to obtain P values and FDRs. 
 
 
 ```{r eval=FALSE}
@@ -319,7 +321,7 @@ fish$qqp()
 ```
 ```{r echo=FALSE,message=FALSE}
 fish$score()
-fish$res[order(p), ][fdr<0.25, ] %>% kable() %>%  kable_styling(bootstrap_options =
+fish$res[order(p), ][fdr<0.25, ][, p:= as.character(p)] %>% kable() %>%  kable_styling(bootstrap_options =
 c("striped", "hover", "condensed", "responsive")) %>%
     scroll_box(width = "100%", height = "200px")
 p = fish$qqp()
@@ -337,12 +339,12 @@ summary(fish$model)
 We can see from the `Estimate` and `Pr(|>z|)` columns of the `Coefficients` table that replication timing and lung gene expression are significantly
 negatively correlated and heterochromatin is significantly positively correlated
 with mutational density (as expected).  However, this table shows that `G` and `C` content are not significantly correlated with 
-mutation density.  We can use the column subsetting function to remove these covariates and rescore to see how the results change. 
+mutation density.  We can use the column subsetting function to remove these covariates and re-score to see how the results change. 
 
 
 ```{r}
 fish2 = fish[, -c(2:3)] ## remove the 2nd and 3rd covariates ('G', 'C')
-fish2$score() ## rescore
+fish2$score() ## re-score
 
 ## check if our new top genes are identical to the previous - they are
 identical(fish2$res[fdr<0.25, sort(gene_name)], fish$res[fdr<0.25, sort(gene_name)])
@@ -447,9 +449,7 @@ c("striped", "hover", "condensed", "responsive")) %>%
 
 <br>
 These sets appear interesting and are related to  additional biological processes known 
-to be important, such EGFR signaling.  The top gene set "Extracellular matrix organization" appears interesting, because it is 
-not obviously associated with known mutational driver pathways in lung
-adenocarcinoma.  Let's examine genes contributing to this top gene set:
+to be important to lung adenocarcinoma biology, such EGFR signaling. The top gene set "Extracellular matrix organization" appears especially interesting, because it is not obviously associated with known targets of driver mutations in this disease. Let's examine genes contributing to this top gene set:
 
 ```{r eval = FALSE}
 ## take the top non-TP53 associated gene set 
@@ -460,7 +460,7 @@ head(fish$res[fish$sets[[mysetname]], ][order(p), ])
 ```
 
 ```{r echo=FALSE,message=FALSE,warning=FALSE}
-## take the top non-TP53 associated gene set 
+## take the top non-TP53 associated gene set (i.e. "Extracellular matrix organization")
 mysetname = fish$setres[!has.tp53, ][order(p)[1], setname]
 
 ## use sets list to pull the individual hypothesis results for members of this set
@@ -496,7 +496,7 @@ fish$qqp()
 ```{r echo=FALSE,message=FALSE,warning=FALSE}
 fish$events = mutations %Q% (grepl('(Frame_Shift_)|(Nonsense)|(OutOfFrame)|(Nonstop)', Variant_Classification))
 fish$score()
-fish$res[order(p), ][fdr<0.25, ] %>% kable() %>%  kable_styling(bootstrap_options =
+fish$res[order(p), ][fdr<0.25, ][, p:= as.character(p)] %>% kable() %>%  kable_styling(bootstrap_options =
 c("striped", "hover", "condensed", "responsive")) %>%
     scroll_box(width = "100%", height = "200px")
 p = fish$qqp()

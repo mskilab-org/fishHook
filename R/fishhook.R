@@ -2831,7 +2831,7 @@ FishHook = R6::R6Class('FishHook',
               if (!inherits(value, 'list') & !all(sapply(value, class)== 'integer'))
                 stop('Provided sets must be a (named) list of indices into hypotheses, each specifying a hypothesis set to be scored')
               
-              if (any(sapply(value, max, na.rm = TRUE)>length(self$hypotheses)))
+              if (any(sapply(value, function(x) max(c(x, 0), na.rm = TRUE))>length(self$hypotheses)))
                 stop('Indices out of bounds for at least one of the provided sets')
 
               
