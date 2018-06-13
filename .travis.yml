@@ -11,14 +11,14 @@ sudo: false
 
 r: 3.4.1
 
-before_install:
-    - curl -OL http://raw.github.com/craigcitro/r-travis/master/scripts/travis-tool.sh
-    - chmod 755 ./travis-tool.sh
-
 r_packages:
     - covr
     - devtools
     - testthat
+
+before_install:
+    - curl -OL http://raw.github.com/craigcitro/r-travis/master/scripts/travis-tool.sh
+    - chmod 755 ./travis-tool.sh
 
 install:
   - R -e "devtools::install_github('mskilab/gUtils')"
