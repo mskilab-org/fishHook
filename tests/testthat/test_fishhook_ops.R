@@ -4,11 +4,6 @@ library(zoo)
 
 Sys.setenv(DEFAULT_BSGENOME = 'BSgenome.Hsapiens.UCSC.hg19::Hsapiens')
 
-## Sample Hypotheses
-#hypotheses = readRDS(system.file("extdata", "targets.rds", package = 'fishHook'))
-hypotheses  = readRDS('targets.rds')
-
-
 ## hypotheses BED
 #hypothesesbed = system.file("extdata", "targets.bed", package = 'fishHook')
 hypothesesbed = 'targets.bed'
@@ -19,6 +14,10 @@ replication_timing  = readRDS('covariate.rds')
 
 ## Same Eligible Subset
 ## eligible = readRDS(system.file("extdata", "eligible.rds", package = 'fishHook'))
+
+## Sample Hypotheses
+#hypotheses = readRDS(system.file("extdata", "targets.rds", package = 'fishHook'))
+hypotheses  = readRDS('targets.rds')
 
 
 ## indexed pathways
