@@ -12,10 +12,10 @@ before_install:
   - curl -OL https://raw.githubusercontent.com/metacran/r-builder/master/pkg-build.sh
   - chmod 755 pkg-build.sh
   - ./pkg-build.sh bootstrap
-  - ./install_bioc.sh
   
 install:
-  - ./pkg-build.sh install_deps
+  - ./pkg-build.sh install_deps install_bioc_deps
+  - ./pkg-build.sh install_deps 
   - ./pkg-build.sh install_github r-lib/testthat
   - ./pkg-build.sh install_github mskilab/gUtils
   - ./pkg-build.sh install_github r-lib/covr
