@@ -424,12 +424,8 @@ c("striped", "hover", "condensed", "responsive")) %>%
 ```
 
 <br>
-This is a common challenge with pathway analysis of
-mutations, since many cancer pathways are usually driven by a single "celebrity"
-gene. 
-
-We can dig a little deeper to identify significant gene sets that do not have
-*TP53* . Here is one approach
+This is a common challenge with pathway analysis of mutations, since many cancer pathways are usually driven by a single "celebrity" gene. We can dig a little deeper to identify significant gene sets that do not have
+*TP53* . Here is one approach:
 
 ```{r eval = FALSE}
 ## these are gene sets with TP53
