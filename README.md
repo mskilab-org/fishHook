@@ -49,7 +49,7 @@ Documentation
 
 [fishHook Tutorial](http://mskilab.com/fishHook/tutorial.html)
 
-[fishHook developer reference](docs/reference.md)
+[fishHook Developer Reference](docs/reference.md)
 
 <!--
 
