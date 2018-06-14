@@ -1929,9 +1929,16 @@ FishHook = R6::R6Class('FishHook',
           ## Initializes and Validates hypotheses
           ### MARCIN: we no longer allow hypotheses to be publicly reset, we will do this manually and check validity of hypotheses using function
           ##          self$hypotheses = hypotheses
-          
+
           if (validate_hypotheses(hypotheses))
+          {
+            if (!is.null(genome))
+            {
+              genome = tryCatch(hg_seqlengths(genome), error = function(e) NULL)
+              hypotheses = gr.fix(hypotheses, genome)
+            }
             private$phypotheses = hypotheses
+          }
           
           # Initializes and Validates out.path
           self$out.path = out.path
@@ -1971,7 +1978,7 @@ FishHook = R6::R6Class('FishHook',
                    
           ##Creating the local mutational density track
           if(use_local_mut_density){
-            bins = gr.tile(seqlengths(hypotheses), local_mut_density_bin)
+            bins = gr.tile(seqlengths(gr.fix(hypotheses)), local_mut_density_bin)
             f1 = FishHook$new(hypotheses = bins, events = events, eligible = eligible, mc.cores = mc.cores, na.rm = na.rm, verbose = verbose, max.slice = max.slice, ff.chunk = ff.chunk, max.chunk = max.chunk)
             f1$score()
             local_mut_density = seg2gr(f1$res)[,'count.density']

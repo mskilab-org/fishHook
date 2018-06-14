@@ -42,7 +42,7 @@ The core of the fishHook framework is to enable nomination of loci following the
 Though we provide pre-computed covariates and a "black box" command-line tool that applies several generic exome and whole genome analyses, 
 the key power of `fishHook` lies in its customizability.  This includes the ability to easily incorporate custom covariates and provide a framework for the generation and fitting of bespoke models to nominate loci, e.g. modeling variant- and tumor-type specific background mutational processes. 
 
-For installation instructions, please visit the [FishHook github page](https://github.com/mskilab/fishHook). For background, it may help to have some familiarity with [`data.table`](https://cran.r-project.org/web/packages/data.table/vignettes/datatable-intro.html), [`GenomicRanges`](https://www.bioconductor.org/packages/3.7/bioc/vignettes/GenomicRanges/inst/doc/GenomicRangesIntroduction.pdf), and [`gUtils`](https://github.com/mskilab/gUtils) packages.
+For installation instructions, please visit the [fishHook github page](https://github.com/mskilab/fishHook). For background, it may help to have some familiarity with [`data.table`](https://cran.r-project.org/web/packages/data.table/vignettes/datatable-intro.html), [`GenomicRanges`](https://www.bioconductor.org/packages/3.7/bioc/vignettes/GenomicRanges/inst/doc/GenomicRangesIntroduction.pdf), and [`gUtils`](https://github.com/mskilab/gUtils) packages.
 
 If you use fishHook in your work, please cite: 
 [Imielinski, Guo, Meyerson. *Cell.* 2017 Jan 26;168(3):460-472](https://www.sciencedirect.com/science/article/pii/S009286741631741X?via%3Dihub).  
@@ -119,7 +119,7 @@ different flavors), and indels (of different flavors).  (We discuss more complex
 models that subdivide mutation types later in the tutorial).
 
 ```{r}
-events = mutations %Q% (Variant_Classification != 'Silent') 
+events = mutations %Q% (Variant_Classification != 'Silent')  ## using gUtils operator %Q% to subset mutations GRanges
 
 ```
 Now that we have loaded our `hypotheses` (i.e. genes), `events`, and `eligible`, we are ready to
