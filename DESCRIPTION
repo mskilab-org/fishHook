@@ -24,8 +24,7 @@ Imports:
     R6, 
 Suggests:
     parallel,
-    testthat, 
-    BSgenome.Hsapiens.UCSC.hg19
+    testthat
 License: GPL-2
 LazyData: true
 RoxygenNote: 6.0.1.9000
