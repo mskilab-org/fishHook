@@ -1328,19 +1328,27 @@ Covariate = R6::R6Class('Covariate',
             fmessage('Empty Covariate Object')
             return(NULL)
         }
-        
-        out= sapply(c(1:length(private$pCovs)),
-            function(x){
-                cat(c('Covariate Number: ' , x, '\nName: ', private$pnames[x],
-                '\ntype: ',private$ptype[x], '\tsignature: ', private$psignature[x],
-                '\nfield: ',private$pfield[x], '\tpad: ', private$ppad[x],
-                '\nna.rm: ', private$pna.rm[x], '\tgrep: ', private$pgrep[x],
-                '\nCovariate Class: ', class(private$pCovs[[x]]), '\n\n'), collapse = '', sep = '')
-        })
-    }
 
-    
+        message('', length(private$pCovs), ' Covariates with features:')
+        print(data.table(
+          name = private$pnames,
+          type = private$ptype,
+          class = sapply(private$pCovs, class),
+          field = private$pfield,
+          signature = private$psignature,
+          na.rm = private$pna.rm,
+          pad = private$ppad,
+          grep = private$pgrep
+        ))
 
+        ## out= sapply(c(1:length(private$pCovs)),
+        ##     function(x){
+        ##         cat(c('Covariate Number: ' , x, '\nName: ', private$pnames[x],
+        ##         '\ntype: ',private$ptype[x], '\tsignature: ', private$psignature[x],
+        ##         '\nfield: ',private$pfield[x], '\tpad: ', private$ppad[x],
+        ##         '\nna.rm: ', private$pna.rm[x], '\tgrep: ', private$pgrep[x],
+        ##         '\nCovariate Class: ', class(private$pCovs[[x]]), '\n\n'), collapse = '', sep = '')
+    }    
     ),
 
     ## Private variables are internal variables that cannot be accessed by the user
@@ -1965,19 +1973,15 @@ FishHook = R6::R6Class('FishHook',
           if(use_local_mut_density){
             Sys.setenv(DEFAULT_BSGENOME = genome)
             bins = gr.tile(hg_seqlengths(), local_mut_density_bin)
-                f1 = FishHook$new(hypotheses = bins, events = events, eligible = eligible, mc.cores = mc.cores, na.rm = na.rm, verbose = verbose, max.slice = max.slice, ff.chunk = ff.chunk, max.chunk = max.chunk)
-                f1$score()
-                local_mut_density = seg2gr(f1$res)[,'count.density']
-                cd = local_mut_density$count.density
-                avg_cd = mean(cd, na.rm = T)
-                cd[is.na(cd) | cd == Inf] = avg_cd
-                local_mut_density$count.density = cd
-                if(length(private$pcovariates$toList()) == 0 ){
-                  private$pcovariates = c(Covariate$new(data = c(local_mut_density), type = c('numeric'), name = c("Local Mutation Density"), field = c("count.density")))
-                } else{
-                  private$pcovariates = c(Covariate$new(data = c(local_mut_density), type = c('numeric'), name = c("Local Mutation Density"), field = c("count.density")), private$pcovariates)
-                }
-            }
+            f1 = FishHook$new(hypotheses = bins, events = events, eligible = eligible, mc.cores = mc.cores, na.rm = na.rm, verbose = verbose, max.slice = max.slice, ff.chunk = ff.chunk, max.chunk = max.chunk)
+            f1$score()
+            local_mut_density = seg2gr(f1$res)[,'count.density']
+            cd = local_mut_density$count.density
+            avg_cd = mean(cd, na.rm = T)
+            cd[is.na(cd) | cd == Inf] = avg_cd
+            local_mut_density$count.density = cd
+            self$merge(Covariate$new(data = c(local_mut_density), type = c('numeric'), name = c("Local Mutation Density"), field = c("count.density")))
+          }
 
           ## private$pdata = annotate.hypotheses(hypotheses = private$phypotheses,
           ##                                     covered = private$peligible,
@@ -2065,13 +2069,13 @@ FishHook = R6::R6Class('FishHook',
         ## none
         ## UI:
         ## prints a summary of the internal state of the FishHook object
-        print = function(){
-            targ = paste('Contains' , length(private$phypotheses), "hypotheses." ,collapse = "")
-            eve = paste('Contains', length(private$pevents), "events to map to hypotheses.", collapse = "")
+      print = function(){
+
+            eve = paste('FishHook object spanning', length(private$phypotheses), "hypotheses,", length(private$pcovariates), "covariates, and", length(private$pevents), 'events.', collapse = "")
             if(is.null(private$peligible)){
-                elig = "All regions are eligible."
+                elig = "\nAll regions are eligible."
             } else{
-                elig = sprintf("Spanning %s MB of eligible territory.", round(sum(as.numeric(width(private$peligible)))/1e6, 2))
+                elig = sprintf("\n Covering %s MB of eligible territory.", round(sum(as.numeric(width(private$peligible)))/1e6, 2))
             }
             if(is.null(private$pcovariates$names)){
                 covs = "No covariates will be used."
@@ -2086,7 +2090,9 @@ FishHook = R6::R6Class('FishHook',
             }
             meta = paste('Hypotheses contains', ncol(values(private$phypotheses)), 'metadata columns.')
             state = paste('Current State:', private$pstate)
-            cat(targ, eve, elig, 'Covariates:', covs, meta, state, sep = '\n', collapse = '\n')
+        cat(eve, elig,'\n')
+        if (length(self$covariates)>0)
+          self$covariates$print()
         },
 
         ## Params:
@@ -2153,14 +2159,14 @@ FishHook = R6::R6Class('FishHook',
             newnames = c(private$pcovariates$names, data$names)
             if (any(duplicated(newnames)))
             {
-              newnames = dedup(newnames)
-              if (length(private$pcovariates)>0)
-              {
-                newnames = newnames[-c(1:length(private$pcovariates$names))]
-              }
-              data$names = newnames
-            }            
+              newnames = dedup(newnames)            
+            }
 
+            if (length(private$pcovariates)>0)
+            {
+              newnames = newnames[-c(1:length(private$pcovariates$names))]
+            }
+            
             tmp.pdata = annotate.hypotheses(hypotheses = private$phypotheses,
                                             covered = private$peligible,
                                             mc.cores = private$pmc.cores,
@@ -2177,8 +2183,11 @@ FishHook = R6::R6Class('FishHook',
 
             private$pcovariates = c(private$pcovariates, data)
 
+            newdata = values(tmp.pdata)[, data$names, drop = FALSE]
+            colnames(newdata) = newnames
+
             values(private$pdata) = cbind(values(private$pdata),
-                                          values(tmp.pdata)[, setdiff(names(values(tmp.pdata)), BASIC.COLS), drop = FALSE])
+                                          newdata)
 
             self$clear()          
           }
@@ -2194,6 +2203,7 @@ FishHook = R6::R6Class('FishHook',
           else
             {
               newnames = dedup(c(private$pcovariates$names, cov.cols))
+              old.cov.cols = cov.cols
               cov.cols = newnames[(length(private$pcovariates)+1):length(newnames)]
               
               names(values(tmpdata)) = cov.cols
@@ -2203,6 +2213,7 @@ FishHook = R6::R6Class('FishHook',
               
               newcovs = do.call('c', lapply(cov.cols, function(x) Covariate$new(data = tmpdata, field = x, name = x, na.rm = TRUE, type = 'numeric')))
               private$pcovariates = c(private$pcovariates, newcovs)
+              names(values(newdat)) = newcovs$names
               values(private$pdata) = cbind(values(private$pdata), values(newdat))
             }
         }            
@@ -2824,7 +2835,16 @@ FishHook = R6::R6Class('FishHook',
         },
 
 
-        ## model
+      coefficients = function(value) {
+        if(!missing(value)){          
+          stop('Cannot set coefficients, can only compute them via $score() and then access them')
+        } else{
+          return(dflm(private$pmodel)[-1, .(covariate = name, p = signif(p,3), estimate = round(estimate,2), ci = effect, method)])
+        }
+      },
+
+
+        ## hypothesis sets 
         sets = function(value) {
             if(!missing(value)){
 

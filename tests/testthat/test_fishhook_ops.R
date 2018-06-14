@@ -5,35 +5,34 @@ library(zoo)
 Sys.setenv(DEFAULT_BSGENOME = 'http://mskilab.com/gUtils/human_g1k_v37.chrom.sizes')
 
 ## hypotheses BED
-#hypothesesbed = system.file("extdata", "targets.bed", package = 'fishHook')
-hypothesesbed = system.file("extdata", "targets.bed", package = 'fishHook')
 
-## Sample Covariate
-#replication_timing = readRDS(system.file("extdata", "covariate.rds", package = 'fishHook'))
-replication_timing = readRDS(system.file("extdata", "covariate.rds", package = 'fishHook'))
+hypothesesbed = "http://mskilab.com/fishHook/tests/targets.bed"
+
+## Sample Covariate #replication_timing = readRDS(gzcon(file("http://mskilab.com/fishHook/tests/covariate.rds")))
+replication_timing = readRDS(gzcon(file("http://mskilab.com/fishHook/tests/covariate.rds")))
 
 ## Same Eligible Subset
-## eligible = readRDS(system.file("extdata", "eligible.rds", package = 'fishHook'))
+## eligible = readRDS(gzcon(file("http://mskilab.com/fishHook/tests/eligible.rds")))
 
 ## Sample Hypotheses
-#hypotheses = readRDS(system.file("extdata", "targets.rds", package = 'fishHook'))
-hypotheses  = readRDS(system.file("extdata", "targets.rds", package = 'fishHook'))
+#hypotheses = readRDS(gzcon(file("http://mskilab.com/fishHook/tests/targets.rds")))
+hypotheses  = readRDS(gzcon(file("http://mskilab.com/fishHook/tests/targets.rds")))
 
 
 ## indexed pathways
-#indexed_pathways = readRDS(system.file("extdata", "indexed_pathways.rds", package = 'fishHook'))
-indexed_pathways = readRDS(system.file("extdata", "indexed_pathways.rds", package = 'fishHook'))
+#indexed_pathways = readRDS(gzcon(file("http://mskilab.com/fishHook/tests/indexed_pathways.rds")))
+indexed_pathways = readRDS(gzcon(file("http://mskilab.com/fishHook/tests/indexed_pathways.rds")))
 
 ## segs
-segs = readRDS(system.file("extdata", "jabba_segs_11517.rds", package = 'fishHook'))
-#segs = readRDS(system.file("extdata", "jabba_segs_11517.rds", package = 'fishHook'))
+segs = readRDS(gzcon(file("http://mskilab.com/fishHook/tests/jabba_segs_11517.rds")))
+#segs = readRDS(gzcon(file("http://mskilab.com/fishHook/tests/jabba_segs_11517.rds")))
 
 ## eligible
-## eligible = readRDS(system.file("extdata", "eligible.rds", package = 'fishHook'))
+## eligible = readRDS(gzcon(file("http://mskilab.com/fishHook/tests/eligible.rds")))
 
 # Sample annotate
-#anno = readRDS(system.file("extdata", "anno.rds", package = 'fishHook'))
-anno = readRDS(system.file("extdata", "anno.rds", package = 'fishHook'))
+#anno = readRDS(gzcon(file("http://mskilab.com/fishHook/tests/anno.rds")))
+anno = readRDS(gzcon(file("http://mskilab.com/fishHook/tests/anno.rds")))
 
 context('unit testing fishhook operations')
 
@@ -49,12 +48,9 @@ test_that('annotate.hypotheses', {
     el1 = eligible[1]
     r1 = replication_timing[1]
     expect_error({annotate.hypotheses(hypotheses = hypotheses[1], events = events[1], idcol = 'hello')})
-    c1 = Covariate$new(data = system.file("extdata", "covariate.rds", package = 'fishHook'), type = 'numeric', name = 'c1', pad = 10)
-    c2 = Covariate$new(data = system.file("extdata", "covariate.rds", package = 'fishHook'), type = 'interval', name = 'c2', pad = 10, na.rm = TRUE)
+    c1 = Covariate$new(data = readRDS(gzcon(file("http://mskilab.com/fishHook/tests/covariate.rds"))), type = 'numeric', name = 'c1', pad = 10)
+    c2 = Covariate$new(data = readRDS(gzcon(file("http://mskilab.com/fishHook/tests/covariate.rds"))), type = 'interval', name = 'c2', pad = 10, na.rm = TRUE)
     c3 = Covariate$new(data = list(RleList()), type = 'interval', name = 'c3', pad = 10, na.rm = TRUE)
-#    c1 = Covariate$new(data = list(system.file("extdata", "covariate.rds", package = 'fishHook')), type = 'numeric', name = 'c1', pad = 10)
-#   c2 = Covariate$new(data = list(system.file("extdata", "covariate.rds", package = 'fishHook')), type = 'interval', name = 'c2', pad = 10, na.rm = TRUE)
-#    c3 = Covariate$new(data = list(RleList()), type = 'interval', name = 'c3', pad = 10, na.rm = TRUE)
     anno = annotate.hypotheses(hypotheses = t1, events = e1, covariates = c1$toList())
     anno2 = annotate.hypotheses(hypotheses = t1, events = e1, covariates = c2$toList())
     #anno3 = annotate.hypotheses(hypotheses = t1, events = e1, covariates = c3$toList())
@@ -103,7 +99,7 @@ test_that('annotate.hypotheses', {
     ## if events != NULL
     expect_equal(max(annotate.hypotheses(hypotheses, events=events)$count), 9750)
     ##
-    annotate.hypotheses(system.file("extdata", "targets.rds", package = 'fishHook'))
+    annotate.hypotheses(readRDS(gzcon(file("http://mskilab.com/fishHook/tests/targets.rds"))))
     expect_true(is(annotate.hypotheses(hypotheses), 'GRanges'))
     ##Interval Covariates
     int = Covariate$new(data = replication_timing[1], name = 'int', type = 'interval', pad = 10)
@@ -120,8 +116,8 @@ test_that('annotate.hypotheses', {
 
 test_that('aggregate.hypotheses', {
 
-    expect_error(aggregate.hypotheses(system.file("extdata", "targets.rds", package = 'fishHook'), rolling = 1))
-    agg = aggregate.hypotheses(c(system.file("extdata", "anno.rds", package = 'fishHook'), system.file("extdata", "anno.rds", package = 'fishHook')), rolling = 1, na.rm = T)
+    expect_error(aggregate.hypotheses(readRDS(gzcon(file("http://mskilab.com/fishHook/tests/targets.rds"))), rolling = 1))
+    agg = aggregate.hypotheses(c(readRDS(gzcon(file("http://mskilab.com/fishHook/tests/anno.rds"))) , readRDS(gzcon(file("http://mskilab.com/fishHook/tests/anno.rds")))), rolling = 20, na.rm = T)
     expect_error({agg = aggregate.hypotheses(anno, rolling = -1)})
     expect_error(aggregate.hypotheses(hypotheses))  ## Error: argument "by" must be specified and same length as hypotheses or "rolling" must be non NULL
     foo = aggregate.hypotheses(hypotheses, by='gene_name')
@@ -150,9 +146,9 @@ test_that('aggregate.hypotheses', {
     expect_equal(length(aggregate.hypotheses(annotated, by = 'gene_name', verbose = FALSE)[[1]]), 16352)
     ## 
     ##  if (is.null(by) & is.character(hypotheses)){
-    expect_error(aggregate.hypotheses(system.file("extdata", "hypotheses.rds", package = 'fishHook')))  ## Coverage missing for input hypotheses
+    expect_error(aggregate.hypotheses(readRDS(gzcon(file("http://mskilab.com/fishHook/tests/hypotheses.rds")))))  ## Coverage missing for input hypotheses
     ##  if (is.null(by) & is.character(hypotheses)){ (continued)
-    expect_error(aggregate.hypotheses(system.file("extdata", "annotated_cov.rds", package = 'fishHook')))
+    expect_error(aggregate.hypotheses(readRDS(gzcon(file("http://mskilab.com/fishHook/tests/annotated_cov.rds")))))
     ##testing rolling aggregation
     start = c(1,1001,2001,3001,4001,5001)
     end = c(1000,2000,3000,4000,5000,6000)
@@ -390,7 +386,7 @@ test_that('FishHook', {
     ## > fish1$toList()
     ## Error in fish1$toList() : argument "x" is missing, with no default
     ## print
-    expect_equal(print(fish1$print()), NULL)
+    fish1$print()
     ## annotate
     expect_equal(anno, "Annotated")
     ## aggregate
