@@ -1971,8 +1971,7 @@ FishHook = R6::R6Class('FishHook',
                    
           ##Creating the local mutational density track
           if(use_local_mut_density){
-            Sys.setenv(DEFAULT_BSGENOME = genome)
-            bins = gr.tile(hg_seqlengths(), local_mut_density_bin)
+            bins = gr.tile(seqlengths(hypotheses), local_mut_density_bin)
             f1 = FishHook$new(hypotheses = bins, events = events, eligible = eligible, mc.cores = mc.cores, na.rm = na.rm, verbose = verbose, max.slice = max.slice, ff.chunk = ff.chunk, max.chunk = max.chunk)
             f1$score()
             local_mut_density = seg2gr(f1$res)[,'count.density']

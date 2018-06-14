@@ -205,7 +205,7 @@ hg19 genome.  Code for computing context (e.g. for another genome) is provided [
 We instantiate a numeric `Covariate` object from `context`, choosing only two of the
 columns here to take into account G and C content.  Note that the covariate object
 can be vectorized (concatenated, subsetted) and instantiated around several
-columns of an input GRanges.  As a result, `contextcov` will be length 2
+columns of an input `GRanges`.  As a result, `contextcov` will be length 2
 (representing G and C nucleotide fraction).
 
 ```{r}
