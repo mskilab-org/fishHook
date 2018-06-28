@@ -416,7 +416,7 @@ test_that('FishHook', {
     expect_equal(dim(fish3)[2],3)
     set.seed(42)
     fish2$sets = split(sample(length(fish2), 100), 1:20)
-    expect_equal(nrow(fish2$setres), 20)
+    expect_equal(nrow(values(fish2$setres)), 20)
     res = fishHook::score(fish2[1:200,], fish2[1:200, ])
     ## test active bindings
     ## data
@@ -432,7 +432,7 @@ test_that('FishHook', {
     ##Scoring
     fish2$score()
     #expect_error(fish2$score())
-    expect_equal(ncol(fish2$res), 15)
+    expect_equal(ncol(as.data.table(fish2$res)), 15)
     ##Clearing
     fish2$clear('Annotated')
     expect_equal(fish2$state, 'Annotated')

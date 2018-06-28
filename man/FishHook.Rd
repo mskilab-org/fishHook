@@ -13,7 +13,7 @@ Fish(hypotheses = NULL, events = NULL, covariates = NULL,
   local_mut_density_bin = 1e+06,
   genome = "BSgenome.Hsapiens.UCSC.hg19::Hsapiens", mc.cores = 1,
   na.rm = TRUE, pad = 0, verbose = TRUE, max.slice = 10000,
-  ff.chunk = 1e+06, max.chunk = 1e+11, idcol = NULL, idcap = Inf,
+  ff.chunk = 1e+06, max.chunk = 1e+12, idcol = NULL, idcap = 1,
   weightEvents = FALSE, nb = TRUE)
 
 FishHook
@@ -29,7 +29,7 @@ random mutagenesis such as late replicating or non-expressed region (transcripti
 reduce thier visible effect in the final data. This param must be of type "Covariate".}
 
 \item{eligible}{Eligible regions are the regions of the genome that have enough statistical power to score. For example, in the case of exome sequencing where all regions are not equally
-represented, eligible can be a set of regions that meet an arbitrary exome coverage threshold. Another example of when to use eligibility is in the case of whole genomes,
+represented, eligible can be a set of regions that meet an arbitrary exome eligible threshold. Another example of when to use eligibility is in the case of whole genomes,
 where your hypotheses are 1kb tiles. Regions of the genome you would want to exclude in this case are highly repetative regions such as centromeres, telomeres, and satelite repeates.
 This param must be of class "GRanges".}
 
@@ -80,7 +80,7 @@ the expected input for the gamma poisson as the gamma poisson measures whole eve
 \item{events}{Events are the given mutational regions and must be of class "GRanges". Examples of events are SNVs (e.g. C->G) somatic copy number alterations (SCNAs), fusion events, etc.}
 
 \item{eligible}{Eligible regions are the regions of the genome that have enough statistical power to score. For example, in the case of exome sequencing where all regions are not equally
-represented, eligible can be a set of regions that meet an arbitrary exome coverage threshold. Another example of when to use eligibility is in the case of whole genomes,
+represented, eligible can be a set of regions that meet an arbitrary exome eligible threshold. Another example of when to use eligibility is in the case of whole genomes,
 where your hypotheses are 1kb tiles. Regions of the genome you would want to exclude in this case are highly repetative regions such as centromeres, telomeres, and satelite repeates.
 This param must be of class "GRanges".}
 
