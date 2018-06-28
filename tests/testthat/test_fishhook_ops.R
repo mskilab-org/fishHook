@@ -114,8 +114,8 @@ test_that('aggregate.hypotheses', {
 
   expect_error(aggregate.hypotheses(readRDS(gzcon(file("http://mskilab.com/fishHook/tests/targets.rds"))), rolling = 1))
   tmp.anno = c(readRDS(gzcon(file("http://mskilab.com/fishHook/tests/anno.rds"))) , readRDS(gzcon(file("http://mskilab.com/fishHook/tests/anno.rds"))))
-  agg = aggregate.hypotheses(tmp.anno, rolling = 20, na.rm = T)
   tmp.anno$eligible = tmp.anno$coverage
+  agg = aggregate.hypotheses(tmp.anno, rolling = 20, na.rm = T)
   expect_error({agg = aggregate.hypotheses(anno, rolling = -1)})
   expect_error(aggregate.hypotheses(hypotheses))  ## Error: argument "by" must be specified and same length as hypotheses or "rolling" must be non NULL
   foo = aggregate.hypotheses(hypotheses, by='gene_name')
