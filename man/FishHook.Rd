@@ -12,7 +12,7 @@ Fish(hypotheses = NULL, events = NULL, covariates = NULL,
   eligible = NULL, out.path = NULL, use_local_mut_density = FALSE,
   local_mut_density_bin = 1e+06,
   genome = "BSgenome.Hsapiens.UCSC.hg19::Hsapiens", mc.cores = 1,
-  na.rm = TRUE, pad = 0, verbose = TRUE, max.slice = 10000,
+  na.rm = TRUE, pad = 0, verbose = TRUE, max.slice = 1e+05,
   ff.chunk = 1e+06, max.chunk = 1e+12, idcol = NULL, idcap = 1,
   weightEvents = FALSE, nb = TRUE)
 

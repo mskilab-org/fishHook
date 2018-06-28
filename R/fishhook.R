@@ -137,6 +137,7 @@ NULL
 #' Interval covariates must be Granges (or paths to GRanges rds) or paths to bed files
 #' @return GRanges of input hypotheses annotated with covariate statistics (+/- constrained to the subranges in optional argument covered)
 #' @author Marcin Imielinski
+#' @export
 annotate.hypotheses = function(hypotheses, covered = NULL, events = NULL,  mc.cores = 1, na.rm = TRUE, pad = 0, verbose = TRUE, max.slice = 1e4,
     ff.chunk = 1e6, max.chunk = 1e11, out.path = NULL, covariates = list(), idcap = Inf, idcol = NULL, weightEvents = FALSE, ...)
 {
@@ -221,6 +222,14 @@ annotate.hypotheses = function(hypotheses, covered = NULL, events = NULL,  mc.co
         if (!is.null(events)){
 
           if (inherits(events, 'GRanges')){
+
+            if (!is.null(idcol))
+              {
+                if (!(idcol %in% names(mcols(events))))
+                {
+                  stop(paste('Column', idcol, 'not found in events'))
+                }
+              }
 
             ev = gr.fix(events[gr.in(events, ov)])
 
@@ -513,6 +522,7 @@ annotate.hypotheses = function(hypotheses, covered = NULL, events = NULL,  mc.co
 #' @importFrom data.table setkey := data.table as.data.table
 #' @importFrom S4Vectors values values<-
 #' @importFrom GenomeInfoDb seqnames
+#' @export
 aggregate.hypotheses = function(hypotheses, by = NULL, fields = NULL, rolling = NULL, disjoint = TRUE, na.rm = FALSE, FUN = list(), verbose = TRUE)
 {
     V1 = sn = st = en = keep = count = width = NULL ## NOTE fix
@@ -713,6 +723,7 @@ aggregate.hypotheses = function(hypotheses, by = NULL, fields = NULL, rolling = 
               {
                 fmessage("Computing rolling count")
               }
+
                 out = tadt[, list(
                     count = zoo::rollapply(count, rolling, sum, na.rm = TRUE, fill = NA),
                     start = zoo::rollapply(start, rolling, min, fill = NA),
@@ -783,6 +794,7 @@ aggregate.hypotheses = function(hypotheses, by = NULL, fields = NULL, rolling = 
 #' @return GRanges of scored results
 #' @author Marcin Imielinski
 #' @import GenomicRanges
+#' @export
 score.hypotheses = function(hypotheses, covariates = names(values(hypotheses)), model = NULL, return.model = FALSE, nb = TRUE,
     verbose = TRUE, iter = 200, subsample = 1e5, sets = NULL, seed = 42, mc.cores = 1, p.randomized = TRUE, classReturn = FALSE)
 {
@@ -2983,8 +2995,8 @@ FishHook = R6::R6Class('FishHook',
             ids = data.table(setid = rep(1:length(self$sets), elementNROWS(self$sets)),
                              id = unlist(self$sets))[, p := self$res$p[id]][order(p), ]
             tmp = split(self$res[ids$id], ids$setid)
-            res = rep(GRangesList(self$res[c()]), length(sets))
-            names(res) = 1:length(sets)
+            res = rep(GRangesList(self$res[c()]), length(self$sets))
+            names(res) = 1:length(self$sets)
             res[names(tmp)] = tmp
             names(res) = names(self$sets)
             values(res) =  private$psetscore[, .(setname, n, p = signif(p, 3), fdr, effect, estimate = signif(estimate, 3), p.left = signif(p.left, 3),           
@@ -4167,7 +4179,7 @@ score = function(..., sets = NULL, mc.cores = NULL, iter = 200, verbose = NULL, 
       fmessage('Rescoring model ', i)
       mod$score(sets = NULL)
     }
-    res = mod$res
+    res = as.data.table(mod$res)
     res[, model.id := i]
     res[, query.id := 1:.N]
     res
