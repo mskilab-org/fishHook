@@ -2172,6 +2172,14 @@ FishHook = R6::R6Class('FishHook',
                 self$annotate()
             }
 
+          if (!is.null(rolling))
+          {
+              if (length(rolling)!=1 || !is.vector(rolling) || any(is.na(as.integer(rolling))) || (rolling %% 1)!=0 || rolling==0)
+              {
+                stop('rolling must be integer scalar')
+              }
+            }          
+
             agg = aggregate.hypotheses(hypotheses,
                 by = by,
                 fields = fields,
@@ -2687,7 +2695,8 @@ FishHook = R6::R6Class('FishHook',
         bins = gr.tile(seqlengths(gr.fix(self$hypotheses)), private$plocal_mut_density_bin)
         f1 = FishHook$new(hypotheses = bins, events = self$events, eligible = self$eligible, mc.cores = self$mc.cores, na.rm = self$na.rm, verbose = self$verbose, max.slice = self$max.slice, ff.chunk = self$ff.chunk, max.chunk = self$max.chunk)
         f1$score()
-        local_mut_density = dt2gr(f1$res, seqlengths = seqlengths(self$hypotheses))[,'count.density']
+        local_mut_density = f1$res
+#        local_mut_density = dt2gr(f1$res, seqlengths = seqlengths(self$hypotheses))[,'count.density']
         cd = local_mut_density$count.density
         avg_cd = mean(cd, na.rm = T)
         cd[is.na(cd) | cd == Inf] = avg_cd

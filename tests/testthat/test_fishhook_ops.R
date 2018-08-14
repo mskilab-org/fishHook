@@ -158,7 +158,7 @@ test_that('aggregate.hypotheses', {
     expect_error(fishAgg$aggregate(rolling = 0))
     expect_error(fishAgg$aggregate(rolling = 4.5))
     expect_equal(length(fishAgg$aggregated), 4)
-    expect_equal(any(!width(fishAgg$aggregated) == rep(3000,4)), FALSE)
+    expect_equal(width(fishAgg$aggregated), rep(3000,4))
 })
 
 
@@ -570,7 +570,10 @@ test_that('FishHook', {
 test_that('qqp', {
     pvals = c(0.0001, 0.0001, 0.032, 0.005, 0.9, 0.15)
     ## check default params
+    pdf('test.pdf')
     foo = qqp(pvals, plotly = FALSE)
+    dev.off()
+    system('rm test.pdf')
     ## expect_match(names(foo)[1], 'rect')
     ## expect_match(names(foo)[2], 'text')
     ## expect_equal(round(foo$rect$w, 2), round(0.8597488, 2))  ## rounding; otherwise, 'double' types not exactly the same
