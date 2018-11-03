@@ -236,14 +236,29 @@ annotate.hypotheses = function(hypotheses, covered = NULL, events = NULL,  mc.co
     }
 
     if (!is.null(covered)){
+      cache.dir <- Sys.getenv("FISHCACHE")
+      fl <- file.path(cache.dir, "covered_ovl.rds")
+      if (file.exists(fl)) {
+        fmessage(paste("...reading overlaps from cache [FISHCACHE environment variable]:", fl,
+                       "To stop cache read, delete", basename(fl)))
+        ov <- readRDS(fl)
+      } else {
         ov = gr.findoverlaps(hypotheses, covered, verbose = verbose>1, max.chunk = max.chunk, mc.cores = mc.cores)
+        
+        if (nchar(cache.dir) > 0 && file.exists(cache.dir)) {
+          fmessage(paste("...caching overlaps to [FISHCACHE environment variable]:", fl,
+                         "To stop caching, remove FISHCACHE var", basename(fl)))
+          saveRDS(ov, file=fl, compress=FALSE)
+        }
+        
+      }
     } else {
-        ov = hypotheses[, c()]
-        ov$query.id = ov$subject.id = 1:length(hypotheses)
+      ov = hypotheses[, c()]
+      ov$query.id = ov$subject.id = 1:length(hypotheses)
     }
-
-    if (verbose){
-        fmessage('Finished overlapping with covered intervals')
+  
+  if (verbose){
+    fmessage('Finished overlapping with covered intervals')
     }
 
     counts.unique = NULL
