@@ -87,6 +87,36 @@ NULL
 #' @format \code{GRanges}
 NULL
 
+#' @name cache.newcol.read
+#' @description
+#'
+#' To save time on covariate overlaps, will read a cache'd version
+#' @author Jeremiah Wala
+cache.newcol.read <- function(cache.dir, nm, type) {
+  new.col <- data.frame()
+  fl <- file.path(cache.dir, paste0(nm, ".", type, ".covariate.rds"))
+  if (file.exists(fl)) {
+    fmessage(paste("...reading covariate from cache [FISHCACHE environment variable]:", fl,
+                   "To stop cache read, delete", basename(fl)))
+    new.col <- readRDS(fl)
+  }
+  return(new.col)
+}
+
+
+#' @name cache.newcol.write
+#' @description
+#'
+#' To save time on covariate overlaps, will write to cache
+#' @author Jeremiah Wala
+cache.newcol.write <- function(cache.dir, nm, type, new.col) {
+  fl <- file.path(cache.dir, paste0(nm, ".", type, ".covariate.rds"))
+  if (nchar(cache.dir) > 0 && file.exists(cache.dir)) {
+    fmessage(paste("...caching to [FISHCACHE environment variable]:", fl,
+                   "To stop caching, remove FISHCACHE var", basename(fl)))
+    saveRDS(new.col, file=fl, compress=FALSE)
+  }
+}
 
 #' @name annotate.hypotheses
 #' @title title
@@ -120,6 +150,7 @@ NULL
 #' @param idcol string Column where patient ID is stored
 #' @param weightEvetns boolean If TRUE, will weight events by their overlap with hypotheses. e.g. if 10% of an event overlaps with a target
 #' region, that target region will get assigned a score of 0.1 for that event. If false, any overlap will be given a weight of 1.
+#' @param cache.dir Optionally specificy a caching directory for covariates
 #' @param ... paths to sequence covariates whose output names will be their argument names, and each consists of a list with (default = FALSE)
 #' $track field corresponding to a GRanges, RleList, ffTrack object (or path to rds containing that object), $type which can
 #' have one of three values "numeric", "sequence", "interval".
@@ -139,7 +170,7 @@ NULL
 #' @author Marcin Imielinski
 #' @export
 annotate.hypotheses = function(hypotheses, covered = NULL, events = NULL,  mc.cores = 1, na.rm = TRUE, pad = 0, verbose = TRUE, max.slice = 1e4,
-    ff.chunk = 1e6, max.chunk = 1e11, out.path = NULL, covariates = list(), idcap = Inf, idcol = NULL, weightEvents = FALSE, ...)
+    ff.chunk = 1e6, max.chunk = 1e11, out.path = NULL, covariates = list(), idcap = Inf, idcol = NULL, weightEvents = FALSE, cache.dir=Sys.getenv("FISHCACHE"), ...)
 {
   if(weightEvents){
         idcap = NULL
@@ -303,191 +334,206 @@ annotate.hypotheses = function(hypotheses, covered = NULL, events = NULL,  mc.co
     }
 
 
-    for (nm in names(covariates)){
-
-        cov = covariates[[nm]]
-
-        if (verbose){
-            fmessage('Annotating track ', nm, '')
-        }
-
-        if (cov$type == 'sequence'){
-
-            if (is.null(cov$grep)){
-                cov$grep = FALSE
-            }
-
-            if (verbose){
-                fmessage('Starting fftab for track', nm, '')
-            }
-
-            if (!is.list(cov$signature)){
-                cov$signature = list(cov$signature)
-            }
-
-            if (is.na(names(cov$signature))){
-                if (length(cov$signature) > 1){
-                    names(cov$signature) = 1:length(cov$signature)
-                }
-
-            }
-
-            if (!is.na(names(cov$signature))){
-                names(cov$signature) = paste(nm, names(cov$signature), sep = '.')
-            } else {
-                names(cov$signature) = nm
-            }
-
-            if (is.na(cov$pad)){
-                cov$pad = pad
-            }
-
-            val = fftab(cov$track, ov + cov$pad, cov$signature, chunksize = ff.chunk, verbose = verbose, FUN = mean, na.rm = TRUE, grep = cov$grep, mc.cores = mc.cores)
-            values(ov) = values(val)
-
-            if (verbose){
-                fmessage('Finished fftab for track', nm, '')
-            }
-
-            if (!is.null(out.path)){
-                tryCatch(saveRDS(ov, paste(out.path, '.intermediate.rds', sep = '')), error = function(e) warning(sprintf('Error writing to file %s', out.file)))
-            }
-        } else if (cov$type == 'numeric'){
-            if (is.character(cov$track)){
-                if (grepl('.rds$', cov$track)){
-                    cov$track = readRDS(cov$track)
-                } else{
-                    ## assume it is a UCSC format
-                    require(rtracklayer)
-                    cov$track = rtracklayer::import(cov$track)
-                }
-            }
-
-            if (is.na(cov$pad)){
-                cov$pad = pad
-            }
-            if (is(cov$track, 'ffTrack') | is(cov$track, 'RleList')){
-                val = fftab(cov$track, ov + cov$pad, signature = cov$signature, FUN = sum, verbose = verbose, chunksize = ff.chunk, grep = cov$grep, mc.cores = mc.cores)
-                values(ov) = values(val)
-            } else{
-                if (is.na(cov$field)){
-                    ## then must be GRanges
-                    cov$field = 'score'
-                }
-                if (is.na(cov$na.rm)){
-
-                }
-                new.col = suppressWarnings(data.frame(val = values(gr.val(ov + cov$pad, cov$track, cov$field, mc.cores = mc.cores, verbose = verbose>1,  max.slice = max.slice, max.chunk = max.chunk, mean = TRUE, na.rm = cov$na.rm))[, cov$field]))
-                names(new.col) = nm
-                values(ov) = cbind(values(ov), new.col)
-            }
-
-            if (!is.null(out.path)){
-                tryCatch(saveRDS(ov, paste(out.path, '.intermediate.rds', sep = '')), error = function(e) warning(sprintf('Error writing to file %s', out.file)))
-            }
-        } else if (cov$type == 'interval'){
-
-            if (is.character(cov$track)){
-
-                if (grepl('.rds$', cov$track)){
-                    cov$track = readRDS(cov$track)
-                } else{
-                    ## assume it is a UCSC format
-                    require(rtracklayer)
-                    cov$track = rtracklayer::import(cov$track)
-                }
-
-            }
-
-            if (is(cov, 'GRanges')){
-                stop('Error: Interval tracks must be GRanges')
-            }
-
-            if (is.null(cov$pad)){
-                cov$pad = pad
-            }
-
-            if (is.null(cov$na.rm)){
-                cov$na.rm = na.rm
-            }
-
-            cov$track = reduce(cov$track)
-
-            new.col = suppressWarnings(data.frame(val = gr.val(ov + cov$pad, cov$track[, c()], mean = FALSE, weighted = TRUE,  mc.cores = mc.cores, max.slice = max.slice, max.chunk = max.chunk, na.rm = TRUE)$value/(width(ov)+2*cov$pad)))
-            new.col$val = ifelse(is.na(new.col$val), 0, new.col$val)
-            names(new.col) = nm
-            values(ov) = cbind(values(ov), new.col)
-
-            if (!is.null(out.path)){
-                tryCatch(saveRDS(ov, paste(out.path, '.intermediate.rds', sep = '')), error = function(e) warning(sprintf('Error writing to file %s', out.file)))
-            }
-        }
+  for (nm in names(covariates)){
+    
+    cov = covariates[[nm]]
+    
+    if (verbose){
+      fmessage('Annotating track ', nm, '')
     }
 
-    ovdt = gr2dt(ov)
+    if (cov$type == 'sequence'){
 
-
-    cmd = 'list(eligible = sum(width), ';
-
-    if (!is.null(events)){
-        cmd = paste(cmd, 'count = sum(count)', sep = '')
-    } else{
-        cmd = paste(cmd, 'count = NA', sep = '')
-    }
-
-
-    cov.nm = setdiff(names(values(ov)), c('eligible', 'count', 'query.id', 'subject.id'))
-
-    if (length(ov) > 0){
-
-        if (length(cov.nm) > 0){
-            cmd = paste(cmd,  ',', paste(cov.nm, '= mean(', cov.nm, ')', sep = '', collapse = ', '), ')',  sep = '')
+      if (is.null(cov$grep)){
+        cov$grep = FALSE
+      }
+      
+      if (verbose){
+        fmessage('Starting fftab for track', nm, '')
+      }
+      
+      if (!is.list(cov$signature)){
+        cov$signature = list(cov$signature)
+      }
+      
+      if (is.na(names(cov$signature))){
+        if (length(cov$signature) > 1){
+          names(cov$signature) = 1:length(cov$signature)
+        }
+      }
+      
+      if (!is.na(names(cov$signature))){
+        names(cov$signature) = paste(nm, names(cov$signature), sep = '.')
+      } else {
+        names(cov$signature) = nm
+      }
+      
+      if (is.na(cov$pad)){
+        cov$pad = pad
+      }
+      
+      val = fftab(cov$track, ov + cov$pad, cov$signature, chunksize = ff.chunk, verbose = verbose, FUN = mean, na.rm = TRUE, grep = cov$grep, mc.cores = mc.cores)
+      values(ov) = values(val)
+      
+      if (verbose){
+        fmessage('Finished fftab for track', nm, '')
+      }
+      
+      if (!is.null(out.path)){
+        tryCatch(saveRDS(ov, paste(out.path, '.intermediate.rds', sep = '')), error = function(e) warning(sprintf('Error writing to file %s', out.file)))
+      }
+    } else if (cov$type == 'numeric'){
+      if (is.character(cov$track)){
+        if (grepl('.rds$', cov$track)){
+          cov$track = readRDS(cov$track)
         } else{
-            cmd = paste(cmd, ')',  sep = '')
+          ## assume it is a UCSC format
+          library(rtracklayer)
+          cov$track = rtracklayer::import(cov$track)
+        }
+      }
+      
+      if (is.na(cov$pad)){
+        cov$pad = pad
+      }
+      if (is(cov$track, 'ffTrack') | is(cov$track, 'RleList')){
+        val = fftab(cov$track, ov + cov$pad, signature = cov$signature, FUN = sum, verbose = verbose, chunksize = ff.chunk, grep = cov$grep, mc.cores = mc.cores)
+        values(ov) = values(val)
+      } else{
+        if (is.na(cov$field)){
+          ## then must be GRanges
+          cov$field = 'score'
+        }
+        if (is.na(cov$na.rm)){
+          
         }
 
-        ovdta =  ovdt[, eval(parse(text = cmd)), keyby = query.id]
-        values(hypotheses) = as(as.data.frame(ovdta[list(1:length(hypotheses)), ]), 'DataFrame')
-
-        if(!is.null(idcap)){
-            hypotheses$count = 0
-            hypotheses$count[as.numeric(counts.unique$V2)] = counts.unique$final_count
+        ## read from cached overlaps OR perform new
+        new.col <- cache.newcol.read(cache.dir, nm, cov$type)
+        if (!nrow(new.col)) {
+          new.col <- suppressWarnings(data.frame(val = values(gr.val(ov + cov$pad, cov$track, cov$field,
+                                                   mc.cores = mc.cores, verbose = verbose>1,  max.slice = max.slice, max.chunk = max.chunk,
+                                                   mean = TRUE, na.rm = cov$na.rm))[, cov$field]))
+          cache.newcol.write(cache.dir, nm, cov$type, new.col)
         }
+        names(new.col) = nm
+        values(ov) = cbind(values(ov), new.col)
+      }
+      
+      if (!is.null(out.path)){
+        tryCatch(saveRDS(ov, paste(out.path, '.intermediate.rds', sep = '')), error = function(e) warning(sprintf('Error writing to file %s', out.file)))
+      }
+    } else if (cov$type == 'interval'){
+      
+      if (is.character(cov$track)){
+        
+        if (grepl('.rds$', cov$track)){
+          cov$track = readRDS(cov$track)
+        } else{
+          ## assume it is a UCSC format
+          require(rtracklayer)
+          cov$track = rtracklayer::import(cov$track)
+        }
+        
+      }
+      
+      if (is(cov, 'GRanges')){
+        stop('Error: Interval tracks must be GRanges')
+      }
+      
+      if (is.null(cov$pad)){
+        cov$pad = pad
+      }
+      
+      if (is.null(cov$na.rm)){
+        cov$na.rm = na.rm
+      }
+      
+      cov$track = reduce(cov$track)
 
+      ## read from cached overlaps OR perform new
+      new.col <- cache.newcol.read(cache.dir, nm, cov$type)
+      if (!nrow(new.col)) {
+        new.col <- suppressWarnings(data.frame(val = gr.val(ov + cov$pad, cov$track[, c()],
+                                                 mean = FALSE, weighted = TRUE,  mc.cores = mc.cores,
+                                                 max.slice = max.slice, max.chunk = max.chunk,
+                                                 na.rm = TRUE)$value/(width(ov)+2*cov$pad)))
+        cache.newcol.write(cache.dir, nm, cov$type, new.col)
+      }
+      new.col$val = ifelse(is.na(new.col$val), 0, new.col$val)
+      names(new.col) = nm
+      values(ov) = cbind(values(ov), new.col)
+        
+      if (!is.null(out.path)){
+        tryCatch(saveRDS(ov, paste(out.path, '.intermediate.rds', sep = '')), error = function(e) warning(sprintf('Error writing to file %s', out.file)))
+      }
+    }
+    
+  } # end covariate loop
+  
+  ovdt = gr2dt(ov)  
+  
+  cmd = 'list(eligible = sum(width), ';
+  
+  if (!is.null(events)){
+    cmd = paste(cmd, 'count = sum(count)', sep = '')
+  } else{
+    cmd = paste(cmd, 'count = NA', sep = '')
+  }
+  
+  
+  cov.nm = setdiff(names(values(ov)), c('eligible', 'count', 'query.id', 'subject.id'))
+  
+  if (length(ov) > 0){
+    
+    if (length(cov.nm) > 0){
+      cmd = paste(cmd,  ',', paste(cov.nm, '= mean(', cov.nm, ')', sep = '', collapse = ', '), ')',  sep = '')
     } else{
-        hypotheses$eligible = 0
+      cmd = paste(cmd, ')',  sep = '')
     }
-
-    hypotheses$query.id = 1:length(hypotheses)
-
-    ix = is.na(hypotheses$eligible)
-    if (any(ix)){
-        hypotheses$eligible[ix] = 0
-        if(!is.null(idcap)){
-            hypotheses$count[hypotheses$eligible == 0] = NA
-        }
+    
+    ovdta =  ovdt[, eval(parse(text = cmd)), keyby = query.id]
+    values(hypotheses) = as(as.data.frame(ovdta[list(1:length(hypotheses)), ]), 'DataFrame')
+    
+    if(!is.null(idcap)){
+      hypotheses$count = 0
+      hypotheses$count[as.numeric(counts.unique$V2)] = counts.unique$final_count
     }
-    if (!is.null(out.path)){
-        if (file.exists(paste(out.path, '.intermediate.rds', sep = ''))){
-            system(paste('rm',  paste(out.path, '.intermediate.rds', sep = '')))  ## error catch above
-        }
-        tryCatch(saveRDS(hypotheses, out.path), error = function(e) warning(sprintf('Error writing to file %s', out.file)))
-    }
-
-
-    if (is.null(hypotheses$count))
-      hypotheses$count = ifelse(hypotheses$eligible == 0, NA, ifelse(is.null(events), NA, 0))
-
-  if (any(missing <- !(names(covariates) %in% names(values(hypotheses)))))
-  {
-    for (m in names(covariates)[missing])
-    {
-      values(hypotheses)[[m]] = as.numeric(NA)
+    
+  } else{
+    hypotheses$eligible = 0
+  }
+  
+  hypotheses$query.id = 1:length(hypotheses)
+  
+  ix = is.na(hypotheses$eligible)
+  if (any(ix)){
+    hypotheses$eligible[ix] = 0
+    if(!is.null(idcap)){
+      hypotheses$count[hypotheses$eligible == 0] = NA
     }
   }
-
-    return(hypotheses)
-
+  if (!is.null(out.path)){
+    if (file.exists(paste(out.path, '.intermediate.rds', sep = ''))){
+      system(paste('rm',  paste(out.path, '.intermediate.rds', sep = '')))  ## error catch above
+    }
+    tryCatch(saveRDS(hypotheses, out.path), error = function(e) warning(sprintf('Error writing to file %s', out.file)))
+  }
+  
+  
+  if (is.null(hypotheses$count))
+    hypotheses$count = ifelse(hypotheses$eligible == 0, NA, ifelse(is.null(events), NA, 0))
+  
+  if (any(missing <- !(names(covariates) %in% names(values(hypotheses)))))
+    {
+      for (m in names(covariates)[missing])
+        {
+          values(hypotheses)[[m]] = as.numeric(NA)
+        }
+    }
+  
+  return(hypotheses)
+  
 }
 
 
