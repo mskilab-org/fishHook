@@ -1878,12 +1878,12 @@ Covariate = R6::R6Class('Covariate',
 #' @importFrom R6 R6Class
 #' @export
 Fish = function(hypotheses = NULL, events = NULL, covariates = NULL, eligible = NULL, out.path = NULL,
-            use_local_mut_density = FALSE, local_mut_density_bin = 1e6, genome = 'BSgenome.Hsapiens.UCSC.hg19::Hsapiens',
+            use_local_mut_density = FALSE, local_mut_density_bin = 1e6,
             mc.cores = 1, na.rm = TRUE, pad = 0, verbose = TRUE, max.slice = 1e5, ff.chunk = 1e6, max.chunk = 1e12, idcol = NULL,
             idcap = 1, weightEvents = FALSE, nb = TRUE)
 {
   FishHook$new(hypotheses = hypotheses, out.path = out.path, eligible = eligible, events = events, covariates = covariates,
-               use_local_mut_density = use_local_mut_density, local_mut_density_bin = local_mut_density_bin, genome = genome,
+               use_local_mut_density = use_local_mut_density, local_mut_density_bin = local_mut_density_bin,
                mc.cores = mc.cores, na.rm = na.rm, pad = pad, verbose = verbose, max.slice = max.slice, ff.chunk = ff.chunk, max.chunk = max.chunk, idcol = idcol,
                idcap = idcap, weightEvents = weightEvents, nb = nb)
 }
@@ -1941,7 +1941,7 @@ FishHook = R6::R6Class('FishHook',
 
         ##See class documentation for params
         initialize = function(hypotheses, eligible = NULL, events = NULL, covariates = NULL, out.path = NULL,
-            use_local_mut_density = FALSE, local_mut_density_bin = 1e6, genome = 'BSgenome.Hsapiens.UCSC.hg19::Hsapiens',
+            use_local_mut_density = FALSE, local_mut_density_bin = 1e6,
             mc.cores = 1, na.rm = TRUE, pad = 0, verbose = TRUE, max.slice = 1e4, ff.chunk = 1e6, max.chunk = 1e11, idcol = NULL,
             idcap = Inf, weightEvents = FALSE, nb = TRUE){
 
@@ -2041,11 +2041,11 @@ FishHook = R6::R6Class('FishHook',
 
           if (validate_hypotheses(hypotheses))
           {
-            if (!is.null(genome))
-            {
-              genome = tryCatch(hg_seqlengths(genome), error = function(e) NULL)
-              hypotheses = gr.fix(hypotheses, genome)
-            }
+            ## if (!is.null(genome))
+            ## {
+              ## genome = tryCatch(hg_seqlengths(genome), error = function(e) NULL)
+              ## hypotheses = gr.fix(hypotheses, genome)
+            ## }
             private$phypotheses = hypotheses
           }
 

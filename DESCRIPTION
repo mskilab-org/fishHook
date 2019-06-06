@@ -12,7 +12,7 @@ Depends:
     GenomicRanges (>= 1.18),
     gUtils, 
     plotly,  
-    data.table (>= 1.9),
+    data.table (>= 1.9)
 Imports:
     MASS,
     Matrix,
@@ -21,7 +21,7 @@ Imports:
     GenomeInfoDb,
     S4Vectors,
     BiocGenerics,
-    R6, 
+    R6
 Suggests:
     parallel,
     testthat
