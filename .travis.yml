@@ -9,7 +9,7 @@ dist: trusty
 cache: packages
 sudo: false
 
-r: 3.4.1
+r: 3.5.1
 
 r_packages:
   - covr
