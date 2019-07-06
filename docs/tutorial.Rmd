@@ -1,6 +1,6 @@
 ---
 title: "fishHook Tutorial"
-author: "Zoran Gajic and Marcin Imielinski"
+author: "Aditya Deshpande, Zoran Gajic, and Marcin Imielinski"
 output: 
   html_document:
     toc: true
@@ -161,8 +161,9 @@ fish$score()
 head(gr2dt(fish$res)[order(p), ][, p:= as.character(p)]) %>% kable() %>%  kable_styling(bootstrap_options =
 c("striped", "hover", "condensed", "responsive")) %>%
     scroll_box(width = "100%", height = "200px")
-p = fish$qqp()
-p
+fish$qqp(plotly = FALSE)
+#p = fish$qqp()
+#p
 ```
 <br>You will notice that this Q-Q plot appears curved and inflated, though its slope
 (`lambda`) is reasonably near 1.  The low `alpha` value (MLE of the alpha parameter
@@ -258,8 +259,9 @@ fish$score()
 gr2dt(fish$res)[order(p), ][fdr<0.25, ][, p:= as.character(p)] %>% kable() %>%  kable_styling(bootstrap_options =
 c("striped", "hover", "condensed", "responsive")) %>%
     scroll_box(width = "100%", height = "200px")
-p = fish$qqp()
-p
+fish$qqp(plotly = FALSE)
+#p = fish$qqp()
+#p
 ```
 <br>
 Note that this model is still quite rudimentary (e.g. we have lumped together
@@ -322,8 +324,9 @@ fish$score()
 gr2dt(fish$res)[order(p), ][fdr<0.25, ][, p:= as.character(p)] %>% kable() %>%  kable_styling(bootstrap_options =
 c("striped", "hover", "condensed", "responsive")) %>%
     scroll_box(width = "100%", height = "200px")
-p = fish$qqp()
-p
+fish$qqp(plotly = FALSE)          
+#p = fish$qqp()
+#p
 ```
 
 <br>
@@ -491,10 +494,50 @@ fish$score()
 gr2dt(fish$res)[order(p), ][fdr<0.25, ][, p:= as.character(p)] %>% kable() %>%  kable_styling(bootstrap_options =
 c("striped", "hover", "condensed", "responsive")) %>%
     scroll_box(width = "100%", height = "200px")
-p = fish$qqp()
-p
+fish$qqp(plotly = FALSE)
+#p = fish$qqp()
+#p
 ```
 
 Though *TP53*, *RBM10*, *SETD2*, and *ARID1A* are well known targets of truncating mutations in lung adenocarcinoma, 
 [*IL32*](https://www.genecards.org/cgi-bin/carddisp.pl?gene=IL32), [*TRIB1*](https://www.genecards.org/cgi-bin/carddisp.pl?gene=IL32), [*SUN1*](https://www.genecards.org/cgi-bin/carddisp.pl?gene=IL32) are interesting candidates that have not previously
 been associated with lung adenocarcinoma. 
+
+
+## Driver discovery in cancer whole genomes
+
+
+Next, we will analyze cancer WGS data that is inspired by the TCGA and NHGRI
+analyzed in [Imielinski, Guo, Meyerson. *Cell.* 2017 Jan
+26;168(3):460-472](https://www.sciencedirect.com/science/article/pii/S009286741631741X?via%3Dihub).
+The distributions of the mutations are "true", but (as per TCGA guidelines) the
+ids of cases and the base changes of these somatic mutations have been wiped /
+changed. However, the provided data are equivalent for identifying mutational
+hotspots. 
+
+```{r message=FALSE, warning=FALSE}
+## download (de-identified) WGS lung adenocarcinoma SNV's and indels (gzipped
+## data.table, which we convert to GRanges with gUtils::dt2gr)
+muts = dt2gr(fread('http://mskilab.com/fishHook/hg19/luad.wgs.maf.gz'))
+```
+
+Let's separate mutations into SNV's and indels
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+snv = muts %Q% (Variant_Type == "SNP")
+indels = muts %Q% (Variant_Type %in% c("INS", "DEL))
+```
+
+We build a covariate model using the same covariates as above but instead of
+using the coding regions of genes, we will use evenly-spaced overlapping genomic
+tiles (which we call "supertiles")
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+## gr.tile gives us non-overlapping 10kb intervals that tile / bin the genome
+tiles = gr.tile(seqinfo(muts), 1e4)
+
+## %+% shifts these intervals 5kb to the right and combines with the original 
+## set and so we will now have (almost) every region covered by two tiles 
+supertiles = c(tiles, tiles %+% 5000)
+```
+
+ 

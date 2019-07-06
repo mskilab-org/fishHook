@@ -4,7 +4,6 @@
 \name{FishHook}
 \alias{FishHook}
 \alias{Fish}
-\alias{FishHook}
 \title{title}
 \format{An object of class \code{R6ClassGenerator} of length 24.}
 \usage{
