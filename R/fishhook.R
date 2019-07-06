@@ -154,6 +154,8 @@ annotate.hypotheses = function(hypotheses, covered = NULL, events = NULL,  mc.co
         }
     }
 
+
+
     if (length(hypotheses)==0){
         stop('Error: Must provide non-empty hypotheses')
     }
@@ -204,7 +206,8 @@ annotate.hypotheses = function(hypotheses, covered = NULL, events = NULL,  mc.co
         fmessage('Overlapping with covered intervals')
     }
 
-    if (!is.null(covered)){
+  if (!is.null(covered)){
+      
         ov = gr.findoverlaps(hypotheses, covered, verbose = verbose>1, max.chunk = max.chunk, mc.cores = mc.cores)
     } else {
         ov = hypotheses[, c()]
@@ -798,7 +801,6 @@ aggregate.hypotheses = function(hypotheses, by = NULL, fields = NULL, rolling = 
 score.hypotheses = function(hypotheses, covariates = names(values(hypotheses)), model = NULL, return.model = FALSE, nb = TRUE,
     verbose = TRUE, iter = 200, subsample = 1e5, sets = NULL, seed = 42, mc.cores = 1, p.randomized = TRUE, classReturn = FALSE)
 {
-
     require(MASS)
     covariates = setdiff(covariates, c('count', 'eligible', 'query.id'))
 
@@ -862,9 +864,21 @@ score.hypotheses = function(hypotheses, covariates = names(values(hypotheses)), 
 
         formula = eval(parse(text = paste('count', " ~ ", paste(c('offset(1*eligible)', covariates), collapse = "+")))) ## make the formula with covariates
 
-      if (nb){
-            g = glm.nb(formula, data = as.data.frame(tdt), maxit = iter)
-      } else{
+      g = NULL
+      if (nb)
+      {
+        g = tryCatch(glm.nb(formula, data = as.data.frame(tdt), maxit = iter), error = function(e) NULL)
+      }
+
+      ## automatically try poisson if nb failed (ie did not converge)
+      if (is.null(g))
+      {
+        warning('negative binomial failed to converge, automatically running poisson')
+        nb = FALSE
+      }
+
+      if (!nb)
+      {
         if (verbose)
         {
           fmessage("Applying Poisson regression.")
@@ -1982,11 +1996,12 @@ FishHook = R6::R6Class('FishHook',
           {
             if (!is.null(genome))
             {
-              genome = tryCatch(hg_seqlengths(genome), error = function(e) NULL)
+              genome = tryCatch(hg_seqlengths(genome, chr = FALSE), error = function(e) NULL) ## Added this to avoid overlap errors Addy
               hypotheses = gr.fix(hypotheses, genome)
             }
             private$phypotheses = hypotheses
           }
+
 
           # Initializes and Validates out.path
           self$out.path = out.path
@@ -2220,7 +2235,6 @@ FishHook = R6::R6Class('FishHook',
             {
               newnames = newnames[-c(1:length(private$pcovariates$names))]
             }
-
             tmp.pdata = annotate.hypotheses(hypotheses = private$phypotheses,
                                             covered = private$peligible,
                                             mc.cores = private$pmc.cores,
@@ -2798,7 +2812,7 @@ FishHook = R6::R6Class('FishHook',
                                                     covariates = private$pcovariates$toList(),
                                                     idcol = private$pidcol,
                                                     idcap = private$pidcap,
-                                                    weightEvents = private$pweightEvents)
+                                                     weightEvents = private$pweightEvents)
 
                 self$clear()
 
@@ -4417,7 +4431,7 @@ fftab = function(ff, intervals, signatures = NULL, FUN = sum, grep = FALSE, mc.c
 #'
 #' @param x a FishHook object
 #'
-#' @retuxrn the seqlengths of this gWalk
+#' @return the seqlengths of this fishHook object
 setMethod("seqlengths", c("FishHook"),
           function(x) {
             return(seqlengths(x$hypotheses))
@@ -4429,7 +4443,7 @@ setMethod("seqlengths", c("FishHook"),
 #'
 #' @param x a FishHook object
 #'
-#' @retuxrn the seqlengths of this gWalk
+#' @return the seqlengths of this fishHook object
 setMethod("seqinfo", c("FishHook"),
           function(x) {
             return(seqinfo(x$hypotheses))
