@@ -9,11 +9,10 @@
 \usage{
 Fish(hypotheses = NULL, events = NULL, covariates = NULL,
   eligible = NULL, out.path = NULL, use_local_mut_density = FALSE,
-  local_mut_density_bin = 1e+06,
-  genome = "BSgenome.Hsapiens.UCSC.hg19::Hsapiens", mc.cores = 1,
-  na.rm = TRUE, pad = 0, verbose = TRUE, max.slice = 1e+05,
-  ff.chunk = 1e+06, max.chunk = 1e+12, idcol = NULL, idcap = 1,
-  weightEvents = FALSE, nb = TRUE)
+  local_mut_density_bin = 1e+06, mc.cores = 1, na.rm = TRUE,
+  pad = 0, verbose = TRUE, max.slice = 1e+05, ff.chunk = 1e+06,
+  max.chunk = 1e+12, idcol = NULL, idcap = 1, weightEvents = FALSE,
+  nb = TRUE)
 
 FishHook
 }
@@ -44,8 +43,6 @@ magnitude greater than the size of your targetls
 
 e.g. if your hypotheses are 1e5 bps long, you may want a local_mut_density_bin of 1e7 or even 1e8}
 
-\item{genome}{A character value indicating which build of the human genome to use, by default set to hg19}
-
 \item{mc.cores}{A numeric value that indicates the amount of computing cores to use when running fishHook. This will mainly be used during the annotation step of the analysis, or during
 initial instantiation of the object if use_local_mut_density = T}
 
@@ -71,6 +68,8 @@ of the SCNA and target is 500:1000 which is half of the original width of the SC
 the expected input for the gamma poisson as the gamma poisson measures whole event counts.}
 
 \item{nb}{boolean negative binomial, if false then use poisson}
+
+\item{genome}{A character value indicating which build of the human genome to use, by default set to hg19}
 
 \item{vebose}{A logical indicating whether or not to print information to the console when running FishHook}
 
