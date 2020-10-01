@@ -9,7 +9,7 @@ Description: Package for performing Gamma-Poisson regression on somatic mutation
 biocViews:
 Remotes:
   github::mskilab/gUtils,  
-  bioc::3.10/GenomeInfoDb   
+  bioc::3.10/GenomeInfoDb,
   bioc::3.10/S4Vectors,
   bioc::3.10/IRanges,      
   bioc::3.10/XVector,
