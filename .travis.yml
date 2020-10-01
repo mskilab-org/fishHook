@@ -5,16 +5,12 @@
 #   https://github.com/craigcitro/r-travis/wiki
 
 language: r
-dist: trusty
 cache: packages
 sudo: false
+warnings_are_errors: false
+r_check_args: "--no-build-vignettes --no-manual --as-cran --no-examples"
 
-r: 3.5.1
-
-r_packages:
-  - covr
-  - devtools
-  - testthat
+r: 3.6.1
     
 bioc_packages:
   - GenomicRanges    
