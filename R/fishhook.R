@@ -1990,7 +1990,7 @@ FishHook = R6::R6Class('FishHook',
 
 
             ##Covariates
-            if(!inherits(coveriates, "Covariate") & !is.null(covariates)){
+            if(!inherits(covariates, "Covariate") & !is.null(covariates)){
                 stop('Error: covariates must be of class Covariate')
             }
 
