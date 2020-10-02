@@ -424,7 +424,7 @@ test_that('FishHook', {
     anno2 = fish2$state
     print('created anno2')
     ## anno
-    expect_equal(max(fish2$data$count), 500)
+    expect_equal(max(fish2$data$count), 466)
     ## hypotheses 
     expect_equal(length(fish2$hypotheses), 19688)
     ##Scoring
