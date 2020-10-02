@@ -1978,19 +1978,19 @@ FishHook = R6::R6Class('FishHook',
 
 
             ##Events
-            if(!(class(events) == 'GRanges')  && !is.null(events)){
+            if(!inherits(events, "GRanges")  && !is.null(events)){
                 stop('Error: events must be of class GRanges')
             }
 
 
             ##Eligible
-            if(!(class(eligible) == 'GRanges') && !is.null(eligible)){
+            if(!inherits(eligible, "GRanges") && !is.null(eligible)){
                 stop('Error: eligible must be of class GRanges')
             }
 
 
             ##Covariates
-            if(!(class(covariates) == 'Covariate')  && !is.null(covariates)){
+            if(!inherits(coveriates, "Covariate") & !is.null(covariates)){
                 stop('Error: covariates must be of class Covariate')
             }
 
