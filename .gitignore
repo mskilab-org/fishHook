@@ -6,3 +6,6 @@ _build*
 *.Rproj*
 .Rproj.user
 !.travis.yml
+*.rd
+*.Rd
+man/FishHook.Rd
