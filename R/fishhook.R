@@ -4023,8 +4023,10 @@ glm.nb.fh = function (formula, data, weights, subset, na.action, start = NULL,
     g <- fam$linkfun
     Lm <- loglik(n, th, mu, Y, w)
     Lm0 <- Lm + 2 * d1
-    while ((iter <- iter + 1) <= control$maxit && (abs(Lm0 -
-        Lm)/d1 + abs(del)/d2) > control$epsilon) {
+    while (
+      ((iter <- iter + 1) <= control$maxit) & 
+      ((abs(Lm0 - Lm)/d1 + abs(del)/d2) > control$epsilon)
+    ){
           eta <- g(mu)
           fit <- glm.fitter(x = X, y = Y, w = w, etastart = eta,
             offset = offset, family = fam, control = list(maxit = control$maxit,
