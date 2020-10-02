@@ -1963,7 +1963,7 @@ FishHook = R6::R6Class('FishHook',
             stop('Hypotheses must be defined')
 
             ##Hypotheses
-            if(!((class(hypotheses) == 'GRanges') || class(hypotheses) == 'character')  && !is.null(hypotheses)){
+            if(!((class(hypotheses) == 'GRanges') | class(hypotheses) == 'character') & !is.null(hypotheses)){
                 stop('Error: hypotheses must be of class GRanges or character')
             }
 
