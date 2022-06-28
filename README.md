@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/mskilab/fishHook.svg?branch=master)](https://travis-ci.com/mskilab/fishHook)
+[![Build Status](https://app.travis-ci.com/github/mskilab//fishHook.svg?branch=master)](https://app.travis-ci.com/github/mskilab/fishHook)
 [![codecov.io](https://img.shields.io/codecov/c/github/mskilab/fishHook.svg)](https://codecov.io/github/mskilab/fishHook?branch=master)
 
 
