@@ -1147,6 +1147,52 @@ score.hypotheses = function(hypotheses, covariates = names(values(hypotheses)), 
 
 
 
+#' @name scoreAggregated
+#' @title scoreAggregated
+#' @description
+#'
+#' function to score aggregated hypotheses and covariates  
+#'
+#' @param fish fishHook model with aggregated hypotheses
+#' @param mod fishHook model to use, not currently used
+#' @param ... additional arguments passed to score.hypothesis
+#' @param covariates chracter vector, indicates which columns of hypotheses contain the covariates
+#' @param model fit existing model --> covariates must be present (default = NULL)
+#' @param return.model boolean info (default = FALSE)
+#' @param nb boolean If TRUE, uses negative binomial; if FALSE then use Poisson
+#' @param verbose boolean verbose flag (default = TRUE)
+#' @param iter integer info (default = 200)
+#' @param subsample interger info (default = 1e5)
+#' @param seed integer (default = 42)
+#' @param p.randomized boolean Flag info (default = TRUE)
+#' @param classReturn boolean Flag info (default = FALSE)
+#' @return Results object 
+#' @author Ashley S Doane
+#' @import R6
+#' @export
+scoreAggregated <- function(fish, covariates = names(S4Vectors::values(fish$aggregated)), model = NULL, return.model = FALSE, nb = TRUE,
+                            verbose = TRUE, iter = 200, subsample = 1e5, sets = NULL, 
+                            seed = 42, mc.cores = 1, p.randomized = TRUE, classReturn = FALSE) {
+  
+  agg = S4Vectors::values(fish$aggregated)
+  ngr <- unlist(range(fish$aggregated))
+  mcols(ngr) <- agg
+  res <- fishHook::score.hypotheses(ngr,
+                                    sets = NULL,
+                                    covariates = covariates,
+                                    #return.model = TRUE,
+                                    nb = TRUE,
+                                    verbose = TRUE,
+                                    #iter = 200,
+                                    subsample = 1e5,
+                                    seed = 42,
+                                    #classReturn = TRUE,
+                                    model = mod,
+                                    mc.cores = 10,
+                                    p.randomize = TRUE)
+  return(res) }
+
+
 #' @name Cov
 #' @title Cov
 #' @description
