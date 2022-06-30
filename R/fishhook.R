@@ -263,94 +263,41 @@ annotate.hypotheses = function(hypotheses, covered = NULL, events = NULL,  mc.co
     fmessage('Finished overlapping with covered intervals')
     }
 
-    counts.unique = NULL
+  ## FIX THIS
+  counts.unique = data.table()
+  if (length(ov) > 0){
+    if (!is.null(events)){
+      if (inherits(events, 'GRanges')){
+        counts.unique = count.events(events, ov, idcap = idcap, idcol = idcol, max.chunk = max.chunk, mc.cores = mc.cores, verbose = verbose)
+      }   else {
+        ## assume it is an Rle of event counts along the genome
+        stop('please check input: events should be a GRanges')
+        ## counts = events
+        ## oix = 1:length(ov)
+      }
+      
+      if (verbose){
+        fmessage('Computing event counts')
+      }
 
-    if (length(ov) > 0){
+      ####  seems like legacy
+      ## ov$count = 0
 
-        if (!is.null(events)){
-
-          if (inherits(events, 'GRanges')){
-
-            if (!is.null(idcol))
-              {
-                if (!(idcol %in% names(mcols(events))))
-                {
-                  stop(paste('Column', idcol, 'not found in events'))
-                }
-              }
-
-            ev = gr.fix(events[gr.in(events, ov)])
-
-            ## weighing each event by width means that each event will get one
-            ## total count, and if an event is split between two tile windows
-            ## then it will contribute a fraction of event proprotional to the number
-            ## oof bases overlapping
-            counts = coverage(ev, weight = 1/width(ev))
-
-            oix = which(gr.in(ov, events))
-
-            counts.unique = data.table(V2 = 1:length(hypotheses), final_count = 0)
-            setkey(counts.unique, V2)
-
-            if (!is.null(idcap) & length(events)>0){
-
-              if(!is.numeric(idcap)){
-                stop('Error: idcap must be of type numeric')
-              }
-
-              if(!("ID" %in% colnames(values(events))) & is.null(idcol)){
-                events$ID = c(1:length(events))
-              }
-
-              ev2 = gr.findoverlaps(events,ov, max.chunk = max.chunk, mc.cores = mc.cores, verbose = verbose>1)
-
-              if (length(ev2)>0)
-              {
-                if(is.null(idcol)){
-                  ev2$ID = events$ID[ev2$query.id]
-                } else{
-                  if (!(idcol %in% names(mcols(events))))
-                  {
-                    stop(paste('Column', idcol, 'not found in events'))
-                  }
-                  if (!is.infinite(idcap) & verbose)
-                    fmessage('Applying idcap of ', idcap, ' on idcol ', idcol, '.')
-
-                  ev2$ID = mcols(events)[,idcol][ev2$query.id]
-                }
-
-                ev2$target.id = ov$query.id[ev2$subject.id]
-                tab = as.data.table(cbind(ev2$ID, ev2$target.id))
-                counts.unique = tab[, dummy :=1][, .(count = sum(dummy)), keyby =.(V1, V2)][, count := pmin(idcap, count)][, .(final_count = sum(count)), keyby = V2]
-              }
-            }
-          }  else {
-            ## assume it is an Rle of event counts along the genome
-            counts = events
-            oix = 1:length(ov)
-          }
-
-          if (verbose){
-            fmessage('Computing event counts')
-          }
-
-          ov$count = 0
-
-          if (length(oix)>0 & is.null(idcap)){
-            ov$count[oix] = fftab(counts, ov[oix], chunksize = ff.chunk, na.rm = TRUE, mc.cores = mc.cores, verbose = verbose)$score
-          }
-
-          if (!is.null(out.path)){
-            tryCatch(saveRDS(ov, paste(out.path, '.intermediate.rds', sep = '')), error = function(e) warning(sprintf('Error writing to file %s', out.file)))
-          }
-
-          if (verbose){
-            fmessage('Finished counting events')
-          }
-        }
+      ## if (length(oix)>0 & is.null(idcap)){
+      ##   ov$count[oix] = fftab(counts, ov[oix], chunksize = ff.chunk, na.rm = TRUE, mc.cores = mc.cores, verbose = verbose)$score
+      ## }
+      
+      if (!is.null(out.path)){
+        tryCatch(saveRDS(ov, paste(out.path, '.intermediate.rds', sep = '')), error = function(e) warning(sprintf('Error writing to file %s', out.file)))
+      }
+      
+      if (verbose){
+        fmessage('Finished counting events')
+      }
     }
-
-
+  }
+  
+  
   for (nm in names(covariates)){
     
     cov = covariates[[nm]]
@@ -487,15 +434,15 @@ annotate.hypotheses = function(hypotheses, covered = NULL, events = NULL,  mc.co
     }
     
   } # end covariate loop
-  
+
   ovdt = gr2dt(ov)  
   
-  cmd = 'list(eligible = sum(width), ';
+  cmd = 'list(eligible = sum(width) ';
   
   if (!is.null(events)){
-    cmd = paste(cmd, 'count = sum(count)', sep = '')
+#    cmd = paste(cmd, 'count = sum(count)', sep = '')
   } else{
-    cmd = paste(cmd, 'count = NA', sep = '')
+#    cmd = paste(cmd, 'count = NA', sep = '')
   }
   
   
@@ -508,14 +455,15 @@ annotate.hypotheses = function(hypotheses, covered = NULL, events = NULL,  mc.co
     } else{
       cmd = paste(cmd, ')',  sep = '')
     }
-    
+
     ovdta =  ovdt[, eval(parse(text = cmd)), keyby = query.id]
     values(hypotheses) = as(as.data.frame(ovdta[list(1:length(hypotheses)), ]), 'DataFrame')
     
-    if(!is.null(idcap)){
-      hypotheses$count = 0
-      hypotheses$count[as.numeric(counts.unique$V2)] = counts.unique$final_count
-    }
+#    if(!is.null(idcap)){
+    hypotheses$count = 0
+    if (nrow(counts.unique))
+      hypotheses$count[as.numeric(counts.unique$query.id)] = counts.unique$final_count
+ #   }
     
   } else{
     hypotheses$eligible = 0
@@ -588,7 +536,7 @@ annotate.hypotheses = function(hypotheses, covered = NULL, events = NULL,  mc.co
 #' @export
 aggregate.hypotheses = function(hypotheses, by = NULL, fields = NULL, rolling = NULL, disjoint = TRUE, na.rm = FALSE, FUN = list(), verbose = TRUE)
 {
-    V1 = sn = st = en = keep = count = width = NULL ## NOTE fix
+  V1 = sn = st = en = keep = count = width = NULL ## NOTE fix
     if (is.null(by) & is.character(hypotheses)){
         fmessage('Applying sample wise merging')
     } else if (is.null(by) & is.null(rolling)){
@@ -742,12 +690,11 @@ aggregate.hypotheses = function(hypotheses, by = NULL, fields = NULL, rolling = 
             if (verbose){
                 fmessage('Splitting into GRangesList')
             }
-
-            out = split(hypotheses, by)
-
-            values(out)[, 'name'] = names(out)
-            values(out)[, 'numintervals'] = table(by)[names(out)]
-
+          out = split(hypotheses, by)
+          
+          byvec = by
+          values(out)[, 'name'] = names(out)
+          values(out)[, 'numintervals'] = data.table(byvec = byvec)[, .N, keyby = byvec][.(names(out)), N]
             tadt = gr2dt(hypotheses)
 
             if (verbose){
@@ -864,11 +811,11 @@ score.hypotheses = function(hypotheses, covariates = names(values(hypotheses)), 
     require(MASS)
     covariates = setdiff(covariates, c('count', 'eligible', 'query.id'))
 
-    if (any(nnin = !(covariates %in% names(values(hypotheses))))){
+    if (any(nnin <- !(covariates %in% names(values(hypotheses))))){
         stop(sprintf('Error: %s covariates (%s) missing from input data', sum(nnin), paste(covariates[nnin], collapse = ',')))
     }
 
-    if (any(nnum = !(sapply(covariates, function(x) class(values(hypotheses)[, x])) %in% c('factor', 'numeric')))){
+    if (any(nnum <- !(sapply(covariates, function(x) class(values(hypotheses)[, x])) %in% c('factor', 'numeric')))){
         warning(sprintf('%s covariates (%s) fit are non-numeric or factor, removing from model', sum(nnum), paste(covariates[nnum], collapse = ',')))
         covariates = covariates[!nnum]
     }
@@ -1169,13 +1116,28 @@ score.hypotheses = function(hypotheses, covariates = names(values(hypotheses)), 
 #' @author Ashley S Doane
 #' @import R6
 #' @export
-scoreAggregated <- function(fish, covariates = names(S4Vectors::values(fish$aggregated)), model = NULL, return.model = FALSE, nb = TRUE,
+scoreAggregated <- function(fish, covariates = names(S4Vectors::values(fish$aggregated)), model =NULL, return.model = FALSE, nb = TRUE,
                             verbose = TRUE, iter = 200, subsample = 1e5, sets = NULL, 
                             seed = 42, mc.cores = 1, p.randomized = TRUE, classReturn = FALSE) {
   
   agg = S4Vectors::values(fish$aggregated)
-  ngr <- unlist(range(fish$aggregated))
+
+  ## dummy ranges here so we remove later on .. need to make this prettier
+  ## eg by making score.hypothess forget about ranges completely
+  ngr <- unlist(range(fish$aggregated))[1:nrow(agg), c()]
+
   mcols(ngr) <- agg
+
+  aggu = grl.unlist(fish$aggregated)
+  ov = gr.findoverlaps(aggu, fish$eligible, qcol = 'grl.ix')
+  ov$query.id = ov$grl.ix
+  counts.unique = count.events(fish$events, ov, fish$idcap, fish$idcol)
+
+  ngr$count = 0
+  ngr$count[as.numeric(counts.unique$query.id)] = counts.unique$final_count
+
+  ngr = unname(ngr)
+  browser()
   res <- fishHook::score.hypotheses(ngr,
                                     sets = NULL,
                                     covariates = covariates,
@@ -1186,10 +1148,17 @@ scoreAggregated <- function(fish, covariates = names(S4Vectors::values(fish$aggr
                                     subsample = 1e5,
                                     seed = 42,
                                     #classReturn = TRUE,
-                                    model = mod,
+                                    model = model,
                                     mc.cores = 10,
                                     p.randomize = TRUE)
-  return(res) }
+
+  ## stripping random ranges from these data so as to not be confusing
+  ## these results will be only identified by their "name" field 
+  res = res[, setdiff(names(res), c('seqnames', 'start', 'end', 'width', 'strand')), with = FALSE]
+  
+  return(res)
+}
+
 
 
 
@@ -2284,7 +2253,7 @@ FishHook = R6::R6Class('FishHook',
         ## Notes:
         ## This function changes the internal state of the fishHook object and sets the state to 'Aggregated'
         aggregate = function(hypotheses = private$pdata, by = NULL, fields = NULL, rolling = NULL, disjoint = TRUE, na.rm = FALSE, FUN = list(), verbose = private$pverbose){
-
+          
             if(private$pstate == "Initialized"){
                 self$annotate()
             }
@@ -4527,6 +4496,84 @@ fftab = function(ff, intervals, signatures = NULL, FUN = sum, grep = FALSE, mc.c
         values(intervals) = cbind(val, out)
         return(intervals)
     }
+
+#' @name count.events
+#' @description
+#'
+#' counts the events in the hypotheses / eligible overlap
+#' subject to an idcap and idcol
+#'
+#' @param events GRanges of mutations that 
+#' @param ov the GRanges result of overlaping hypotheses (query.id) and eligible (subject.id)
+#' @param idcap the maximum number that a patient can contribute to a hypothesis / target
+#' @param idcol is teh column of events
+#' @return a data.table with fields $query.id and $final.count of idcap-ped counts per input query (indexed by ov$query.id)
+count.events = function(events, ov, idcap = NULL, idcol = NULL, max.chunk = 1e11, mc.cores = 1, verbose = FALSE)
+{
+  counts.unique = data.table()
+
+  if (!is.null(idcol))
+  {
+    if (!(idcol %in% names(mcols(events))))
+    {
+      stop(paste('Column', idcol, 'not found in events'))
+    }
+  }
+  
+#  ev = gr.fix(events[gr.in(events, ov)])
+  
+  ## weighing each event by width means that each event will get one
+  ## total count, and if an event is split between two tile windows
+  ## then it will contribute a fraction of event proprotional to the number
+  ## oof bases overlapping
+
+  ## legacy 
+  ## counts = coverage(ev, weight = 1/width(ev))  
+  ## oix = which(gr.in(ov, events))
+
+  counts.unique = data.table(query.id = 1:max(ov$query.id), final_count = 0)
+  setkey(counts.unique, query.id)
+  
+  evov = gr.findoverlaps(events, ov, max.chunk = max.chunk, mc.cores = mc.cores, verbose = verbose>1)  
+  if (length(evov)>0){
+    if (!is.null(idcap))
+    {      
+      if(!is.numeric(idcap)){
+        stop('Error: idcap must be of type numeric')
+      }
+
+      if(!("ID" %in% colnames(values(events))) & is.null(idcol)){
+        events$ID = c(1:length(events))
+      }
+      
+      if (length(evov)>0)
+      {
+        if(is.null(idcol)){
+          evov$ID = events$ID[evov$query.id]
+        } else{
+          if (!(idcol %in% names(mcols(events))))
+          {
+            stop(paste('Column', idcol, 'not found in events'))
+          }
+          if (!is.infinite(idcap) & verbose)
+            fmessage('Applying idcap of ', idcap, ' on idcol ', idcol, '.')
+
+          evov$ID = mcols(events)[,idcol][evov$query.id]
+        }
+
+        evov$target.id = ov$query.id[evov$subject.id]
+        tab = data.table(ID = evov$ID, query.id = evov$target.id)
+
+        counts.unique = tab[, dummy :=1][, .(count = sum(dummy)), keyby =.(ID, query.id)][, count := pmin(idcap, count)][, .(final_count = sum(count)), keyby = query.id]
+      }
+    } else
+    {
+      counts.unique = gr2dt(evov)[, .N, keyby = query.id][counts.unique$query.id, pmax(0, N, na.rm = TRUE)]
+    }
+  }
+  counts.unique
+}
+
 
 
 #' @name seqlengths
