@@ -7,8 +7,6 @@ Description: Package for performing Gamma-Poisson regression on somatic mutation
     count data with covariates to identify mutational enrichment or depletion in a
     statistically-calibrated fashion.
 biocViews:
-Remotes:
-  github::mskilab/gUtils,  
   bioc::3.10/GenomeInfoDb,
   bioc::3.10/S4Vectors,
   bioc::3.10/IRanges,      
@@ -16,6 +14,8 @@ Remotes:
   bioc::3.10/GenomicRanges,
   bioc::3.10/rtracklayer,
   bioc::3.10/VariantAnnotation
+Remotes:
+  github::mskilab/gUtils
 Depends:
     R (>= 3.6.0),
     GenomicRanges,
