@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/mskilab/fishHook.svg?branch=master)](https://app.travis-ci.com/github/mskilab/fishHook)
+[![R-CMD-check](https://github.com/mskilab/fishHook/actions/workflows/check-release.yaml/badge.svg)](https://github.com/mskilab/fishHook/actions/workflows/check-release.yaml)
 [![codecov.io](https://img.shields.io/codecov/c/github/mskilab/fishHook.svg)](https://codecov.io/github/mskilab/fishHook?branch=master)
 
 
