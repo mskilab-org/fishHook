@@ -8,29 +8,30 @@ Sys.setenv(DEFAULT_BSGENOME = system.file('extdata', 'human_g1k_v37.chrom.sizes'
 ## hypotheses BED
 
 ## hypothesesbed = "http://mskilab.com/fishHook/tests/targets.bed"
-hypothesesbed = system.file("extdata", "targets.bed", package = "fishHook")
+## hypothesesbed = system.file("extdata", "targets.bed", package = "fishHook")
+hypothesesbed = testthat::test_path("data", "targets.bed")
 
 ## Sample Covariate #replication_timing = readRDS(gzcon(file("http://mskilab.com/fishHook/tests/covariate.rds")))
 ## replication_timing = readRDS(gzcon(file("http://mskilab.com/fishHook/tests/covariate.rds")))
-replication_timing = readRDS(system.file("extdata", "covariate.rds", package = "fishHook"))
+replication_timing = readRDS(testthat::test_path("data", "covariate.rds"))
 
 ## Same Eligible Subset
 ## eligible = readRDS(gzcon(file("http://mskilab.com/fishHook/tests/eligible.rds")))
-eligible = readRDS(system.file("extdata", "eligible.rds", package = "fishHook"))
+eligible = readRDS(testthat::test_path("data", "eligible.rds"))
 
 ## Sample Hypotheses
 #hypotheses = readRDS(gzcon(file("http://mskilab.com/fishHook/tests/targets.rds")))
-hypotheses  = readRDS(system.file("extdata", "targets.rds", package = "fishHook"))
-hypotheses.2 = readRDS(system.file("extdata", "hypotheses.rds", package = "fishHook"))
+hypotheses  = readRDS(testthat::test_path("data", "targets.rds"))
+hypotheses.2 = readRDS(testthat::test_path("data", "hypotheses.rds"))
 
 ## indexed pathways
 #indexed_pathways = readRDS(gzcon(file("http://mskilab.com/fishHook/tests/indexed_pathways.rds")))
 ## indexed_pathways = readRDS(gzcon(file("http://mskilab.com/fishHook/tests/indexed_pathways.rds")))
-indexed_pathways = readRDS(system.file("extdata", "indexed_pathways.rds", package = "fishHook"))
-annotated_cov = readRDS(system.file("extdata", "annotated_cov.rds", package = "fishHook"))
+indexed_pathways = readRDS(testthat::test_path("data", "indexed_pathways.rds"))
+annotated_cov = readRDS(testthat::test_path("data", "annotated_cov.rds"))
 ## segs
 ## segs = readRDS(gzcon(file("http://mskilab.com/fishHook/tests/jabba_segs_11517.rds")))
-segs = readRDS(system.file("extdata", "jabba_segs_11517.rds", package = "fishHook"))
+segs = readRDS(testthat::test_path("data", "jabba_segs_11517.rds"))
 #segs = readRDS(gzcon(file("http://mskilab.com/fishHook/tests/jabba_segs_11517.rds")))
 
 ## eligible
@@ -39,7 +40,7 @@ segs = readRDS(system.file("extdata", "jabba_segs_11517.rds", package = "fishHoo
 # Sample annotate
 #anno = readRDS(gzcon(file("http://mskilab.com/fishHook/tests/anno.rds")))
 ## anno = readRDS(gzcon(file( "http://mskilab.com/fishHook/tests/anno.rds")))
-anno = readRDS(system.file("extdata", "anno.rds", package = "fishHook"))
+anno = readRDS(testthat::test_path("data", "anno.rds"))
 
 context('unit testing fishhook operations')
 
